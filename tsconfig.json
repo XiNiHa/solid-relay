@@ -5,8 +5,12 @@
     "strict": true,
     "outDir": "dist",
     "rootDir": "src",
+    "baseUrl": ".",
     "isolatedModules": true,
-    "allowJs": true
+    "allowJs": true,
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js",
+    "types": ["./src/types.d.ts"]
   },
   "include": ["src/**/*"]
 }
