@@ -1,5 +1,10 @@
 lockfileVersion: '6.0'
 
+patchedDependencies:
+  '@types/relay-runtime@14.1.10':
+    hash: nbsxx3ygotlmqkpgxobw46yefu
+    path: patches/@types__relay-runtime@14.1.10.patch
+
 devDependencies:
   '@rollup/plugin-commonjs':
     specifier: ^24.1.0
@@ -9,7 +14,7 @@ devDependencies:
     version: 18.16.3
   '@types/relay-runtime':
     specifier: ^14.1.10
-    version: 14.1.10
+    version: 14.1.10(patch_hash=nbsxx3ygotlmqkpgxobw46yefu)
   '@typescript-eslint/eslint-plugin':
     specifier: ^5.59.1
     version: 5.59.1(@typescript-eslint/parser@5.59.1)(eslint@8.39.0)(typescript@5.0.4)
@@ -1516,9 +1521,10 @@ packages:
     resolution: {integrity: sha512-OPs5WnnT1xkCBiuQrZA4+YAV4HEJejmHneyraIaxsbev5yCEr6KMwINNFP9wQeFIw8FWcoTqF3vQsa5CDaI+8Q==}
     dev: true
 
-  /@types/relay-runtime@14.1.10:
+  /@types/relay-runtime@14.1.10(patch_hash=nbsxx3ygotlmqkpgxobw46yefu):
     resolution: {integrity: sha512-px/vskDhwlsh+fRiF9s9TBB84U6FbCfFzdgusnVtN8iQ3lLebHlt/v1v6YzpqUZFDXZxvC6GWUbhXcCfSZwN9A==}
     dev: true
+    patched: true
 
   /@types/resolve@1.20.2:
     resolution: {integrity: sha512-60BCwRFOZCQhDncwQdxxeOEEkbc5dIMccYLwbxsS4TUNeVECQ/pBJ0j09mrHOl/JJvpRPGwO9SvE4nR2Nb/a4Q==}

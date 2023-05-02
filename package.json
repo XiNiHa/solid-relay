@@ -41,5 +41,10 @@
     "rollup-preset-solid": "^2.0.1",
     "solid-js": "^1.7.3",
     "typescript": "^5.0.4"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "@types/relay-runtime@14.1.10": "patches/@types__relay-runtime@14.1.10.patch"
+    }
   }
 }
