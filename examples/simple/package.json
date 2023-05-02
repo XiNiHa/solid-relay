@@ -1,0 +1,26 @@
+{
+  "name": "vite-template-solid",
+  "version": "0.0.0",
+  "description": "",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"relay-compiler -w\"",
+    "relay": "relay-compiler",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/relay-runtime": "^14.1.10",
+    "concurrently": "^8.0.1",
+    "typescript": "^4.9.5",
+    "vite": "^4.1.1",
+    "vite-plugin-relay": "^2.0.0",
+    "vite-plugin-solid": "^2.5.0"
+  },
+  "dependencies": {
+    "relay-compiler": "^15.0.0",
+    "relay-runtime": "^15.0.0",
+    "solid-js": "^1.6.10",
+    "solid-relay": "workspace:*"
+  }
+}
