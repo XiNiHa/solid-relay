@@ -57,5 +57,10 @@
     "patchedDependencies": {
       "@types/relay-runtime@14.1.10": "patches/@types__relay-runtime@14.1.10.patch"
     }
-  }
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ]
 }
