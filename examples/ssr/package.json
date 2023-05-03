@@ -1,0 +1,37 @@
+{
+  "name": "solid-relay-example-ssr",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"solid-start dev\" \"relay-compiler -w\" \"graphql-client-example-server\"",
+    "relay": "relay-compiler",
+    "build": "solid-start build",
+    "start": "solid-start start"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^18.11.18",
+    "@types/relay-runtime": "^14.1.10",
+    "concurrently": "^8.0.1",
+    "esbuild": "^0.14.54",
+    "graphql-client-example-server": "^1.5.2",
+    "postcss": "^8.4.21",
+    "solid-start-node": "^0.2.19",
+    "typescript": "^4.9.4",
+    "vite": "^4.1.4",
+    "vite-plugin-relay": "^2.0.0"
+  },
+  "dependencies": {
+    "@solidjs/meta": "^0.28.2",
+    "@solidjs/router": "^0.8.2",
+    "meros": "^1.2.1",
+    "relay-compiler": "^15.0.0",
+    "relay-runtime": "^15.0.0",
+    "solid-js": "^1.7.2",
+    "solid-relay": "workspace:*",
+    "solid-start": "^0.2.26",
+    "undici": "^5.15.1"
+  },
+  "engines": {
+    "node": ">=16.8"
+  }
+}

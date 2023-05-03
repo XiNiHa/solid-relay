@@ -1,19 +1,17 @@
 import { graphql } from 'relay-runtime'
-import { Show } from 'solid-js'
+import { For, Show, Suspense } from 'solid-js'
 import { createFragment, createLazyLoadQuery } from 'solid-relay'
 import type { CompQuery } from './__generated__/CompQuery.graphql'
-import type { Comp_Sub_user$key } from './__generated__/Comp_Sub_user.graphql'
+import type { Comp_Sub_query$key } from './__generated__/Comp_Sub_query.graphql'
 
 export default () => {
-  const [data] = createLazyLoadQuery<CompQuery>(
+  const data = createLazyLoadQuery<CompQuery>(
     graphql`
       query CompQuery {
-        viewer {
-          login
-          ... on User {
-            ...Comp_Sub_user
-          }
+        siteStatistics {
+          currentVisitorsOnline
         }
+        ...Comp_Sub_query @defer
       }
     `,
     {}
@@ -24,8 +22,10 @@ export default () => {
       <Show when={data()} fallback={'meh'}>
         {(data) => (
           <div>
-            <p>{data().viewer.login}</p>
-            <Sub $user={data().viewer} />
+            <p>{data().siteStatistics.currentVisitorsOnline}</p>
+            <Suspense fallback="Additional data...">
+              <Sub $query={data()} />
+            </Suspense>
           </div>
         )}
       </Show>
@@ -34,24 +34,35 @@ export default () => {
 }
 
 interface SubProps {
-  $user: Comp_Sub_user$key
+  $query: Comp_Sub_query$key
 }
 
 const Sub = (props: SubProps) => {
-  const [viewer] = createFragment(
+  const viewer = createFragment(
     graphql`
-      fragment Comp_Sub_user on User {
-        login
-        email
+      fragment Comp_Sub_query on Query {
+        ticketsConnection(first: 10) {
+          edges {
+            node {
+              id
+              subject
+              status
+            }
+          }
+        }
       }
     `,
-    props.$user
+    () => props.$query
   )
 
   return (
     <div>
       <Show when={viewer()} fallback={'eh'}>
-        {(viewer) => <p>{`${viewer().login} ${viewer().email}`}</p>}
+        {(viewer) => (
+          <For each={viewer().ticketsConnection.edges}>
+            {(edge) => <p>{edge.node.subject}</p>}
+          </For>
+        )}
       </Show>
     </div>
   )

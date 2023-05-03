@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "description": "",
   "scripts": {
-    "dev": "concurrently \"vite\" \"relay-compiler -w\"",
+    "dev": "concurrently \"vite\" \"relay-compiler -w\" \"graphql-client-example-server\"",
     "relay": "relay-compiler",
     "build": "vite build",
     "serve": "vite preview"
@@ -13,12 +13,14 @@
   "devDependencies": {
     "@types/relay-runtime": "^14.1.10",
     "concurrently": "^8.0.1",
+    "graphql-client-example-server": "^1.5.2",
     "typescript": "^4.9.5",
     "vite": "^4.1.1",
     "vite-plugin-relay": "^2.0.0",
     "vite-plugin-solid": "^2.5.0"
   },
   "dependencies": {
+    "meros": "^1.2.1",
     "relay-compiler": "^15.0.0",
     "relay-runtime": "^15.0.0",
     "solid-js": "^1.6.10",

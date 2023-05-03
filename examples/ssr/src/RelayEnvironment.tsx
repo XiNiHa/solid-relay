@@ -15,11 +15,15 @@ import { meros } from 'meros/browser'
 const fetchFn: FetchFunction = (params, variables) =>
   Observable.create((sink) => {
     ;(async () => {
-      const response = await fetch('http://localhost:4000/graphql', {
+      if (typeof window !== 'undefined') {
+        return sink.error(new Error('This fetch function is for SSR only.'))
+      }
+
+      const response = await fetch('http://0.0.0.0:4000/graphql', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json, multipart/mixed'
+          Accept: 'application/json, multipart/mixed',
         },
         body: JSON.stringify({ query: params.text, variables }),
       })
@@ -45,13 +49,11 @@ const fetchFn: FetchFunction = (params, variables) =>
     })()
   })
 
-function createEnvironment(): IEnvironment {
+export function createEnvironment(): IEnvironment {
   const network = Network.create(fetchFn)
   const store = new Store(new RecordSource())
   return new Environment({ store, network })
 }
-
-export const environment = createEnvironment()
 
 function isAsyncIterable(input: unknown): input is AsyncIterable<unknown> {
   return (
