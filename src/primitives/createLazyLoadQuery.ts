@@ -1,6 +1,6 @@
 import { access } from '@solid-primitives/utils'
 import type { MaybeAccessor } from '@solid-primitives/utils'
-import { __internal } from 'relay-runtime'
+import { GraphQLResponse, Observable, __internal } from 'relay-runtime'
 import type {
   OperationType,
   GraphQLTaggedNode,
@@ -9,12 +9,14 @@ import type {
   CacheConfig,
   RenderPolicy,
 } from 'relay-runtime'
-import { createMemo } from 'solid-js'
-import type { ResourceReturn } from 'solid-js'
+import { createComputed, createMemo, createResource } from 'solid-js'
+import type { Accessor } from 'solid-js'
+import { createStore, reconcile } from 'solid-js/store'
 
 import { createLazyLoadQueryNode } from './createLazyLoadQueryNode'
 import { createMemoOperationDescriptor } from './createMemoOperationDescriptor'
 import { useRelayEnvironment } from '../RelayEnvironment'
+import { getQueryResourceForEnvironment } from '../utils/QueryResource'
 
 export function createLazyLoadQuery<TQuery extends OperationType>(
   gqlQuery: MaybeAccessor<GraphQLTaggedNode>,
@@ -25,25 +27,54 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
     networkCacheConfig?: MaybeAccessor<CacheConfig | undefined>
     UNSTABLE_renderPolicy?: MaybeAccessor<RenderPolicy | undefined>
   }
-): ResourceReturn<TQuery['response']> {
+): Accessor<TQuery['response']> {
   const environment = useRelayEnvironment()
+  const QueryResource = getQueryResourceForEnvironment(environment)
 
   const query = createMemoOperationDescriptor(
     gqlQuery,
     variables,
     () => access(options?.networkCacheConfig) ?? { force: true }
   )
-  const data = createLazyLoadQueryNode({
+
+  let shouldFetchHere = false
+
+  const [loadShouldFetchHere] = createResource(() => {
+    shouldFetchHere = true
+    return true
+  })
+
+  const fragmentNode = createLazyLoadQueryNode({
     componentDisplayName: 'createLazyLoadQuery()',
     environment,
     query,
-    fetchObservable: createMemo(() =>
-      __internal.fetchQuery(environment, access(query))
-    ),
+    fetchObservable: createMemo(() => {
+      loadShouldFetchHere()
+      return shouldFetchHere
+        ? __internal.fetchQuery(environment, access(query))
+        : Observable.create<GraphQLResponse>((sink) => {
+            QueryResource.registerReplaySink(
+              access(query).request.identifier,
+              sink
+            )
+          })
+    }),
     fetchKey: () => access(options?.fetchKey) ?? null,
     fetchPolicy: () => access(options?.fetchPolicy) ?? null,
     renderPolicy: () => access(options?.UNSTABLE_renderPolicy) ?? null,
   })
+  return () => fragmentNode()?.data
 
-  return data
+  // const [dataStore, setDataStore] = createStore<[TQuery['response'] | null]>([
+  //   null,
+  // ])
+
+  // createComputed(() => {
+  //   const node = fragmentNode()
+  //   if (!node) return
+
+  //   setDataStore(0, reconcile(node.data))
+  // })
+
+  // return () => dataStore[0]
 }

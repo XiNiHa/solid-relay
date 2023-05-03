@@ -6,39 +6,48 @@ import type {
   ArrayKeyType,
   ArrayKeyTypeData,
 } from 'relay-runtime/lib/store/ResolverFragments'
-import { createResource } from 'solid-js'
-import type { ResourceReturn } from 'solid-js'
-import { unwrap } from 'solid-js/store'
+import { createComputed } from 'solid-js'
+import type { Accessor } from 'solid-js'
+import { createStore, reconcile, unwrap } from 'solid-js/store'
 
 import { createFragmentNode } from './createFragmentNode'
 import { useRelayEnvironment } from '../RelayEnvironment'
 
 export function createFragment<TKey extends KeyType>(
   fragment: GraphQLTaggedNode,
-  key: TKey
-): ResourceReturn<KeyTypeData<TKey>>
+  key: Accessor<TKey>
+): Accessor<KeyTypeData<TKey> | undefined>
 export function createFragment<TKey extends KeyType>(
   fragment: GraphQLTaggedNode,
-  key: TKey | null
-): ResourceReturn<KeyTypeData<TKey> | null>
+  key: Accessor<TKey | null>
+): Accessor<KeyTypeData<TKey> | null | undefined>
 export function createFragment<TKey extends ArrayKeyType>(
   fragment: GraphQLTaggedNode,
-  key: TKey
-): ResourceReturn<ArrayKeyTypeData<TKey>>
+  key: Accessor<TKey>
+): Accessor<ArrayKeyTypeData<TKey> | undefined>
 export function createFragment<TKey extends ArrayKeyType>(
   fragment: GraphQLTaggedNode,
-  key: TKey | null
-): ResourceReturn<ArrayKeyTypeData<TKey> | null> {
+  key: Accessor<TKey | null>
+): Accessor<ArrayKeyTypeData<TKey> | null | undefined> {
   const environment = useRelayEnvironment()
   const fragmentNode = getFragment(fragment)
-  return createResource(
-    createFragmentNode(
-      environment,
-      fragmentNode,
-      unwrap(key),
-      'createFragment()'
-    )[0],
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
-    (node) => node.data as any
+  const node = createFragmentNode(
+    environment,
+    fragmentNode,
+    () => unwrap(key()),
+    'createFragment()'
   )
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
+  return () => node()?.data as any
+
+  // const [dataStore, setDataStore] = createStore<[unknown | null]>([null])
+
+  // createComputed(() => {
+  //   const currentNode = node()
+  //   setDataStore(0, reconcile(currentNode?.data))
+  // })
+
+  // // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
+  // return () => dataStore[0] as any
 }

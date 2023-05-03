@@ -1,4 +1,3 @@
-import { createDeepSignal } from '@solid-primitives/resource'
 import { MaybeAccessor, access } from '@solid-primitives/utils'
 import { isPromise } from 'relay-runtime'
 import type {
@@ -11,9 +10,9 @@ import type {
   RenderPolicy,
 } from 'relay-runtime'
 import { createEffect, createMemo, createResource, onCleanup } from 'solid-js'
-import type { Accessor, ResourceReturn } from 'solid-js'
+import type { Accessor } from 'solid-js'
 
-import { createFragmentNode } from './createFragmentNode'
+import { FragmentNode, createFragmentNode } from './createFragmentNode'
 import {
   getQueryCacheIdentifier,
   getQueryResourceForEnvironment,
@@ -37,7 +36,7 @@ export function createLazyLoadQueryNode<TQuery extends OperationType>({
   fetchKey: MaybeAccessor<string | number | null>
   fetchPolicy: MaybeAccessor<FetchPolicy | null>
   renderPolicy: MaybeAccessor<RenderPolicy | null>
-}): ResourceReturn<TQuery['response']> {
+}): Accessor<FragmentNode<TQuery['response']> | undefined> {
   const QueryResource = getQueryResourceForEnvironment(environment)
 
   const fetchManager = createFetchManager()
@@ -65,43 +64,38 @@ export function createLazyLoadQueryNode<TQuery extends OperationType>({
       }
     )
 
-  const [queryResult] = createResource(cacheIdentifier, () => {
+  const [isQueryResultAvailable] = createResource(cacheIdentifier, () => {
     function fetcher(
       queryResult: QueryResult | Promise<void>
-    ): QueryResult | Promise<QueryResult> {
+    ): true | Promise<true> {
       if (isPromise(queryResult)) {
         return queryResult.then(() => fetcher(getPreparedQueryResult()))
       }
-      return queryResult
+      return true
     }
     return fetcher(getPreparedQueryResult())
   })
 
   createEffect(() => {
-    const preparedResult = queryResult()
-    if (!preparedResult) return
+    if (!isQueryResultAvailable()) return
 
-    const disposable = QueryResource.retain(preparedResult)
+    const disposable = QueryResource.retain(
+      getPreparedQueryResult() as QueryResult
+    )
     onCleanup(() => disposable.dispose())
   })
 
   const fragmentNode = createMemo(() => {
-    const result = queryResult()
-    if (!result) return
-    const { fragmentNode, fragmentRef } = result
-    const [node] = createFragmentNode(
+    if (!isQueryResultAvailable()) return
+    const { fragmentNode, fragmentRef } =
+      getPreparedQueryResult() as QueryResult
+    return createFragmentNode(
       environment,
       fragmentNode,
-      fragmentRef,
+      () => fragmentRef,
       componentDisplayName
     )
-    return node
   })
-  const data = createResource(
-    () => fragmentNode()?.(),
-    (node) => node.data,
-    { storage: createDeepSignal }
-  )
 
-  return data
+  return () => fragmentNode()?.()
 }

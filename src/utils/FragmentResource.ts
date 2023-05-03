@@ -338,7 +338,7 @@ class FragmentResource {
         fragmentNode,
         fragmentOwner,
         fragmentResult
-      ) as { promise: Promise<void> } | undefined // TODO: remove typecast
+      )
     const parentQueryPromiseResultPromise = parentQueryPromiseResult?.promise
     const missingResolverFieldPromises =
       missingLiveResolverFields(snapshot)?.map(({ liveStateID }) => {

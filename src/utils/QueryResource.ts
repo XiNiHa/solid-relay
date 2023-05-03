@@ -12,6 +12,7 @@ import type {
   Snapshot,
   Subscription,
 } from 'relay-runtime'
+import { Sink } from 'relay-runtime/lib/network/RelayObservable'
 import invariant from 'tiny-invariant'
 
 import * as LRUCache from './LRUCache'
@@ -23,6 +24,7 @@ const DEFAULT_LIVE_FETCH_POLICY = 'store-and-network'
 
 type QueryResourceCacheEntry = {
   id: number
+  requestIdentifier: string
   cacheIdentifier: string
   operationAvailability: OperationAvailability | null
   // The number of received payloads for the operation.
@@ -127,6 +129,7 @@ function createCacheEntry(
   })
 
   const cacheEntry: QueryResourceCacheEntry = {
+    requestIdentifier: operation.request.identifier,
     cacheIdentifier,
     id: nextID++,
     processedPayloadsCount: 0,
@@ -161,6 +164,8 @@ class QueryResource {
   #environment: IEnvironment
   #cache: LRUCache.Cache<QueryResourceCacheEntry> =
     LRUCache.create(CACHE_CAPACITY)
+  #queues: Map<string, GraphQLResponse[]> = new Map()
+  #replayObservableSinks: Map<string, Sink<GraphQLResponse>> = new Map()
 
   constructor(environment: IEnvironment) {
     this.#environment = environment
@@ -263,8 +268,38 @@ class QueryResource {
     }
   }
 
+  flushPayloadQueue(requestIdentifier: string): GraphQLResponse[] | undefined {
+    const queue = this.#queues.get(requestIdentifier)
+    if (queue != null) {
+      this.#queues.delete(requestIdentifier)
+    }
+    return queue
+  }
+
+  registerReplaySink(
+    requestIdentifier: string,
+    sink: Sink<GraphQLResponse>
+  ): void {
+    this.#replayObservableSinks.set(requestIdentifier, sink)
+  }
+
+  publishReplayPayload(
+    requestIdentifier: string,
+    response: GraphQLResponse
+  ): void {
+    const sink = this.#replayObservableSinks.get(requestIdentifier)
+    if (sink != null) sink.next(response)
+  }
+
+  completeReplay(requestIdentifier: string): void {
+    const sink = this.#replayObservableSinks.get(requestIdentifier)
+    if (sink != null) sink.complete()
+  }
+
   #clearCacheEntry = (cacheEntry: QueryResourceCacheEntry) => {
     this.#cache.delete(cacheEntry.cacheIdentifier)
+    this.#queues.delete(cacheEntry.requestIdentifier)
+    this.#replayObservableSinks.delete(cacheEntry.requestIdentifier)
   }
 
   #getOrCreateCacheEntry(
@@ -365,7 +400,7 @@ class QueryResource {
             },
           })
         },
-        next: () => {
+        next: (payload) => {
           const cacheEntry = this.#getOrCreateCacheEntry(
             cacheIdentifier,
             operation,
@@ -376,6 +411,13 @@ class QueryResource {
           cacheEntry.processedPayloadsCount += 1
           cacheEntry.setValue(queryResult)
           resolveNetworkPromise()
+
+          let queue = this.#queues.get(operation.request.identifier)
+          if (queue == null) {
+            queue = []
+            this.#queues.set(operation.request.identifier, queue)
+          }
+          queue.push(payload)
 
           observer?.next?.(environment.lookup(operation.fragment))
         },
