@@ -164,7 +164,8 @@ class ClientEdgeQueryResultsCache {
 class FragmentResource {
   #environment: IEnvironment
   #cache: FragmentResourceCache = LRUCache.create(CACHE_CAPACITY)
-  #clientEdgeQueryResultsCache: void | ClientEdgeQueryResultsCache
+  #clientEdgeQueryResultsCache: undefined | ClientEdgeQueryResultsCache =
+    undefined
 
   constructor(environment: IEnvironment) {
     this.#environment = environment
