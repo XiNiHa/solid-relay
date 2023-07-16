@@ -9,9 +9,8 @@ import type {
   CacheConfig,
   RenderPolicy,
 } from 'relay-runtime'
-import { createComputed, createMemo, createResource } from 'solid-js'
+import { createMemo, createResource } from 'solid-js'
 import type { Accessor } from 'solid-js'
-import { createStore, reconcile } from 'solid-js/store'
 
 import { createLazyLoadQueryNode } from './createLazyLoadQueryNode'
 import { createMemoOperationDescriptor } from './createMemoOperationDescriptor'
@@ -64,17 +63,4 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
     renderPolicy: () => access(options?.UNSTABLE_renderPolicy) ?? null,
   })
   return () => fragmentNode()?.data
-
-  // const [dataStore, setDataStore] = createStore<[TQuery['response'] | null]>([
-  //   null,
-  // ])
-
-  // createComputed(() => {
-  //   const node = fragmentNode()
-  //   if (!node) return
-
-  //   setDataStore(0, reconcile(node.data))
-  // })
-
-  // return () => dataStore[0]
 }

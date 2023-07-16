@@ -6,9 +6,7 @@ import type {
   ArrayKeyType,
   ArrayKeyTypeData,
 } from 'relay-runtime/lib/store/ResolverFragments'
-import { createComputed } from 'solid-js'
 import type { Accessor } from 'solid-js'
-import { createStore, reconcile, unwrap } from 'solid-js/store'
 
 import { createFragmentNode } from './createFragmentNode'
 import { useRelayEnvironment } from '../RelayEnvironment'
@@ -33,21 +31,11 @@ export function createFragment<TKey extends ArrayKeyType>(
   const fragmentNode = getFragment(fragment)
   const node = createFragmentNode(
     environment,
-    fragmentNode,
-    () => unwrap(key()),
+    () => fragmentNode,
+    () => key(),
     'createFragment()'
   )
 
   // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
   return () => node()?.data as any
-
-  // const [dataStore, setDataStore] = createStore<[unknown | null]>([null])
-
-  // createComputed(() => {
-  //   const currentNode = node()
-  //   setDataStore(0, reconcile(currentNode?.data))
-  // })
-
-  // // eslint-disable-next-line @typescript-eslint/no-unsafe-return, @typescript-eslint/no-explicit-any
-  // return () => dataStore[0] as any
 }

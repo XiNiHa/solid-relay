@@ -3,7 +3,6 @@ import type { IEnvironment, ReaderFragment } from 'relay-runtime'
 import { getPromiseForActiveRequest } from 'relay-runtime/lib/query/fetchQueryInternal'
 import {
   createEffect,
-  createMemo,
   createRenderEffect,
   createResource,
   onCleanup,
@@ -23,7 +22,7 @@ export type FragmentNode<TFragmentData> = {
 
 export function createFragmentNode<TFragmentData>(
   environment: IEnvironment,
-  fragmentNode: ReaderFragment,
+  fragmentNode: Accessor<ReaderFragment | undefined>,
   fragmentRef: Accessor<unknown>,
   componentDisplayName: string
 ): Accessor<FragmentNode<TFragmentData> | undefined> {
@@ -31,37 +30,35 @@ export function createFragmentNode<TFragmentData>(
   const FragmentResource = getFragmentResourceForEnvironment(environment)
 
   let isMounted = false
-  const fragmentIdentifier = () =>
-    getFragmentIdentifier(fragmentNode, fragmentRef())
+  const fragmentIdentifier = (node: ReaderFragment) =>
+    getFragmentIdentifier(node, fragmentRef())
 
-  const getFragmentResult = () =>
+  const getFragmentResult = (node: ReaderFragment) =>
     FragmentResource.readWithIdentifier(
-      fragmentNode,
+      node,
       fragmentRef(),
-      fragmentIdentifier(),
+      fragmentIdentifier(node),
       componentDisplayName
     )
 
-  const [hasFragmentResult, { refetch: refreshFragmentResultStatus }] =
+  const [fragmentNodeWithResult, { refetch: refreshFragmentResultStatus }] =
     createResource(
       () => {
         const ref = fragmentRef()
-        console.log('ref', ref)
-        return ref && fragmentIdentifier()
+        const node = fragmentNode()
+        if (!ref || !node) return
+        return node
       },
-      (identifier) => {
-        console.log('fetching', identifier)
+      (node) => {
         function fetcher(
           fragmentResult: FragmentResult | Promise<void>
-        ): true | Promise<true> {
+        ): ReaderFragment | Promise<ReaderFragment> {
           if (isPromise(fragmentResult)) {
-            console.log('got promise', identifier)
-            return fragmentResult.then(() => fetcher(getFragmentResult()))
+            return fragmentResult.then(() => fetcher(getFragmentResult(node)))
           }
-          console.log('got fragment result', identifier)
-          return true
+          return node
         }
-        return fetcher(getFragmentResult())
+        return fetcher(getFragmentResult(node))
       }
     )
 
@@ -89,26 +86,26 @@ export function createFragmentNode<TFragmentData>(
   })
 
   createRenderEffect(() => {
-    if (!hasFragmentResult()) return
+    const fragmentNode = fragmentNodeWithResult()
+    if (!fragmentNode) return
 
     const disposable = FragmentResource.subscribe(
-      getFragmentResult() as FragmentResult,
+      getFragmentResult(fragmentNode) as FragmentResult,
       handleDataUpdate
     )
     onCleanup(() => disposable.dispose())
   })
 
-  const [nodeData] = createResource(hasFragmentResult, () => {
-    const result = getFragmentResult() as FragmentResult
+  const [nodeData] = createResource(fragmentNodeWithResult, (node) => {
+    const result = getFragmentResult(node) as FragmentResult
     const data = result.data as TFragmentData
-    console.log('nodeData', data)
-    return data
+    return { node, data }
   })
 
-  const node = createMemo(() => {
-    const data = nodeData()
-    if (!data) return
-    const result = getFragmentResult() as FragmentResult
+  const node = () => {
+    const { node, data } = nodeData() ?? {}
+    if (!node || !data) return
+    const result = getFragmentResult(node) as FragmentResult
     return {
       data,
       disableStoreUpdates,
@@ -116,17 +113,20 @@ export function createFragmentNode<TFragmentData>(
         enableStoreUpdates(result)
       },
     }
-  })
+  }
 
-  const fragmentOwner = createMemo(() => {
-    const fragmentSelector = getSelector(fragmentNode, fragmentRef())
+  const fragmentOwner = () => {
+    const ref = fragmentRef()
+    const node = fragmentNode()
+    if (!node) return
+    const fragmentSelector = getSelector(node, ref)
     if (!fragmentSelector) return
     const fragmentOwner =
       'selectors' in fragmentSelector
         ? fragmentSelector.selectors[0].owner
         : fragmentSelector.owner
     return fragmentOwner
-  })
+  }
 
   const [payloads] = createResource(
     () => [fragmentOwner(), node()] as const,

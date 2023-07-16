@@ -64,20 +64,20 @@ export function createLazyLoadQueryNode<TQuery extends OperationType>({
       }
     )
 
-  const [isQueryResultAvailable] = createResource(cacheIdentifier, () => {
+  const [preparedQueryResult] = createResource(() => {
     function fetcher(
       queryResult: QueryResult | Promise<void>
-    ): true | Promise<true> {
+    ): QueryResult | Promise<QueryResult> {
       if (isPromise(queryResult)) {
         return queryResult.then(() => fetcher(getPreparedQueryResult()))
       }
-      return true
+      return queryResult
     }
     return fetcher(getPreparedQueryResult())
   })
 
   createEffect(() => {
-    if (!isQueryResultAvailable()) return
+    if (!preparedQueryResult()) return
 
     const disposable = QueryResource.retain(
       getPreparedQueryResult() as QueryResult
@@ -85,17 +85,12 @@ export function createLazyLoadQueryNode<TQuery extends OperationType>({
     onCleanup(() => disposable.dispose())
   })
 
-  const fragmentNode = createMemo(() => {
-    if (!isQueryResultAvailable()) return
-    const { fragmentNode, fragmentRef } =
-      getPreparedQueryResult() as QueryResult
-    return createFragmentNode(
-      environment,
-      fragmentNode,
-      () => fragmentRef,
-      componentDisplayName
-    )
-  })
+  const fragmentNode = createFragmentNode(
+    environment,
+    () => preparedQueryResult()?.fragmentNode,
+    () => preparedQueryResult()?.fragmentRef,
+    componentDisplayName
+  )
 
-  return () => fragmentNode()?.()
+  return () => fragmentNode()
 }
