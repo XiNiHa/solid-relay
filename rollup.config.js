@@ -1,6 +1,6 @@
+import commonjs from '@rollup/plugin-commonjs'
 import { resolve } from 'node:path'
 import withSolid from 'rollup-preset-solid'
-import commonjs from '@rollup/plugin-commonjs'
 
 export default withSolid({
   input: 'src/index.ts',

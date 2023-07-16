@@ -1,3 +1,4 @@
+/* eslint-env node */
 /** @type{import('eslint').Linter.Config} */
 const config = {
   root: true,
@@ -5,27 +6,29 @@ const config = {
     'eslint:recommended',
     'prettier',
     'plugin:@typescript-eslint/recommended',
-    'plugin:@typescript-eslint/recommended-requiring-type-checking',
     'plugin:import/recommended',
     'plugin:import/typescript',
   ],
   plugins: ['@typescript-eslint', 'prettier'],
   parser: '@typescript-eslint/parser',
+  overrides: [
+    {
+      files: ['./src/**/*', './examples/**/*'],
+      extends: [
+        'plugin:@typescript-eslint/recommended-requiring-type-checking',
+      ],
+      parserOptions: {
+        tsconfigRootDir: __dirname,
+        project: ['./tsconfig.json', './examples/*/tsconfig.json'],
+      },
+    },
+  ],
   settings: {
     'import/resolver': {
       typescript: true,
       node: true,
     },
   },
-  overrides: [
-    {
-      files: ['./src/**/*.{ts,tsx}'],
-      parserOptions: {
-        project: true,
-        tsconfigRootDir: __dirname,
-      },
-    },
-  ],
   rules: {
     'prettier/prettier': 'error',
     'import/order': [

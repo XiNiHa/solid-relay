@@ -1,6 +1,7 @@
 import { graphql } from 'relay-runtime'
 import { For, Suspense } from 'solid-js'
 import { createFragment, createLazyLoadQuery } from 'solid-relay'
+
 import type { routesQuery } from './__generated__/routesQuery.graphql'
 import type { routes_Sub_query$key } from './__generated__/routes_Sub_query.graphql'
 
