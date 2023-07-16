@@ -31,6 +31,7 @@
     "@rollup/plugin-commonjs": "^24.1.0",
     "@total-typescript/ts-reset": "^0.4.2",
     "@types/deep-equal": "^1.0.1",
+    "@types/eslint": "^8.44.0",
     "@types/node": "^18.16.3",
     "@types/relay-runtime": "^14.1.10",
     "@typescript-eslint/eslint-plugin": "^5.59.1",
