@@ -1,23 +1,25 @@
 /* @refresh reload */
-import { render } from 'solid-js/web'
-import { RelayEnvironmentProvider } from 'solid-relay'
+import { render } from "solid-js/web";
+import { RelayEnvironmentProvider } from "solid-relay";
 
-import App from './App'
-import { environment } from './RelayEnvironment'
+import App from "./App";
+import { environment } from "./RelayEnvironment";
 
-const root = document.getElementById('root')
+const root = document.getElementById("root");
 
 if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
-  throw new Error(
-    'Root element not found. Did you forget to add it to your index.html? Or maybe the id attribute got mispelled?'
-  )
+	throw new Error(
+		"Root element not found. Did you forget to add it to your index.html? Or maybe the id attribute got mispelled?",
+	);
 }
 
-render(
-  () => (
-    <RelayEnvironmentProvider environment={environment}>
-      <App />
-    </RelayEnvironmentProvider>
-  ),
-  root!
-)
+if (root) {
+	render(
+		() => (
+			<RelayEnvironmentProvider environment={environment}>
+				<App />
+			</RelayEnvironmentProvider>
+		),
+		root,
+	);
+}

@@ -1,6 +1,6 @@
-export { createLazyLoadQuery } from './primitives/createLazyLoadQuery'
-export { createFragment } from './primitives/createFragment'
+export { createLazyLoadQuery } from "./primitives/createLazyLoadQuery";
+export { createFragment } from "./primitives/createFragment";
 export {
-  RelayEnvironmentProvider,
-  useRelayEnvironment,
-} from './RelayEnvironment'
+	RelayEnvironmentProvider,
+	useRelayEnvironment,
+} from "./RelayEnvironment";

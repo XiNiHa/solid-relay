@@ -1,0 +1,23 @@
+{
+	"$schema": "https://biomejs.dev/schemas/1.8.1/schema.json",
+	"organizeImports": {
+		"enabled": true
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"style": {
+				"useTemplate": "off",
+				"noUnusedTemplateLiteral": "off",
+				"noUselessElse": "off"
+			},
+			"complexity": {
+				"noUselessSwitchCase": "off"
+			}
+		}
+	},
+	"files": {
+		"ignore": ["dist", ".changeset", "__generated__"]
+	}
+}

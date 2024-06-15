@@ -1,5 +1,5 @@
 diff --git a/lib/store/RelayModernEnvironment.d.ts b/lib/store/RelayModernEnvironment.d.ts
-index 498520020d4b1eb41e43067949f6afbabe790b55..dd111dcea88563276fdee437a7d6c252b722a3a6 100755
+index 79e87c24b23e037dfdf0fd63e87a5965b082319f..95aa0b144410925214e4a43fd61f65dbd4c0b768 100644
 --- a/lib/store/RelayModernEnvironment.d.ts
 +++ b/lib/store/RelayModernEnvironment.d.ts
 @@ -47,6 +47,7 @@ export default class RelayModernEnvironment implements Environment {
@@ -11,7 +11,7 @@ index 498520020d4b1eb41e43067949f6afbabe790b55..dd111dcea88563276fdee437a7d6c252
      getNetwork(): Network;
      getOperationTracker(): RelayOperationTracker;
 diff --git a/lib/store/RelayModernStore.d.ts b/lib/store/RelayModernStore.d.ts
-index 99d0e7c503d80ebdc64f0e7be71e238ac186e69a..67688625ee34ce68fc8827a8502efef7884564c0 100755
+index 61e8bc57a8699d622b52ec1305acda24e2f99a1d..b87f394b1c50c5890ff0bbc0261ea8f068d3485a 100644
 --- a/lib/store/RelayModernStore.d.ts
 +++ b/lib/store/RelayModernStore.d.ts
 @@ -29,6 +29,7 @@ export default class RelayModernStore implements Store {
@@ -23,19 +23,35 @@ index 99d0e7c503d80ebdc64f0e7be71e238ac186e69a..67688625ee34ce68fc8827a8502efef7
      retain(operation: OperationDescriptor): Disposable;
      lookup(selector: SingularReaderSelector): Snapshot;
 diff --git a/lib/store/RelayStoreTypes.d.ts b/lib/store/RelayStoreTypes.d.ts
-index 6af99687e464896c0d1cc0eb6279fde247799382..44d46cd7e6a5761808da174587dd06578ed44635 100755
+index 0eb534fecdc429cf12cdb77111703f6b01c58c95..5d9caa84086c1616e4e102e5b1e36167b9b31934 100644
 --- a/lib/store/RelayStoreTypes.d.ts
 +++ b/lib/store/RelayStoreTypes.d.ts
-@@ -85,6 +85,16 @@ export interface NormalizationSelector {
+@@ -9,7 +9,6 @@ import {
+ } from "../network/RelayNetworkTypes";
+ import { RelayObservable } from "../network/RelayObservable";
+ import { GraphQLTaggedNode } from "../query/RelayModernGraphQLTag";
+-import { RequestIdentifier } from "../util/getRequestIdentifier";
+ import {
+     NormalizationLinkedField,
+     NormalizationScalarField,
+@@ -28,6 +27,7 @@ import {
+     Variables,
+     VariablesOf,
+ } from "../util/RelayRuntimeTypes";
++import { RequestIdentifier } from "../util/getRequestIdentifier";
+ import { InvalidationState } from "./RelayModernStore";
+ import { RelayOperationTracker } from "./RelayOperationTracker";
+ import { RecordState } from "./RelayRecordState";
+@@ -94,6 +94,16 @@ export interface NormalizationSelector {
      readonly variables: Variables;
  }
  
-+export type MissingLiveResolverField = {
++export interface MissingLiveResolverField {
 +  path: string;
 +  liveStateID: DataID;
 +}
 +
-+export type MissingClientEdgeRequestInfo = {
++export interface MissingClientEdgeRequestInfo {
 +  request: ConcreteRequest;
 +  clientEdgeDestinationID: DataID;
 +}
@@ -43,7 +59,7 @@ index 6af99687e464896c0d1cc0eb6279fde247799382..44d46cd7e6a5761808da174587dd0657
  /**
   * A representation of a selector and its results at a particular point in time.
   */
-@@ -93,6 +103,10 @@ export interface TypedSnapshot<TData> {
+@@ -102,6 +112,10 @@ export interface TypedSnapshot<TData> {
      readonly isMissingData: boolean;
      readonly seenRecords: RecordMap;
      readonly selector: SingularReaderSelector;
@@ -54,33 +70,33 @@ index 6af99687e464896c0d1cc0eb6279fde247799382..44d46cd7e6a5761808da174587dd0657
  }
  export type Snapshot = TypedSnapshot<SelectorData>;
  
-@@ -223,6 +237,8 @@ export interface Store {
+@@ -232,6 +246,8 @@ export interface Store {
       */
      getSource(): RecordSource;
  
-+    getEpoch(): number
++    getEpoch(): number;
 +
      /**
       * Determine if the operation can be resolved with data in the store (i.e. no
       * fields are missing).
-@@ -635,6 +651,8 @@ export interface Environment {
+@@ -645,6 +661,8 @@ export interface Environment {
       */
      getOperationTracker(): RelayOperationTracker;
  
-+    UNSTABLE_getDefaultRenderPolicy(): RenderPolicy
++    UNSTABLE_getDefaultRenderPolicy(): RenderPolicy;
 +
      /**
       * Read the results of a selector from in-memory records in the store.
       * Optionally takes an owner, corresponding to the operation that
 diff --git a/lib/util/ReaderNode.d.ts b/lib/util/ReaderNode.d.ts
-index 2e6a99d0268a9c042139ce746185cf906d42e72c..080eb79b23379f615e7cb092794efecdf0f87f63 100755
+index e88aae7969d1afc1484d30dd4ebaae254f1231fc..11cb2b6a40cc22d451bc055435f86f34ef889d8c 100644
 --- a/lib/util/ReaderNode.d.ts
 +++ b/lib/util/ReaderNode.d.ts
 @@ -34,6 +34,7 @@ export interface ReaderFragment {
-               readonly connection?: ReadonlyArray<ConnectionMetadata>;
-               readonly mask?: boolean;
-               readonly plural?: boolean;
-+              readonly hasClientEdges?: boolean;
-               readonly refetch?: ReaderRefetchMetadata;
-           }
+             readonly connection?: readonly ConnectionMetadata[];
+             readonly mask?: boolean;
+             readonly plural?: boolean;
++            readonly hasClientEdges?: boolean;
+             readonly refetch?: ReaderRefetchMetadata;
+         }
          | null
