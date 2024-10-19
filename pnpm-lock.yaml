@@ -8,9 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@solid-primitives/resource':
-        specifier: ^0.3.1
-        version: 0.3.1(solid-js@1.9.2)
       '@solid-primitives/utils':
         specifier: ^6.2.3
         version: 6.2.3(solid-js@1.9.2)
@@ -30,9 +27,6 @@ importers:
       '@rollup/plugin-commonjs':
         specifier: ^28.0.1
         version: 28.0.1(rollup@4.24.0)
-      '@total-typescript/ts-reset':
-        specifier: ^0.6.1
-        version: 0.6.1
       '@types/deep-equal':
         specifier: ^1.0.4
         version: 1.0.4
@@ -1156,18 +1150,10 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@solid-primitives/resource@0.3.1':
-    resolution: {integrity: sha512-17YquMeg58aGOxUP85x4sN7PL1qBgm6euFY7a2pQQLiu5dzrCzKPHsZ8hmgSEztejVlk8VCgOIteGdTCkDgJmw==}
-    peerDependencies:
-      solid-js: ^1.6.0
-
   '@solid-primitives/utils@6.2.3':
     resolution: {integrity: sha512-CqAwKb2T5Vi72+rhebSsqNZ9o67buYRdEJrIFzRXz3U59QqezuuxPsyzTSVCacwS5Pf109VRsgCJQoxKRoECZQ==}
     peerDependencies:
       solid-js: ^1.6.12
-
-  '@total-typescript/ts-reset@0.6.1':
-    resolution: {integrity: sha512-cka47fVSo6lfQDIATYqb/vO1nvFfbPw7uWLayIXIhGETj0wcOOlrlkobOMDNQOFr9QOafegUPq13V2+6vtD7yg==}
 
   '@types/babel__core@7.20.5':
     resolution: {integrity: sha512-qoQprZvz5wQFJwMDqeseRXWv3rqMvhgpbXFfVyWhbx9X47POIA6i/+dXefEmZKoAgOaTdaIgNSMqMIU61yRyzA==}
@@ -3687,15 +3673,9 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.24.0':
     optional: true
 
-  '@solid-primitives/resource@0.3.1(solid-js@1.9.2)':
-    dependencies:
-      solid-js: 1.9.2
-
   '@solid-primitives/utils@6.2.3(solid-js@1.9.2)':
     dependencies:
       solid-js: 1.9.2
-
-  '@total-typescript/ts-reset@0.6.1': {}
 
   '@types/babel__core@7.20.5':
     dependencies:
