@@ -12,17 +12,17 @@
 	},
 	"license": "MIT",
 	"devDependencies": {
-		"@types/relay-runtime": "^14.1.24",
-		"concurrently": "^8.2.2",
-		"typescript": "^5.4.5",
-		"vite": "^5.3.1",
+		"@types/relay-runtime": "^18.1.0",
+		"concurrently": "^9.0.1",
+		"typescript": "^5.6.3",
+		"vite": "^5.4.9",
 		"vite-plugin-relay": "^2.1.0",
 		"vite-plugin-solid": "^2.10.2"
 	},
 	"dependencies": {
-		"relay-compiler": "^17.0.0",
-		"relay-runtime": "^17.0.0",
-		"solid-js": "^1.8.17",
+		"relay-compiler": "^18.1.0",
+		"relay-runtime": "^18.1.0",
+		"solid-js": "^1.9.2",
 		"solid-relay": "workspace:*"
 	}
 }
