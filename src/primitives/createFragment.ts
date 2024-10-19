@@ -1,44 +1,106 @@
-import { getFragment } from "relay-runtime";
 import type { GraphQLTaggedNode } from "relay-runtime";
+import { observeFragment } from "relay-runtime/experimental";
 import type {
-	ArrayKeyType,
-	ArrayKeyTypeData,
 	KeyType,
 	KeyTypeData,
 } from "relay-runtime/lib/store/ResolverFragments";
-import { createResource } from "solid-js";
-import type { ResourceReturn } from "solid-js";
-import { unwrap } from "solid-js/store";
+import {
+	batch,
+	createComputed,
+	createMemo,
+	createResource,
+	onCleanup,
+} from "solid-js";
+import type { Accessor } from "solid-js";
 
+import { createStore, unwrap } from "solid-js/store";
 import { useRelayEnvironment } from "../RelayEnvironment";
-import { createFragmentNode } from "./createFragmentNode";
+import { type DataProxy, makeDataProxy } from "../utils/dataProxy";
+
+type FragmentResult<T> = {
+	data: T | undefined;
+	error: unknown;
+	pending: boolean;
+};
 
 export function createFragment<TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
-	key: TKey,
-): ResourceReturn<KeyTypeData<TKey>>;
+	key: Accessor<TKey>,
+): DataProxy<KeyTypeData<TKey>>;
 export function createFragment<TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
-	key: TKey | null,
-): ResourceReturn<KeyTypeData<TKey> | null>;
-export function createFragment<TKey extends ArrayKeyType>(
+	key: Accessor<TKey | null>,
+): DataProxy<KeyTypeData<TKey> | null>;
+export function createFragment<TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
-	key: TKey,
-): ResourceReturn<ArrayKeyTypeData<TKey>>;
-export function createFragment<TKey extends ArrayKeyType>(
-	fragment: GraphQLTaggedNode,
-	key: TKey | null,
-): ResourceReturn<ArrayKeyTypeData<TKey> | null> {
+	key: Accessor<TKey | null>,
+): DataProxy<KeyTypeData<TKey> | null> {
 	const environment = useRelayEnvironment();
-	const fragmentNode = getFragment(fragment);
-	return createResource(
-		createFragmentNode(
-			environment,
-			fragmentNode,
-			unwrap(key),
-			"createFragment()",
-		)[0],
-		// biome-ignore lint/suspicious/noExplicitAny: return type already enforced
-		(node) => node.data as any,
+
+	const source = createMemo(() => {
+		const k = unwrap(key());
+		return k && observeFragment(environment, fragment, k);
+	});
+
+	const [resource] = createResource(
+		source,
+		(source) =>
+			new Promise<void>((resolve, reject) => {
+				const subscription = source.subscribe({
+					next() {
+						resolve();
+						queueMicrotask(() => {
+							subscription.unsubscribe();
+						});
+					},
+					error() {
+						reject();
+						queueMicrotask(() => {
+							subscription.unsubscribe();
+						});
+					},
+				});
+			}),
 	);
+
+	const initialResult: FragmentResult<TKey[" $data"]> = {
+		data: undefined,
+		error: undefined,
+		pending: false,
+	};
+	const [result, setResult] =
+		createStore<FragmentResult<TKey[" $data"]>>(initialResult);
+
+	createComputed(() => {
+		setResult(initialResult);
+		const currentSource = source();
+		if (!currentSource) return;
+
+		setResult("pending", true);
+
+		const subscription = currentSource.subscribe({
+			next(res) {
+				batch(() => {
+					switch (res.state) {
+						case "ok":
+							setResult("error", undefined);
+							setResult("pending", false);
+							setResult("data", res.value);
+							break;
+						case "error":
+							setResult("data", undefined);
+							setResult("error", res.error);
+							setResult("pending", false);
+							break;
+					}
+				});
+			},
+		});
+
+		onCleanup(() => {
+			subscription?.unsubscribe();
+		});
+	});
+
+	return makeDataProxy(result, resource);
 }
