@@ -5,14 +5,12 @@ import type { CompQuery } from "./__generated__/CompQuery.graphql";
 import type { Comp_Sub_user$key } from "./__generated__/Comp_Sub_user.graphql";
 
 export default () => {
-	const [data] = createLazyLoadQuery<CompQuery>(
+	const data = createLazyLoadQuery<CompQuery>(
 		graphql`
       query CompQuery {
         viewer {
           login
-          ... on User {
-            ...Comp_Sub_user
-          }
+          ...Comp_Sub_user
         }
       }
     `,
@@ -38,14 +36,14 @@ interface SubProps {
 }
 
 const Sub = (props: SubProps) => {
-	const [viewer] = createFragment(
+	const viewer = createFragment(
 		graphql`
       fragment Comp_Sub_user on User {
         login
         email
       }
     `,
-		props.$user,
+		() => props.$user,
 	);
 
 	return (

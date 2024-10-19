@@ -14,12 +14,12 @@ import type { Accessor } from "solid-js";
 export function createMemoOperationDescriptor(
 	gqlQuery: MaybeAccessor<GraphQLTaggedNode>,
 	variables: MaybeAccessor<Variables>,
-	cacheConfig?: MaybeAccessor<CacheConfig>,
+	cacheConfig?: MaybeAccessor<CacheConfig | undefined>,
 ): Accessor<OperationDescriptor> {
-	const memoizedVariables = createMemo(() => access(variables), {
+	const memoizedVariables = createMemo(() => access(variables), undefined, {
 		equals: deepEqual,
 	});
-	const memoizedCacheConfig = createMemo(() => access(cacheConfig), {
+	const memoizedCacheConfig = createMemo(() => access(cacheConfig), undefined, {
 		equals: deepEqual,
 	});
 	return createMemo(() =>
