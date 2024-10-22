@@ -50,16 +50,25 @@ export function createFragment<TKey extends KeyType>(
 
 	const source = createMemo(() => {
 		const k = unwrap(key());
-		return (
-			k && {
-				observable: RelayRuntime.observeFragment(environment, fragment, k),
-				promise: RelayRuntime.waitForFragmentData(environment, fragment, k),
-			}
-		);
+		return k && RelayRuntime.observeFragment(environment, fragment, k);
 	});
 
-	const [resource] = createResource(source, (source) =>
-		source.promise.then(() => {}),
+	const [resource] = createResource(
+		source,
+		(source) =>
+			new Promise((resolve, reject) => {
+				const subscription = source.subscribe({
+					next(value) {
+						if (value.state === "ok") {
+							resolve(value.value);
+							queueMicrotask(() => subscription.unsubscribe());
+						} else if (value.state === "error") {
+							reject(value.error);
+							queueMicrotask(() => subscription.unsubscribe());
+						}
+					},
+				});
+			}),
 	);
 
 	const initialResult: FragmentResult<TKey[" $data"]> = {
@@ -77,7 +86,7 @@ export function createFragment<TKey extends KeyType>(
 
 		setResult("pending", true);
 
-		const subscription = currentSource.observable.subscribe({
+		const subscription = currentSource.subscribe({
 			next(res) {
 				batch(() => {
 					switch (res.state) {
