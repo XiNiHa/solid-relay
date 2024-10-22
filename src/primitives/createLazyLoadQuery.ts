@@ -1,5 +1,5 @@
 import type { MaybeAccessor } from "@solid-primitives/utils";
-import { ReplaySubject, __internal } from "relay-runtime";
+import RelayRuntime from "relay-runtime";
 import {
 	type CacheConfig,
 	type FetchQueryFetchPolicy,
@@ -49,41 +49,58 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 		observable: Observable<GraphQLResponse>;
 		operation: OperationDescriptor;
 	}>();
+	const [serverData, setServerData] = createSignal<TQuery["response"]>();
 
 	const [resource] = createResource(
 		operation,
-		(operation) => {
-			const observable = __internal.fetchQuery(environment, operation);
+		async (operation) => {
+			const observable = RelayRuntime.__internal.fetchQuery(
+				environment,
+				operation,
+			);
 			setSource({ observable, operation });
-			return new Promise<GraphQLResponse>((resolve, reject) => {
-				const subscription = observable.subscribe({
-					next(response) {
-						resolve(response);
-						subscription.unsubscribe();
-					},
-					error(error: unknown) {
-						reject(error);
-						subscription.unsubscribe();
-					},
-				});
+			const stream = new ReadableStream<GraphQLResponse>({
+				start(controller) {
+					observable.subscribe({
+						next(response) {
+							controller.enqueue(response);
+						},
+						error(error: unknown) {
+							controller.error(error);
+						},
+						complete() {
+							controller.close();
+						},
+					});
+				},
 			});
+			await observable.toPromise();
+			return stream;
 		},
 		{
-			onHydrated(source, { value }) {
-				if (!source || !value) return;
+			async onHydrated(operation, { value }) {
+				if (!operation || !value) return;
 
-				const replaySubject = new ReplaySubject<GraphQLResponse>();
+				const replaySubject = new RelayRuntime.ReplaySubject<GraphQLResponse>();
 				setSource({
-					observable: Observable.create((sink) =>
-						replaySubject.subscribe(sink),
-					),
-					operation: source,
+					observable: environment.executeWithSource({
+						operation,
+						source: Observable.create((sink) => replaySubject.subscribe(sink)),
+					}),
+					operation: operation,
 				});
 
-				replaySubject.next(value);
-				if (!("hasNext" in value) || !value.hasNext) {
-					replaySubject.complete();
+				for await (const response of value.values()) {
+					try {
+						replaySubject.next(response);
+					} catch (error) {
+						replaySubject.error(
+							error instanceof Error ? error : new Error(String(error)),
+						);
+						break;
+					}
 				}
+				replaySubject.complete();
 			},
 		},
 	);
@@ -96,6 +113,11 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 	};
 	const [result, setResult] =
 		createStore<QueryResult<TQuery["response"]>>(initialResult);
+
+	const updateData = (data: TQuery["response"]) => {
+		if (typeof window !== "undefined") setResult("data", reconcile(data));
+		else setServerData(() => data);
+	};
 
 	createComputed(() => {
 		setResult({
@@ -113,15 +135,12 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 				batch(() => {
 					setResult("error", undefined);
 					setResult("pending", false);
-					setResult(
-						"data",
-						reconcile(environment.lookup(operation.fragment).data),
-					);
+					updateData(environment.lookup(operation.fragment).data);
 				});
 			},
 			error(error: unknown) {
 				batch(() => {
-					setResult("data", undefined);
+					updateData(undefined);
 					setResult("error", error);
 					setResult("pending", false);
 				});
@@ -137,5 +156,9 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 		});
 	});
 
-	return makeDataProxy(result, resource);
+	return makeDataProxy(
+		result,
+		resource,
+		typeof window === "undefined" ? serverData : undefined,
+	);
 }

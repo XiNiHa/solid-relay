@@ -16,4 +16,10 @@ declare module "relay-runtime/experimental" {
 		fragment: GraphQLTaggedNode,
 		key: TKey,
 	): Observable<FragmentState<TKey[" $data"]>>;
+
+	export function waitForFragmentData<TKey extends KeyType>(
+		environment: IEnvironment,
+		fragment: GraphQLTaggedNode,
+		key: TKey,
+	): Promise<TKey[" $data"]>;
 }

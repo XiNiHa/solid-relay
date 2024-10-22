@@ -14,10 +14,11 @@ export const makeDataProxy = <
 >(
 	store: T,
 	resource: () => void,
+	data?: () => T["data"],
 ): DataProxy<T> => {
 	const readData = () => {
 		void resource();
-		return Reflect.get(store, "data");
+		return data ? data() : Reflect.get(store, "data");
 	};
 
 	Object.defineProperties(readData, {
