@@ -1,6 +1,5 @@
 import type { MaybeAccessor } from "@solid-primitives/utils";
-import RelayRuntime from "relay-runtime";
-import {
+import RelayRuntime, {
 	type CacheConfig,
 	type FetchQueryFetchPolicy,
 	type GraphQLResponse,
@@ -97,29 +96,30 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 			return stream;
 		},
 		{
-			async onHydrated(operation, { value }) {
+			onHydrated(operation, { value }) {
 				if (!operation || !value) return;
 
-				const replaySubject = new RelayRuntime.ReplaySubject<GraphQLResponse>();
 				setSource({
+					operation,
 					observable: environment.executeWithSource({
 						operation,
-						source: Observable.create((sink) => replaySubject.subscribe(sink)),
+						source: Observable.create((sink) => {
+							(async () => {
+								for await (const response of value.values()) {
+									try {
+										sink.next(response);
+									} catch (error) {
+										sink.error(
+											error instanceof Error ? error : new Error(String(error)),
+										);
+										break;
+									}
+								}
+								sink.complete();
+							})();
+						}),
 					}),
-					operation: operation,
 				});
-
-				for await (const response of value.values()) {
-					try {
-						replaySubject.next(response);
-					} catch (error) {
-						replaySubject.error(
-							error instanceof Error ? error : new Error(String(error)),
-						);
-						break;
-					}
-				}
-				replaySubject.complete();
 			},
 		},
 	);
