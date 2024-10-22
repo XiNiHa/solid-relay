@@ -86,7 +86,7 @@ export function createFragment<TKey extends KeyType>(
 		});
 
 		onCleanup(() => {
-			subscription?.unsubscribe();
+			subscription.unsubscribe();
 		});
 	});
 
