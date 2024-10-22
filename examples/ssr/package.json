@@ -1,0 +1,31 @@
+{
+	"name": "solid-relay-example-ssr",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "concurrently \"vinxi dev\" \"relay-compiler -w\" \"graphql-client-example-server\"",
+		"build": "vinxi build",
+		"start": "vinxi start",
+		"version": "vinxi version"
+	},
+	"dependencies": {
+		"@solidjs/meta": "^0.29.4",
+		"@solidjs/router": "^0.14.10",
+		"@solidjs/start": "^1.0.9",
+		"meros": "^1.3.0",
+		"relay-runtime": "^18.1.0",
+		"solid-js": "^1.9.2",
+		"solid-relay": "workspace:*",
+		"vinxi": "^0.4.3"
+	},
+	"engines": {
+		"node": ">=18"
+	},
+	"devDependencies": {
+		"@types/relay-runtime": "^18.1.0",
+		"concurrently": "^9.0.1",
+		"graphql-client-example-server": "^1.5.2",
+		"relay-compiler": "^18.1.0",
+		"vite-plugin-relay": "^2.1.0"
+	}
+}
