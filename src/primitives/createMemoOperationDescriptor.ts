@@ -1,7 +1,7 @@
 import { access } from "@solid-primitives/utils";
 import type { MaybeAccessor } from "@solid-primitives/utils";
 import deepEqual from "deep-equal";
-import { createOperationDescriptor, getRequest } from "relay-runtime";
+import RelayRuntime from "relay-runtime";
 import type {
 	CacheConfig,
 	GraphQLTaggedNode,
@@ -23,8 +23,8 @@ export function createMemoOperationDescriptor(
 		equals: deepEqual,
 	});
 	return createMemo(() =>
-		createOperationDescriptor(
-			getRequest(access(gqlQuery)),
+		RelayRuntime.createOperationDescriptor(
+			RelayRuntime.getRequest(access(gqlQuery)),
 			memoizedVariables(),
 			memoizedCacheConfig(),
 		),

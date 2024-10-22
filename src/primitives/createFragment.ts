@@ -1,5 +1,5 @@
 import type { GraphQLTaggedNode } from "relay-runtime";
-import { observeFragment } from "relay-runtime/experimental";
+import RelayRuntime from "relay-runtime/experimental";
 import type {
 	KeyType,
 	KeyTypeData,
@@ -39,28 +39,16 @@ export function createFragment<TKey extends KeyType>(
 
 	const source = createMemo(() => {
 		const k = unwrap(key());
-		return k && observeFragment(environment, fragment, k);
+		return (
+			k && {
+				observable: RelayRuntime.observeFragment(environment, fragment, k),
+				promise: RelayRuntime.waitForFragmentData(environment, fragment, k),
+			}
+		);
 	});
 
-	const [resource] = createResource(
-		source,
-		(source) =>
-			new Promise<void>((resolve, reject) => {
-				const subscription = source.subscribe({
-					next() {
-						resolve();
-						queueMicrotask(() => {
-							subscription.unsubscribe();
-						});
-					},
-					error() {
-						reject();
-						queueMicrotask(() => {
-							subscription.unsubscribe();
-						});
-					},
-				});
-			}),
+	const [resource] = createResource(source, (source) =>
+		source.promise.then(() => {}),
 	);
 
 	const initialResult: FragmentResult<TKey[" $data"]> = {
@@ -78,7 +66,7 @@ export function createFragment<TKey extends KeyType>(
 
 		setResult("pending", true);
 
-		const subscription = currentSource.subscribe({
+		const subscription = currentSource.observable.subscribe({
 			next(res) {
 				batch(() => {
 					switch (res.state) {
