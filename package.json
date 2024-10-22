@@ -25,8 +25,8 @@
 	},
 	"license": "MIT",
 	"peerDependencies": {
-		"relay-runtime": "^17.0.0",
-		"solid-js": "^1.8.17"
+		"relay-runtime": "^18.1.0",
+		"solid-js": ">=1.4.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
