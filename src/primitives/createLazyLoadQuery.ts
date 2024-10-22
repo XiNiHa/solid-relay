@@ -23,12 +23,31 @@ import { useRelayEnvironment } from "../RelayEnvironment";
 import { type DataProxy, makeDataProxy } from "../utils/dataProxy";
 import { createMemoOperationDescriptor } from "./createMemoOperationDescriptor";
 
-type QueryResult<T> = {
-	data: T | undefined;
-	error: unknown;
-	pending: boolean;
-	inFlight: boolean;
-};
+type QueryResult<T> =
+	| {
+			data: T;
+			error: undefined;
+			pending: false;
+			inFlight: boolean;
+	  }
+	| {
+			data: undefined;
+			error: unknown;
+			pending: false;
+			inFlight: boolean;
+	  }
+	| {
+			data: undefined;
+			error: undefined;
+			pending: true;
+			inFlight: true;
+	  }
+	| {
+			data: undefined;
+			error: undefined;
+			pending: false;
+			inFlight: false;
+	  };
 
 export function createLazyLoadQuery<TQuery extends OperationType>(
 	gqlQuery: MaybeAccessor<GraphQLTaggedNode>,
@@ -121,7 +140,8 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 
 	createComputed(() => {
 		setResult({
-			...initialResult,
+			data: undefined,
+			error: undefined,
 			pending: true,
 			inFlight: true,
 		});

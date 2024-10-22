@@ -17,11 +17,22 @@ import { createStore, unwrap } from "solid-js/store";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import { type DataProxy, makeDataProxy } from "../utils/dataProxy";
 
-type FragmentResult<T> = {
-	data: T | undefined;
-	error: unknown;
-	pending: boolean;
-};
+type FragmentResult<T> =
+	| {
+			data: T;
+			error: undefined;
+			pending: false;
+	  }
+	| {
+			data: undefined;
+			error: unknown;
+			pending: false;
+	  }
+	| {
+			data: undefined;
+			error: undefined;
+			pending: true;
+	  };
 
 export function createFragment<TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,

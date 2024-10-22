@@ -1,9 +1,22 @@
-export type DataProxy<T> = {
-	(): T | undefined;
-	readonly latest: T | undefined;
-	readonly error: unknown;
-	readonly pending: boolean;
-};
+export type DataProxy<T> =
+	| {
+			(): T;
+			readonly latest: T;
+			readonly error: undefined;
+			readonly pending: false;
+	  }
+	| {
+			(): undefined;
+			readonly latest: undefined;
+			readonly error: unknown;
+			readonly pending: false;
+	  }
+	| {
+			(): undefined;
+			readonly latest: undefined;
+			readonly error: undefined;
+			readonly pending: true;
+	  };
 
 export const makeDataProxy = <
 	T extends {
