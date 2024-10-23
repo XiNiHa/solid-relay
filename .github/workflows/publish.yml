@@ -3,24 +3,19 @@ on:
   push:
     branches:
       - main
-env:
-  CI: true
-  PNPM_CACHE_FOLDER: .pnpm-store
 jobs:
   version:
-    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - name: checkout code repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: setup node.js
-        uses: actions/setup-node@v3
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 18
-      - name: install pnpm
-        run: npm i pnpm@latest -g
+          node-version: 22
+          cache: "pnpm"
       - name: Setup npmrc
         run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > "$HOME/.npmrc"
       - name: setup pnpm config
