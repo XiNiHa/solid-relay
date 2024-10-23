@@ -1,14 +1,14 @@
-import type { MaybeAccessor } from "@solid-primitives/utils";
+import { access, type MaybeAccessor } from "@solid-primitives/utils";
 import RelayRuntime, {
+	getRequest,
 	type CacheConfig,
 	type FetchQueryFetchPolicy,
 	type GraphQLResponse,
 	type GraphQLTaggedNode,
-	Observable,
-	type OperationDescriptor,
 	type OperationType,
 	type VariablesOf,
 } from "relay-runtime";
+import RelayRuntimeExperimental from "relay-runtime/experimental";
 import {
 	batch,
 	createComputed,
@@ -19,7 +19,8 @@ import {
 import { createStore, reconcile } from "solid-js/store";
 
 import { useRelayEnvironment } from "../RelayEnvironment";
-import { type DataProxy, makeDataProxy } from "../utils/dataProxy";
+import { makeDataProxy, type DataProxy } from "../utils/dataProxy";
+import { getQueryRef } from "../utils/getQueryRef";
 import { createMemoOperationDescriptor } from "./createMemoOperationDescriptor";
 
 type QueryResult<T> =
@@ -27,25 +28,16 @@ type QueryResult<T> =
 			data: T;
 			error: undefined;
 			pending: false;
-			inFlight: boolean;
 	  }
 	| {
 			data: undefined;
 			error: unknown;
 			pending: false;
-			inFlight: boolean;
 	  }
 	| {
 			data: undefined;
 			error: undefined;
 			pending: true;
-			inFlight: true;
-	  }
-	| {
-			data: undefined;
-			error: undefined;
-			pending: false;
-			inFlight: false;
 	  };
 
 export function createLazyLoadQuery<TQuery extends OperationType>(
@@ -63,10 +55,6 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 		variables,
 		options?.networkCacheConfig,
 	);
-	const [source, setSource] = createSignal<{
-		observable: Observable<GraphQLResponse>;
-		operation: OperationDescriptor;
-	}>();
 	const [serverData, setServerData] = createSignal<TQuery["response"]>();
 
 	const [resource] = createResource(
@@ -76,7 +64,6 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 				environment,
 				operation,
 			);
-			setSource({ observable, operation });
 			const stream = new ReadableStream<GraphQLResponse>({
 				start(controller) {
 					observable.subscribe({
@@ -99,25 +86,22 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 			onHydrated(operation, { value }) {
 				if (!operation || !value) return;
 
-				setSource({
+				environment.executeWithSource({
 					operation,
-					observable: environment.executeWithSource({
-						operation,
-						source: Observable.create((sink) => {
-							(async () => {
-								for await (const response of value.values()) {
-									try {
-										sink.next(response);
-									} catch (error) {
-										sink.error(
-											error instanceof Error ? error : new Error(String(error)),
-										);
-										break;
-									}
+					source: RelayRuntime.Observable.create((sink) => {
+						(async () => {
+							for await (const response of value.values()) {
+								try {
+									sink.next(response);
+								} catch (error) {
+									sink.error(
+										error instanceof Error ? error : new Error(String(error)),
+									);
+									break;
 								}
-								sink.complete();
-							})();
-						}),
+							}
+							sink.complete();
+						})();
 					}),
 				});
 			},
@@ -127,8 +111,7 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 	const initialResult: QueryResult<TQuery["response"]> = {
 		data: undefined,
 		error: undefined,
-		pending: false,
-		inFlight: false,
+		pending: true,
 	};
 	const [result, setResult] =
 		createStore<QueryResult<TQuery["response"]>>(initialResult);
@@ -139,39 +122,33 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 	};
 
 	createComputed(() => {
-		setResult({
-			data: undefined,
-			error: undefined,
-			pending: true,
-			inFlight: true,
-		});
+		setResult(initialResult);
 
-		const currentSource = source();
-		if (!currentSource) return;
+		const source = operation();
+		if (!source) return;
 
-		const { observable, operation } = currentSource;
-		const fetchSubscription = observable.subscribe({
-			next() {
+		const fragmentSubscription = RelayRuntimeExperimental.observeFragment(
+			environment,
+			getRequest(access(gqlQuery)).fragment,
+			getQueryRef(source),
+		).subscribe({
+			next(state) {
 				batch(() => {
-					setResult("error", undefined);
-					setResult("pending", false);
-					updateData(environment.lookup(operation.fragment).data);
+					if (state.state === "ok") {
+						setResult("error", undefined);
+						setResult("pending", false);
+						updateData(state.value);
+					} else if (state.state === "error") {
+						updateData(undefined);
+						setResult("error", state.error);
+						setResult("pending", false);
+					}
 				});
 			},
-			error(error: unknown) {
-				batch(() => {
-					updateData(undefined);
-					setResult("error", error);
-					setResult("pending", false);
-				});
-			},
-			complete() {
-				setResult("inFlight", false);
-			},
 		});
-		const retainSubscription = environment.retain(operation);
+		const retainSubscription = environment.retain(source);
 		onCleanup(() => {
-			fetchSubscription.unsubscribe();
+			fragmentSubscription.unsubscribe();
 			retainSubscription.dispose();
 		});
 	});
