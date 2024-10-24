@@ -18,6 +18,6 @@
 		}
 	},
 	"files": {
-		"ignore": ["dist", ".changeset", "__generated__"]
+		"ignore": ["dist", ".changeset", "__generated__", "*.graphql"]
 	}
 }
