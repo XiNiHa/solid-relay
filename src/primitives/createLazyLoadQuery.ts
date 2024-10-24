@@ -1,4 +1,4 @@
-import { access, type MaybeAccessor } from "@solid-primitives/utils";
+import { type MaybeAccessor, access } from "@solid-primitives/utils";
 import RelayRuntime, {
 	getRequest,
 	type CacheConfig,
@@ -19,7 +19,7 @@ import {
 import { createStore, reconcile } from "solid-js/store";
 
 import { useRelayEnvironment } from "../RelayEnvironment";
-import { makeDataProxy, type DataProxy } from "../utils/dataProxy";
+import { type DataProxy, makeDataProxy } from "../utils/dataProxy";
 import { getQueryRef } from "../utils/getQueryRef";
 import { createMemoOperationDescriptor } from "./createMemoOperationDescriptor";
 
