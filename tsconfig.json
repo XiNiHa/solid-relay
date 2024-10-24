@@ -9,8 +9,7 @@
 		"isolatedModules": true,
 		"allowJs": true,
 		"jsx": "preserve",
-		"jsxImportSource": "solid-js",
-		"types": ["./src/types.d.ts"]
+		"jsxImportSource": "solid-js"
 	},
 	"include": ["src/**/*"]
 }
