@@ -40,12 +40,12 @@ export function createFragment<TKey extends KeyType>(
 ): DataProxy<KeyTypeData<TKey>>;
 export function createFragment<TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
-	key: Accessor<TKey | null>,
-): DataProxy<KeyTypeData<TKey> | null>;
+	key: Accessor<TKey | null | undefined>,
+): DataProxy<KeyTypeData<TKey> | null | undefined>;
 export function createFragment<TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
-	key: Accessor<TKey | null>,
-): DataProxy<KeyTypeData<TKey> | null> {
+	key: Accessor<TKey | null | undefined>,
+): DataProxy<KeyTypeData<TKey> | null | undefined> {
 	const environment = useRelayEnvironment();
 
 	const source = createMemo(() => {
