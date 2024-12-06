@@ -1,6 +1,9 @@
 import { type MaybeAccessor, access } from "@solid-primitives/utils";
 import RelayRuntime, {
+	__internal,
+	getPendingOperationsForFragment,
 	getRequest,
+	ReplaySubject,
 	type CacheConfig,
 	type FetchQueryFetchPolicy,
 	type GraphQLResponse,
@@ -12,6 +15,7 @@ import RelayRuntimeExperimental from "relay-runtime/experimental";
 import {
 	batch,
 	createComputed,
+	createEffect,
 	createResource,
 	createSignal,
 	onCleanup,
@@ -56,6 +60,7 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 		options?.networkCacheConfig,
 	);
 	const [serverData, setServerData] = createSignal<TQuery["response"]>();
+	const replaySubject = new ReplaySubject();
 
 	const [resource] = createResource(
 		operation,
@@ -86,24 +91,19 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 			onHydrated(operation, { value }) {
 				if (!operation || !value) return;
 
-				environment.executeWithSource({
-					operation,
-					source: RelayRuntime.Observable.create((sink) => {
-						(async () => {
-							for await (const response of value.values()) {
-								try {
-									sink.next(response);
-								} catch (error) {
-									sink.error(
-										error instanceof Error ? error : new Error(String(error)),
-									);
-									break;
-								}
-							}
-							sink.complete();
-						})();
-					}),
-				});
+				(async () => {
+					for await (const response of value.values()) {
+						try {
+							replaySubject.next(response);
+						} catch (error) {
+							replaySubject.error(
+								error instanceof Error ? error : new Error(String(error)),
+							);
+							break;
+						}
+					}
+					replaySubject.complete();
+				})();
 			},
 		},
 	);
@@ -124,13 +124,35 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 	createComputed(() => {
 		setResult(initialResult);
 
-		const source = operation();
-		if (!source) return;
+		const op = operation();
+		if (!op) return;
+
+		if (
+			!getPendingOperationsForFragment(
+				environment,
+				getRequest(access(gqlQuery)).fragment,
+				op.request,
+			)
+		) {
+			environment
+				.executeWithSource({
+					operation: op,
+					source: __internal.fetchQueryDeduped(
+						environment,
+						op.request.identifier,
+						() =>
+							RelayRuntime.Observable.create((sink) =>
+								replaySubject.subscribe(sink),
+							),
+					),
+				})
+				.subscribe({});
+		}
 
 		const fragmentSubscription = RelayRuntimeExperimental.observeFragment(
 			environment,
 			getRequest(access(gqlQuery)).fragment,
-			getQueryRef(source),
+			getQueryRef(op),
 		).subscribe({
 			next(state) {
 				batch(() => {
@@ -146,7 +168,7 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 				});
 			},
 		});
-		const retainSubscription = environment.retain(source);
+		const retainSubscription = environment.retain(op);
 		onCleanup(() => {
 			fragmentSubscription.unsubscribe();
 			retainSubscription.dispose();
