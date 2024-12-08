@@ -50,7 +50,8 @@ const Todos = (props: { $query: routesTodos$key | null | undefined }) => {
       fragment routesTodos on Query
       @argumentDefinitions(first: { type: "Int!" }, after: { type: "String" })
       @refetchable(queryName: "TodosRefetchQuery") {
-        todosConnection(first: $first, after: $after) {
+        todosConnection(first: $first, after: $after)
+        @connection(key: "routesTodos__todosConnection") {
           __id
           edges {
             node {
