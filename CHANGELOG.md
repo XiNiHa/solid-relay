@@ -1,5 +1,11 @@
 # solid-relay
 
+## 0.2.1
+
+### Patch Changes
+
+- 340d136: chore: support moduleResolution: nodenext
+
 ## 0.2.0
 
 ### Minor Changes
