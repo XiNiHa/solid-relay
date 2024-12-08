@@ -35,6 +35,7 @@
 		"@types/deep-equal": "^1.0.4",
 		"@types/node": "^22.7.7",
 		"@types/relay-runtime": "^18.2.1",
+		"pkg-pr-new": "^0.0.35",
 		"relay-runtime": "^18.1.0",
 		"rollup": "^4.24.0",
 		"rollup-preset-solid": "^2.0.1",
