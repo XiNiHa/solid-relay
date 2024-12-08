@@ -22,7 +22,7 @@
 		"node": ">=18"
 	},
 	"devDependencies": {
-		"@types/relay-runtime": "^18.1.0",
+		"@types/relay-runtime": "^18.2.1",
 		"concurrently": "^9.0.1",
 		"graphql-client-example-server": "^1.5.2",
 		"relay-compiler": "^18.1.0",

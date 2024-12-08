@@ -12,7 +12,7 @@
 	},
 	"license": "MIT",
 	"devDependencies": {
-		"@types/relay-runtime": "^18.1.0",
+		"@types/relay-runtime": "^18.2.1",
 		"concurrently": "^9.0.1",
 		"typescript": "^5.6.3",
 		"vite": "^5.4.9",
