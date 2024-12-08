@@ -17,3 +17,7 @@ jobs:
           cache: pnpm
       - run: pnpm install
       - run: pnpm check
+      - name: Build
+        run: pnpm build
+      - name: Publish using pkg.pr.new
+        run: pnpm pkg-pr-new publish
