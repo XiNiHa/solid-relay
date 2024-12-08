@@ -117,8 +117,9 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 		createStore<QueryResult<TQuery["response"]>>(initialResult);
 
 	const updateData = (data: TQuery["response"]) => {
-		if (typeof window !== "undefined") setResult("data", reconcile(data));
-		else setServerData(() => data);
+		if (typeof window !== "undefined") {
+			setResult("data", reconcile(data, { key: "__id", merge: true }));
+		} else setServerData(() => data);
 	};
 
 	createComputed(() => {

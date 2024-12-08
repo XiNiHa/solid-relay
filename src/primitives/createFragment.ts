@@ -13,7 +13,7 @@ import {
 } from "solid-js";
 import type { Accessor } from "solid-js";
 
-import { createStore, unwrap } from "solid-js/store";
+import { createStore, reconcile, unwrap } from "solid-js/store";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import { type DataProxy, makeDataProxy } from "../utils/dataProxy";
 
@@ -93,7 +93,13 @@ export function createFragment<TKey extends KeyType>(
 						case "ok":
 							setResult("error", undefined);
 							setResult("pending", false);
-							setResult("data", res.value);
+							setResult(
+								"data",
+								reconcile(res.value as Record<string, unknown>, {
+									key: "__id",
+									merge: true,
+								}),
+							);
 							break;
 						case "error":
 							setResult("data", undefined);
