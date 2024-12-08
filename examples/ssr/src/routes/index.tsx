@@ -1,9 +1,10 @@
 import { graphql } from "relay-runtime";
-import { For, Show, Suspense } from "solid-js";
+import { For, Show, Suspense, createSignal, useTransition } from "solid-js";
 import {
 	createFragment,
 	createLazyLoadQuery,
 	createMutation,
+	createRefetchableFragment,
 } from "solid-relay";
 import type { routesAddTodoItemMutation } from "./__generated__/routesAddTodoItemMutation.graphql";
 import type { routesHomeQuery } from "./__generated__/routesHomeQuery.graphql";
@@ -36,20 +37,20 @@ export default function Home() {
 			<section>
 				<h2>Todos</h2>
 				<Suspense fallback={<p>Loading...</p>}>
-					<Show when={query()}>{(query) => <Todos $query={query()} />}</Show>
+					<Todos $query={query()} />
 				</Suspense>
 			</section>
 		</main>
 	);
 }
 
-const Todos = (props: { $query: routesTodos$key }) => {
-	const query = createFragment(
+const Todos = (props: { $query: routesTodos$key | null | undefined }) => {
+	const [query, refetch] = createRefetchableFragment(
 		graphql`
       fragment routesTodos on Query
-      @argumentDefinitions(first: { type: "Int!" }, after: { type: "String" }) {
-        todosConnection(first: $first, after: $after)
-          @connection(key: "Todos__todosConnection") {
+      @argumentDefinitions(first: { type: "Int!" }, after: { type: "String" })
+      @refetchable(queryName: "TodosRefetchQuery") {
+        todosConnection(first: $first, after: $after) {
           __id
           edges {
             node {
@@ -81,6 +82,8 @@ const Todos = (props: { $query: routesTodos$key }) => {
 				}
 			}
 		`);
+	const [isTransitioning, startTransition] = useTransition();
+	const [wrapTransition, setWrapTransition] = createSignal(false);
 
 	return (
 		<div>
@@ -105,6 +108,26 @@ const Todos = (props: { $query: routesTodos$key }) => {
 					Add Todo
 				</button>
 			</form>
+			<button
+				type="button"
+				onClick={() => {
+					const run = wrapTransition()
+						? startTransition
+						: (fn: () => void) => fn();
+					run(() => refetch({}));
+				}}
+				disabled={isTransitioning()}
+			>
+				Refetch
+			</button>
+			<label>
+				<input
+					type="checkbox"
+					checked={wrapTransition()}
+					onChange={(e) => setWrapTransition(e.target.checked)}
+				/>
+				Wrap refetch() with startTransition()
+			</label>
 			<ul>
 				<For each={query()?.todosConnection?.edges}>
 					{(edge) => <TodoItem $todo={edge?.node} />}

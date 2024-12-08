@@ -1,4 +1,8 @@
-import type { GraphQLTaggedNode } from "relay-runtime";
+import type {
+	GraphQLResponse,
+	GraphQLTaggedNode,
+	Subscribable,
+} from "relay-runtime";
 import RelayRuntime from "relay-runtime/experimental";
 import type {
 	KeyType,
@@ -46,6 +50,16 @@ export function createFragment<TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
 ): DataProxy<KeyTypeData<TKey> | null | undefined> {
+	return createFragmentInternal(fragment, key);
+}
+
+export function createFragmentInternal<TKey extends KeyType>(
+	fragment: GraphQLTaggedNode,
+	key: Accessor<TKey | null | undefined>,
+	options?: Accessor<{
+		parentOperation: Subscribable<GraphQLResponse> | null | undefined;
+	}>,
+): DataProxy<KeyTypeData<TKey> | null | undefined> {
 	const environment = useRelayEnvironment();
 
 	const source = createMemo(() => {
@@ -54,13 +68,26 @@ export function createFragment<TKey extends KeyType>(
 	});
 
 	const [resource] = createResource(
-		source,
-		(source) =>
-			new Promise((resolve, reject) => {
+		() => {
+			const s = source();
+			if (!s) return;
+			return { source: s, parentOperation: options?.().parentOperation };
+		},
+		async ({ source, parentOperation }) => {
+			if (parentOperation) {
+				await new Promise<void>((resolve, reject) => {
+					parentOperation.subscribe({
+						complete: resolve,
+						error: reject,
+					});
+				});
+			}
+
+			return new Promise<true>((resolve, reject) => {
 				const subscription = source.subscribe({
 					next(value) {
 						if (value.state === "ok") {
-							resolve(value.value);
+							resolve(true);
 							queueMicrotask(() => subscription.unsubscribe());
 						} else if (value.state === "error") {
 							reject(value.error);
@@ -68,7 +95,8 @@ export function createFragment<TKey extends KeyType>(
 						}
 					},
 				});
-			}),
+			});
+		},
 	);
 
 	const initialResult: FragmentResult<TKey[" $data"]> = {
