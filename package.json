@@ -20,7 +20,7 @@
 		"build": "rollup -c",
 		"check": "biome check && tsc --noEmit",
 		"fix": "biome check --fix",
-		"ci:version": "changeset version",
+		"ci:version": "changeset version && biome check --fix",
 		"ci:publish": "pnpm publish -r"
 	},
 	"license": "MIT",
