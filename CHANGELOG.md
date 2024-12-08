@@ -1,5 +1,17 @@
 # solid-relay
 
+## 0.2.0
+
+### Minor Changes
+
+- 7fc7723: feat: add `createRefetchableFragment()`
+
+### Patch Changes
+
+- 823242f: fix: resolve various reliability issues of createLazyLoadQuery
+- b6417fa: chore: bump `@types/relay-runtime`
+- b1d886a: feat: reconcile data stores
+
 ## 0.1.0
 
 ### Minor Changes
