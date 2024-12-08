@@ -2,8 +2,6 @@
 	"name": "solid-relay-example-simple",
 	"private": true,
 	"type": "module",
-	"version": "0.0.2",
-	"description": "",
 	"scripts": {
 		"dev": "concurrently \"vite\" \"relay-compiler -w\"",
 		"relay": "relay-compiler",
