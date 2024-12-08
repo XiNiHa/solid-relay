@@ -7,7 +7,7 @@ import {
 } from "relay-runtime";
 import { type Accessor, createSignal } from "solid-js";
 
-import { useRelayEnvironment } from "../RelayEnvironment";
+import { useRelayEnvironment } from "../RelayEnvironment.js";
 
 export function createMutation<TMutation extends MutationParameters>(
 	mutation: GraphQLTaggedNode,

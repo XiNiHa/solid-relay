@@ -7,7 +7,7 @@ import RelayRuntime from "relay-runtime/experimental";
 import type {
 	KeyType,
 	KeyTypeData,
-} from "relay-runtime/lib/store/ResolverFragments";
+} from "relay-runtime/lib/store/ResolverFragments.js";
 import {
 	batch,
 	createComputed,
@@ -18,8 +18,8 @@ import {
 import type { Accessor } from "solid-js";
 
 import { createStore, reconcile, unwrap } from "solid-js/store";
-import { useRelayEnvironment } from "../RelayEnvironment";
-import { type DataProxy, makeDataProxy } from "../utils/dataProxy";
+import { useRelayEnvironment } from "../RelayEnvironment.js";
+import { type DataProxy, makeDataProxy } from "../utils/dataProxy.js";
 
 type FragmentResult<T> =
 	| {
