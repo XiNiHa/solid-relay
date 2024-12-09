@@ -14,13 +14,13 @@ import {
 	onCleanup,
 	untrack,
 } from "solid-js";
-import { useRelayEnvironment } from "../RelayEnvironment.js";
+import { useRelayEnvironment } from "../RelayEnvironment";
 import {
 	type LoadQueryOptions,
 	type PreloadedQuery,
 	loadQuery,
-} from "../loadQuery.js";
-import { useIsMounted } from "../utils/useIsMounted.js";
+} from "../loadQuery";
+import { useIsMounted } from "../utils/useIsMounted";
 
 export type NullQueryReference = { kind: "NullQueryReference" };
 const initialNullQueryReferenceState: NullQueryReference = {

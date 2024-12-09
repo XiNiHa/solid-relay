@@ -20,7 +20,7 @@ import {
 	getRequest,
 	getRequestIdentifier,
 } from "relay-runtime";
-import type { RequestIdentifier } from "relay-runtime/lib/util/getRequestIdentifier.js";
+import type { RequestIdentifier } from "relay-runtime/lib/util/getRequestIdentifier";
 import invariant from "tiny-invariant";
 
 export type PreloadFetchPolicy =

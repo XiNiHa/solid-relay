@@ -22,10 +22,10 @@ import {
 } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 
-import { useRelayEnvironment } from "../RelayEnvironment.js";
-import { type DataProxy, makeDataProxy } from "../utils/dataProxy.js";
-import { getQueryRef } from "../utils/getQueryRef.js";
-import { createMemoOperationDescriptor } from "./createMemoOperationDescriptor.js";
+import { useRelayEnvironment } from "../RelayEnvironment";
+import { type DataProxy, makeDataProxy } from "../utils/dataProxy";
+import { getQueryRef } from "../utils/getQueryRef";
+import { createMemoOperationDescriptor } from "./createMemoOperationDescriptor";
 
 type QueryResult<T> =
 	| {

@@ -4,7 +4,7 @@ declare module "relay-runtime/experimental" {
 		IEnvironment,
 		Observable,
 	} from "relay-runtime";
-	import type { KeyType } from "relay-runtime/lib/store/ResolverFragments.js";
+	import type { KeyType } from "relay-runtime/lib/store/ResolverFragments";
 
 	export type FragmentState<T> =
 		| { state: "ok"; value: T }

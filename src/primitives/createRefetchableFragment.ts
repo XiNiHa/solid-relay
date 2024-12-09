@@ -23,7 +23,7 @@ import RelayRuntimeExperimental from "relay-runtime/experimental";
 import type {
 	KeyType,
 	KeyTypeData,
-} from "relay-runtime/lib/store/ResolverFragments.js";
+} from "relay-runtime/lib/store/ResolverFragments";
 import {
 	type Accessor,
 	batch,
@@ -35,12 +35,12 @@ import {
 	untrack,
 } from "solid-js";
 import { unwrap } from "solid-js/store";
-import { useRelayEnvironment } from "../RelayEnvironment.js";
-import type { DataProxy } from "../utils/dataProxy.js";
-import { getQueryRef } from "../utils/getQueryRef.js";
-import { useIsMounted } from "../utils/useIsMounted.js";
-import { createFragment, createFragmentInternal } from "./createFragment.js";
-import { createQueryLoader } from "./createQueryLoader.js";
+import { useRelayEnvironment } from "../RelayEnvironment";
+import type { DataProxy } from "../utils/dataProxy";
+import { getQueryRef } from "../utils/getQueryRef";
+import { useIsMounted } from "../utils/useIsMounted";
+import { createFragment, createFragmentInternal } from "./createFragment";
+import { createQueryLoader } from "./createQueryLoader";
 
 export type CreateRefetchableFragmentReturn<
 	TQuery extends OperationType,

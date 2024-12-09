@@ -1,5 +1,5 @@
 import RelayRuntime, { type OperationDescriptor } from "relay-runtime";
-import type { KeyType } from "relay-runtime/lib/store/ResolverFragments.js";
+import type { KeyType } from "relay-runtime/lib/store/ResolverFragments";
 
 export const getQueryRef = (operation: OperationDescriptor) =>
 	({
