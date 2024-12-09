@@ -26,6 +26,7 @@
 		"concurrently": "^9.0.1",
 		"graphql-client-example-server": "^1.5.2",
 		"relay-compiler": "^18.1.0",
+		"solid-devtools": "^0.30.1",
 		"vite-plugin-relay": "^2.1.0"
 	}
 }

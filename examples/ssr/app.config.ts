@@ -1,9 +1,10 @@
 import { defineConfig } from "@solidjs/start/config";
+import solidDevtools from "solid-devtools/vite";
 import relay from "vite-plugin-relay";
 
 export default defineConfig({
 	vite: {
-		plugins: [relay],
+		plugins: [solidDevtools({ autoname: true }), relay],
 		optimizeDeps: {
 			include: ["relay-runtime"],
 		},
