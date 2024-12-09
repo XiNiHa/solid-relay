@@ -1,5 +1,11 @@
 # solid-relay
 
+## 0.2.2
+
+### Patch Changes
+
+- 3ee9a42: Revert "chore: support moduleResolution: nodenext"
+
 ## 0.2.1
 
 ### Patch Changes
