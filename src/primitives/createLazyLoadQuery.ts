@@ -15,7 +15,6 @@ import RelayRuntimeExperimental from "relay-runtime/experimental";
 import {
 	batch,
 	createComputed,
-	createEffect,
 	createResource,
 	createSignal,
 	onCleanup,

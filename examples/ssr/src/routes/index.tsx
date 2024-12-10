@@ -1,5 +1,5 @@
 import { graphql } from "relay-runtime";
-import { For, Show, Suspense, createSignal, useTransition } from "solid-js";
+import { For, Suspense, createSignal, useTransition } from "solid-js";
 import {
 	createFragment,
 	createLazyLoadQuery,

@@ -30,7 +30,6 @@ import {
 	createComputed,
 	createEffect,
 	createMemo,
-	createResource,
 	createSignal,
 	untrack,
 } from "solid-js";
@@ -39,7 +38,7 @@ import { useRelayEnvironment } from "../RelayEnvironment";
 import type { DataProxy } from "../utils/dataProxy";
 import { getQueryRef } from "../utils/getQueryRef";
 import { useIsMounted } from "../utils/useIsMounted";
-import { createFragment, createFragmentInternal } from "./createFragment";
+import { createFragmentInternal } from "./createFragment";
 import { createQueryLoader } from "./createQueryLoader";
 
 export type CreateRefetchableFragmentReturn<
@@ -50,7 +49,7 @@ export type CreateRefetchableFragmentReturn<
 
 export type RefetchFnDynamic<
 	TQuery extends OperationType,
-	TKey extends KeyType | null | undefined,
+	_TKey extends KeyType | null | undefined,
 	TOptions = Options,
 > = RefetchInexactDynamicResponse<TQuery, TOptions> &
 	RefetchExactDynamicResponse<TQuery, TOptions>;
@@ -291,7 +290,7 @@ export function createRefetchableFragment<
 			if (fragmentRef === null) {
 				console.warn(
 					"Relay: Unexpected call to `refetch` while using a null fragment ref " +
-						`for fragment \`fragmentNode.name\` in \`createRefetchableFragment()\`. When calling \`refetch\`, we expect ` +
+						"for fragment `fragmentNode.name` in `createRefetchableFragment()`. When calling `refetch`, we expect " +
 						"initial fragment data to be non-null. Please make sure you're " +
 						"passing a valid fragment ref to `createRefetchableFragment()` before calling " +
 						"`refetch`, or make sure you pass all required variables to `refetch`.",
