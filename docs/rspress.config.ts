@@ -1,4 +1,5 @@
 import * as path from "node:path";
+import { pluginTypeDoc } from "@rspress/plugin-typedoc";
 import { defineConfig } from "rspress/config";
 
 export default defineConfig({
@@ -15,4 +16,9 @@ export default defineConfig({
 		],
 	},
 	globalStyles: path.join(__dirname, "styles/global.css"),
+	plugins: [
+		pluginTypeDoc({
+			entryPoints: [path.join(__dirname, "src/index.ts")],
+		}),
+	],
 });
