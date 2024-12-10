@@ -39,17 +39,17 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
-		"@changesets/cli": "^2.27.9",
+		"@changesets/cli": "^2.27.10",
 		"@rollup/plugin-commonjs": "^28.0.1",
 		"@types/deep-equal": "^1.0.4",
-		"@types/node": "^22.7.7",
+		"@types/node": "^22.10.1",
 		"@types/relay-runtime": "^18.2.1",
 		"pkg-pr-new": "^0.0.35",
-		"relay-runtime": "^18.1.0",
-		"rollup": "^4.24.0",
+		"relay-runtime": "^18.2.0",
+		"rollup": "^4.28.1",
 		"rollup-preset-solid": "^2.0.1",
-		"solid-js": "^1.9.2",
-		"typescript": "^5.6.3"
+		"solid-js": "^1.9.3",
+		"typescript": "^5.7.2"
 	},
 	"files": ["dist"],
 	"license": "MIT",
