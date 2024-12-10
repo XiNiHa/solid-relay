@@ -1,0 +1,10 @@
+:root {
+	--rp-c-brand: #f26b00;
+	--rp-c-brand-dark: color-mix(in oklch, var(--rp-c-brand), black 5%);
+	--rp-c-brand-light: color-mix(in oklch, var(--rp-c-brand), white 10%);
+	--rp-home-hero-name-background: linear-gradient(
+		in oklch 130deg,
+		#0e8ee7 35%,
+		var(--rp-c-brand) 65%
+	);
+}
