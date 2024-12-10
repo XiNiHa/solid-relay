@@ -36,7 +36,7 @@
 	"lsp": {
 		"relay": {
 			"settings": {
-				"rootDirectory": "./examples/ssr"
+				"rootDirectory": "./example"
 			}
 		}
 	}

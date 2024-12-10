@@ -1,5 +1,5 @@
 {
-	"name": "solid-relay-example-ssr",
+	"name": "solid-relay-example",
 	"private": true,
 	"type": "module",
 	"scripts": {
