@@ -41,50 +41,44 @@ import { useIsMounted } from "../utils/useIsMounted";
 import { createFragmentInternal } from "./createFragment";
 import { createQueryLoader } from "./createQueryLoader";
 
-export type CreateRefetchableFragmentReturn<
-	TQuery extends OperationType,
-	TKey extends KeyType,
-	TFragmentData,
-> = [DataProxy<TFragmentData>, RefetchFnDynamic<TQuery, TKey>];
-
-export type RefetchFnDynamic<
+type RefetchFnDynamic<
 	TQuery extends OperationType,
 	_TKey extends KeyType | null | undefined,
 	TOptions = Options,
 > = RefetchInexactDynamicResponse<TQuery, TOptions> &
 	RefetchExactDynamicResponse<TQuery, TOptions>;
 
-export type RefetchInexact<TQuery extends OperationType, TOptions> = (
+type RefetchInexact<TQuery extends OperationType, TOptions> = (
 	data?: unknown,
 ) => RefetchFnInexact<TQuery, TOptions>;
-export type RefetchInexactDynamicResponse<
+type RefetchInexactDynamicResponse<
 	TQuery extends OperationType,
 	TOptions,
 > = ReturnType<RefetchInexact<TQuery, TOptions>>;
 
-export type RefetchExact<TQuery extends OperationType, TOptions> = (
+type RefetchExact<TQuery extends OperationType, TOptions> = (
 	data?: unknown | null,
 ) => RefetchFnExact<TQuery, TOptions>;
-export type RefetchExactDynamicResponse<
+type RefetchExactDynamicResponse<
 	TQuery extends OperationType,
 	TOptions,
 > = ReturnType<RefetchExact<TQuery, TOptions>>;
 
-export type RefetchFnBase<TVars, TOptions> = (
+type RefetchFnBase<TVars, TOptions> = (
 	vars: TVars,
 	options?: TOptions,
 ) => Disposable;
 
-export type RefetchFnExact<
+type RefetchFnExact<
 	TQuery extends OperationType,
 	TOptions = Options,
 > = RefetchFnBase<VariablesOf<TQuery>, TOptions>;
-export type RefetchFnInexact<
+type RefetchFnInexact<
 	TQuery extends OperationType,
 	TOptions = Options,
 > = RefetchFnBase<Partial<VariablesOf<TQuery>>, TOptions>;
 
-export interface Options {
+interface Options {
 	fetchPolicy?: FetchPolicy | undefined;
 	onComplete?: ((arg: Error | null) => void) | undefined;
 }
@@ -95,29 +89,27 @@ export function createRefetchableFragment<
 >(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey>,
-): CreateRefetchableFragmentReturn<TQuery, TKey, KeyTypeData<TKey>>;
+): [DataProxy<KeyTypeData<TKey>>, RefetchFnDynamic<TQuery, TKey>];
 export function createRefetchableFragment<
 	TQuery extends OperationType,
 	TKey extends KeyType,
 >(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
-): CreateRefetchableFragmentReturn<
-	TQuery,
-	TKey,
-	KeyTypeData<TKey> | null | undefined
->;
+): [
+	DataProxy<KeyTypeData<TKey> | null | undefined>,
+	RefetchFnDynamic<TQuery, TKey>,
+];
 export function createRefetchableFragment<
 	TQuery extends OperationType,
 	TKey extends KeyType,
 >(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
-): CreateRefetchableFragmentReturn<
-	TQuery,
-	TKey,
-	KeyTypeData<TKey> | null | undefined
-> {
+): [
+	DataProxy<KeyTypeData<TKey> | null | undefined>,
+	RefetchFnDynamic<TQuery, TKey>,
+] {
 	const parentEnvironment = useRelayEnvironment();
 	const parentFragmentRef = () => unwrap(key());
 	const isMounted = useIsMounted();

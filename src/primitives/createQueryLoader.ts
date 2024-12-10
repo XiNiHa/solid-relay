@@ -22,28 +22,24 @@ import {
 } from "../loadQuery";
 import { useIsMounted } from "../utils/useIsMounted";
 
-export type NullQueryReference = { kind: "NullQueryReference" };
+type NullQueryReference = { kind: "NullQueryReference" };
 const initialNullQueryReferenceState: NullQueryReference = {
 	kind: "NullQueryReference",
 };
 
-export type CreateQueryLoaderLoadQueryOptions = LoadQueryOptions & {
-	__environment?: IEnvironment | null | undefined;
-};
-
-export type CreateQueryLoaderReturn<TQuery extends OperationType> = [
-	Accessor<PreloadedQuery<TQuery> | null | undefined>,
-	(
-		variables: VariablesOf<TQuery>,
-		options?: CreateQueryLoaderLoadQueryOptions,
-	) => void,
-	DisposeFn,
-];
-
 export function createQueryLoader<TQuery extends OperationType>(
 	preloadableRequest: GraphQLTaggedNode | PreloadableConcreteRequest<TQuery>,
 	initialQueryReference?: PreloadedQuery<TQuery> | null,
-): CreateQueryLoaderReturn<TQuery> {
+): [
+	Accessor<PreloadedQuery<TQuery> | null | undefined>,
+	(
+		variables: VariablesOf<TQuery>,
+		options?: LoadQueryOptions & {
+			__environment?: IEnvironment | null | undefined;
+		},
+	) => void,
+	DisposeFn,
+] {
 	const environment = useRelayEnvironment();
 	const isMounted = useIsMounted();
 
@@ -65,41 +61,34 @@ export function createQueryLoader<TQuery extends OperationType>(
 		});
 	});
 
-	const queryLoaderCallback = (
-		variables: VariablesOf<TQuery>,
-		options?: CreateQueryLoaderLoadQueryOptions,
-	) => {
-		const mergedOptions =
-			options != null &&
-			Object.prototype.hasOwnProperty.call(options, "__environment")
-				? {
-						fetchPolicy: options.fetchPolicy,
-						networkCacheConfig: options.networkCacheConfig,
-					}
-				: options;
-		if (untrack(isMounted)) {
-			setQueryReference(
-				loadQuery(
-					options?.__environment ?? environment,
-					preloadableRequest,
-					variables,
-					mergedOptions,
-				),
-			);
-		}
-	};
-
-	const disposeQuery = () => {
-		if (untrack(isMounted)) setQueryReference(initialNullQueryReferenceState);
-	};
-
 	return [
 		() => {
 			const ref = queryReference();
 			return ref.kind === "NullQueryReference" ? null : ref;
 		},
-		queryLoaderCallback,
-		disposeQuery,
+		(variables, options) => {
+			const mergedOptions =
+				options != null &&
+				Object.prototype.hasOwnProperty.call(options, "__environment")
+					? {
+							fetchPolicy: options.fetchPolicy,
+							networkCacheConfig: options.networkCacheConfig,
+						}
+					: options;
+			if (untrack(isMounted)) {
+				setQueryReference(
+					loadQuery(
+						options?.__environment ?? environment,
+						preloadableRequest,
+						variables,
+						mergedOptions,
+					),
+				);
+			}
+		},
+		() => {
+			if (untrack(isMounted)) setQueryReference(initialNullQueryReferenceState);
+		},
 	];
 }
 
