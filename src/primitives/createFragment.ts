@@ -4,10 +4,6 @@ import type {
 	Subscribable,
 } from "relay-runtime";
 import RelayRuntime from "relay-runtime/experimental";
-import type {
-	KeyType,
-	KeyTypeData,
-} from "relay-runtime/lib/store/ResolverFragments";
 import {
 	batch,
 	createComputed,
@@ -16,9 +12,9 @@ import {
 	onCleanup,
 } from "solid-js";
 import type { Accessor } from "solid-js";
-
 import { createStore, reconcile, unwrap } from "solid-js/store";
 import { useRelayEnvironment } from "../RelayEnvironment";
+import type { KeyType, KeyTypeData } from "../types/keyType";
 import { type DataProxy, makeDataProxy } from "../utils/dataProxy";
 
 type FragmentResult<T> =

@@ -20,10 +20,6 @@ import {
 	getValueAtPath,
 } from "relay-runtime";
 import RelayRuntimeExperimental from "relay-runtime/experimental";
-import type {
-	KeyType,
-	KeyTypeData,
-} from "relay-runtime/lib/store/ResolverFragments";
 import {
 	type Accessor,
 	batch,
@@ -35,6 +31,7 @@ import {
 } from "solid-js";
 import { unwrap } from "solid-js/store";
 import { useRelayEnvironment } from "../RelayEnvironment";
+import type { KeyType, KeyTypeData } from "../types/keyType";
 import type { DataProxy } from "../utils/dataProxy";
 import { getQueryRef } from "../utils/getQueryRef";
 import { useIsMounted } from "../utils/useIsMounted";

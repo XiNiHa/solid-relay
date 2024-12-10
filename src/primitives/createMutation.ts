@@ -6,7 +6,6 @@ import {
 	commitMutation,
 } from "relay-runtime";
 import { type Accessor, createSignal } from "solid-js";
-
 import { useRelayEnvironment } from "../RelayEnvironment";
 
 export function createMutation<TMutation extends MutationParameters>(

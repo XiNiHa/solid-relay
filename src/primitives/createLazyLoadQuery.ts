@@ -20,7 +20,6 @@ import {
 	onCleanup,
 } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
-
 import { useRelayEnvironment } from "../RelayEnvironment";
 import { type DataProxy, makeDataProxy } from "../utils/dataProxy";
 import { getQueryRef } from "../utils/getQueryRef";
