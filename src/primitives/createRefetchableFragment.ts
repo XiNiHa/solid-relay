@@ -38,10 +38,10 @@ import { useIsMounted } from "../utils/useIsMounted";
 import { createFragmentInternal } from "./createFragment";
 import { createQueryLoader } from "./createQueryLoader";
 
-type RefetchFnDynamic<
+export type RefetchFnDynamic<
 	TQuery extends OperationType,
 	_TKey extends KeyType | null | undefined,
-	TOptions = Options,
+	TOptions = RefetchOptions,
 > = RefetchInexactDynamicResponse<TQuery, TOptions> &
 	RefetchExactDynamicResponse<TQuery, TOptions>;
 
@@ -68,14 +68,14 @@ type RefetchFnBase<TVars, TOptions> = (
 
 type RefetchFnExact<
 	TQuery extends OperationType,
-	TOptions = Options,
+	TOptions = RefetchOptions,
 > = RefetchFnBase<VariablesOf<TQuery>, TOptions>;
 type RefetchFnInexact<
 	TQuery extends OperationType,
-	TOptions = Options,
+	TOptions = RefetchOptions,
 > = RefetchFnBase<Partial<VariablesOf<TQuery>>, TOptions>;
 
-interface Options {
+export interface RefetchOptions {
 	fetchPolicy?: FetchPolicy | undefined;
 	onComplete?: ((arg: Error | null) => void) | undefined;
 }
@@ -107,16 +107,34 @@ export function createRefetchableFragment<
 	DataProxy<KeyTypeData<TKey> | null | undefined>,
 	RefetchFnDynamic<TQuery, TKey>,
 ] {
+	const { fragmentData, refetch } = createRefetchableFragmentInternal(
+		fragment,
+		key,
+	);
+	return [fragmentData, refetch];
+}
+
+export function createRefetchableFragmentInternal<
+	TQuery extends OperationType,
+	TKey extends KeyType,
+>(
+	fragment: GraphQLTaggedNode,
+	key: Accessor<TKey | null | undefined>,
+	componentDisplayName = "createRefetchableFragment()",
+): {
+	fragmentData: DataProxy<KeyTypeData<TKey> | null | undefined>;
+	fragmentRef: Accessor<TKey | null | undefined>;
+	refetch: RefetchFnDynamic<TQuery, TKey>;
+} {
 	const parentEnvironment = useRelayEnvironment();
 	const parentFragmentRef = () => unwrap(key());
 	const isMounted = useIsMounted();
 	const fragmentNode = getFragment(fragment);
 	// Outdated type definitions on DT, fix PR: https://github.com/DefinitelyTyped/DefinitelyTyped/pull/71342
 	const { refetchableRequest, fragmentRefPathInResponse, identifierInfo } =
-		getRefetchMetadata(
-			fragmentNode,
-			"createRefetchableFragment()",
-		) as ReturnType<typeof getRefetchMetadata> & {
+		getRefetchMetadata(fragmentNode, componentDisplayName) as ReturnType<
+			typeof getRefetchMetadata
+		> & {
 			readonly identifierInfo:
 				| {
 						readonly identifierField: string;
@@ -253,9 +271,10 @@ export function createRefetchableFragment<
 		parentOperation: refetchObservable(),
 	}));
 
-	return [
+	return {
 		fragmentData,
-		(providedRefetchVariables, options) => {
+		fragmentRef,
+		refetch: (providedRefetchVariables, options) => {
 			const fragmentRef = parentFragmentRef();
 			const identifierValue =
 				identifierInfo?.identifierField != null &&
@@ -269,7 +288,7 @@ export function createRefetchableFragment<
 			if (!untrack(isMounted)) {
 				console.warn(
 					"Relay: Unexpected call to `refetch` on unmounted component for fragment " +
-						`\`${fragmentNode.name}\` in \`createRefetchableFragment()\`. It looks like some instances of your component are ` +
+						`\`${fragmentNode.name}\` in \`${componentDisplayName}\`. It looks like some instances of your component are ` +
 						"still trying to fetch data but they already unmounted. " +
 						"Please make sure you clear all timers, intervals, " +
 						"async calls, etc that may trigger a fetch.",
@@ -279,9 +298,9 @@ export function createRefetchableFragment<
 			if (fragmentRef === null) {
 				console.warn(
 					"Relay: Unexpected call to `refetch` while using a null fragment ref " +
-						"for fragment `fragmentNode.name` in `createRefetchableFragment()`. When calling `refetch`, we expect " +
+						`for fragment \`fragmentNode.name\` in \`${componentDisplayName}\`. When calling \`refetch\`, we expect ` +
 						"initial fragment data to be non-null. Please make sure you're " +
-						"passing a valid fragment ref to `createRefetchableFragment()` before calling " +
+						`passing a valid fragment ref to \`${componentDisplayName}\` before calling ` +
 						"`refetch`, or make sure you pass all required variables to `refetch`.",
 				);
 			}
@@ -350,5 +369,5 @@ export function createRefetchableFragment<
 
 			return { dispose: disposeQuery };
 		},
-	];
+	};
 }

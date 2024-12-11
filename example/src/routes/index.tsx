@@ -1,13 +1,15 @@
 import { graphql } from "relay-runtime";
-import { For, Suspense, createSignal, useTransition } from "solid-js";
+import { For, Show, Suspense, createSignal, useTransition } from "solid-js";
 import {
 	createFragment,
 	createLazyLoadQuery,
 	createMutation,
+	createPaginationFragment,
 	createRefetchableFragment,
 } from "solid-relay";
 import type { routesAddTodoItemMutation } from "./__generated__/routesAddTodoItemMutation.graphql";
 import type { routesHomeQuery } from "./__generated__/routesHomeQuery.graphql";
+import type { routesSiteStatistics$key } from "./__generated__/routesSiteStatistics.graphql";
 import type { routesTodoItem$key } from "./__generated__/routesTodoItem.graphql";
 import type { routesTodos$key } from "./__generated__/routesTodos.graphql";
 
@@ -16,11 +18,9 @@ export default function Home() {
 		graphql`
       query routesHomeQuery {
         siteStatistics {
-          weeklySales
-          weeklyOrders
-          currentVisitorsOnline
+          ...routesSiteStatistics
         }
-        ...routesTodos @arguments(first: 10) @defer
+        ...routesTodos @arguments(first: 2) @defer
       }
     `,
 		{},
@@ -31,7 +31,7 @@ export default function Home() {
 			<section>
 				<h2>Site Statistics</h2>
 				<Suspense fallback={<p>Loading...</p>}>
-					<p>{JSON.stringify(query()?.siteStatistics)}</p>
+					<SiteStatistics $stats={query()?.siteStatistics} />
 				</Suspense>
 			</section>
 			<section>
@@ -44,8 +44,55 @@ export default function Home() {
 	);
 }
 
+const SiteStatistics = (props: {
+	$stats: routesSiteStatistics$key | null | undefined;
+}) => {
+	const [stats, refetch] = createRefetchableFragment(
+		graphql`
+			fragment routesSiteStatistics on SiteStatistics @refetchable(queryName: "SiteStatisticsRefetchQuery") {
+				weeklySales
+				weeklyOrders
+				currentVisitorsOnline
+			}
+		`,
+		() => props.$stats,
+	);
+	const [wrapTransition, setWrapTransition] = createSignal(false);
+	const [isTransitioning, startTransition] = useTransition();
+
+	return (
+		<div>
+			<button
+				type="button"
+				onClick={() => {
+					const run = wrapTransition()
+						? startTransition
+						: (fn: () => void) => fn();
+					run(() => refetch({}));
+				}}
+				disabled={isTransitioning()}
+			>
+				Refetch
+			</button>
+			<label>
+				<input
+					type="checkbox"
+					checked={wrapTransition()}
+					onChange={(e) => setWrapTransition(e.target.checked)}
+				/>
+				Wrap refetch() with startTransition()
+			</label>
+			<ul>
+				<li>Weekly Sales: {stats()?.weeklySales}</li>
+				<li>Weekly Orders: {stats()?.weeklyOrders}</li>
+				<li>Current Visitors Online: {stats()?.currentVisitorsOnline}</li>
+			</ul>
+		</div>
+	);
+};
+
 const Todos = (props: { $query: routesTodos$key | null | undefined }) => {
-	const [query, refetch] = createRefetchableFragment(
+	const query = createPaginationFragment(
 		graphql`
       fragment routesTodos on Query
       @argumentDefinitions(first: { type: "Int!" }, after: { type: "String" })
@@ -115,7 +162,7 @@ const Todos = (props: { $query: routesTodos$key | null | undefined }) => {
 					const run = wrapTransition()
 						? startTransition
 						: (fn: () => void) => fn();
-					run(() => refetch({}));
+					run(() => query.refetch({}));
 				}}
 				disabled={isTransitioning()}
 			>
@@ -134,6 +181,15 @@ const Todos = (props: { $query: routesTodos$key | null | undefined }) => {
 					{(edge) => <TodoItem $todo={edge?.node} />}
 				</For>
 			</ul>
+			<Show when={query.hasNext}>
+				<button
+					type="button"
+					disabled={query.isLoadingNext}
+					onClick={() => query.loadNext(2)}
+				>
+					Load More
+				</button>
+			</Show>
 		</div>
 	);
 };
