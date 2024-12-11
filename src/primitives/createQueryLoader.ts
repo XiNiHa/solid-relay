@@ -78,7 +78,7 @@ export function createQueryLoader<TQuery extends OperationType>(
 			if (untrack(isMounted)) {
 				setQueryReference(
 					loadQuery(
-						options?.__environment ?? environment,
+						options?.__environment ?? untrack(environment),
 						preloadableRequest,
 						variables,
 						mergedOptions,

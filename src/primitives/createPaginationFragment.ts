@@ -178,7 +178,7 @@ function createLoadMore<TQuery extends OperationType, TKey extends KeyType>({
 	const environment = useRelayEnvironment();
 	const [isLoadingMore, reallySetIsLoadingMore] = createSignal(false);
 	const setIsLoadingMore = (value: boolean) => {
-		const schedule = environment.getScheduler()?.schedule;
+		const schedule = untrack(environment).getScheduler()?.schedule;
 		if (schedule) {
 			schedule(() => {
 				reallySetIsLoadingMore(value);
@@ -211,8 +211,9 @@ function createLoadMore<TQuery extends OperationType, TKey extends KeyType>({
 	);
 
 	const isMounted = useIsMounted();
-	const [mirroredEnvironment, setMirroredEnvironment] =
-		createSignal(environment);
+	const [mirroredEnvironment, setMirroredEnvironment] = createSignal(
+		environment(),
+	);
 	const [mirroredFragmentIdentifier, setMirroredFragmentIdentifier] =
 		createSignal(fragmentIdentifier());
 
@@ -223,7 +224,7 @@ function createLoadMore<TQuery extends OperationType, TKey extends KeyType>({
 
 	const shouldReset = createMemo(
 		() =>
-			environment !== mirroredEnvironment() ||
+			environment() !== mirroredEnvironment() ||
 			fragmentIdentifier() !== mirroredFragmentIdentifier(),
 	);
 	createEffect(() => {
@@ -231,7 +232,7 @@ function createLoadMore<TQuery extends OperationType, TKey extends KeyType>({
 			batch(() => {
 				disposeFetch();
 				setIsLoadingMore(false);
-				setMirroredEnvironment(environment);
+				setMirroredEnvironment(untrack(environment));
 				setMirroredFragmentIdentifier(untrack(fragmentIdentifier));
 			});
 		}
@@ -318,7 +319,7 @@ function createLoadMore<TQuery extends OperationType, TKey extends KeyType>({
 				paginationVariables,
 				{ force: true },
 			);
-			__internal.fetchQuery(environment, paginationQuery).subscribe({
+			__internal.fetchQuery(untrack(environment), paginationQuery).subscribe({
 				start(subscription) {
 					startFetch(subscription);
 					setIsLoadingMore(true);

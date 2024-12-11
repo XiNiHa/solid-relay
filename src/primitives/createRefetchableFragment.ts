@@ -156,7 +156,7 @@ export function createRefetchableFragmentInternal<
 		refetchQuery: OperationDescriptor | null;
 	}>({
 		fetchPolicy: undefined,
-		mirroredEnvironment: parentEnvironment,
+		mirroredEnvironment: parentEnvironment(),
 		mirroredFragmentIdentifier: fragmentIdentifier(),
 		onComplete: undefined,
 		refetchEnvironment: null,
@@ -164,7 +164,7 @@ export function createRefetchableFragmentInternal<
 	});
 
 	const environment = createMemo(
-		() => state().refetchEnvironment ?? parentEnvironment,
+		() => state().refetchEnvironment ?? parentEnvironment(),
 	);
 
 	const [preloadedQueryRef, loadQuery, disposeQuery] =

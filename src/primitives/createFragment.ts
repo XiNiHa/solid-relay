@@ -60,7 +60,7 @@ export function createFragmentInternal<TKey extends KeyType>(
 
 	const source = createMemo(() => {
 		const k = unwrap(key());
-		return k && observeFragment(environment, fragment, k);
+		return k && observeFragment(environment(), fragment, k);
 	});
 
 	const [resource] = createResource(

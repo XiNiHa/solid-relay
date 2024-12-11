@@ -30,7 +30,7 @@ export function useIsOperationNodeActive(
 			"useIsOperationNodeActive: Plural fragments are not supported.",
 		);
 		return __internal.getObservableForActiveRequest(
-			environment,
+			environment(),
 			(s as SingularReaderSelector).owner,
 		);
 	});

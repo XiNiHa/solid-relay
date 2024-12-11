@@ -62,8 +62,13 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 	const replaySubject = new ReplaySubject();
 
 	const [resource] = createResource(
-		operation,
-		async (operation) => {
+		() => {
+			const op = operation();
+			const env = environment();
+			if (!op || !env) return;
+			return { operation: op, environment: env };
+		},
+		async ({ operation, environment }) => {
 			const observable = __internal.fetchQuery(environment, operation);
 			const stream = new ReadableStream<GraphQLResponse>({
 				start(controller) {
@@ -122,29 +127,28 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 		setResult(initialResult);
 
 		const op = operation();
-		if (!op) return;
+		const env = environment();
+		if (!op || !env) return;
 
 		if (
 			!getPendingOperationsForFragment(
-				environment,
+				env,
 				getRequest(access(gqlQuery)).fragment,
 				op.request,
 			)
 		) {
-			environment
+			env
 				.executeWithSource({
 					operation: op,
-					source: __internal.fetchQueryDeduped(
-						environment,
-						op.request.identifier,
-						() => Observable.create((sink) => replaySubject.subscribe(sink)),
+					source: __internal.fetchQueryDeduped(env, op.request.identifier, () =>
+						Observable.create((sink) => replaySubject.subscribe(sink)),
 					),
 				})
 				.subscribe({});
 		}
 
 		const fragmentSubscription = RelayRuntimeExperimental.observeFragment(
-			environment,
+			env,
 			getRequest(access(gqlQuery)).fragment,
 			getQueryRef(op),
 		).subscribe({
@@ -162,7 +166,7 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 				});
 			},
 		});
-		const retainSubscription = environment.retain(op);
+		const retainSubscription = env.retain(op);
 		onCleanup(() => {
 			fragmentSubscription.unsubscribe();
 			retainSubscription.dispose();

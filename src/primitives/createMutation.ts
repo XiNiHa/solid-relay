@@ -25,7 +25,7 @@ export function createMutation<TMutation extends MutationParameters>(
 
 	const commit = (config: Omit<MutationConfig<TMutation>, "mutation">) => {
 		setIsMutationInFlight(true);
-		const disposable = commitMutation(environment, {
+		const disposable = commitMutation(environment(), {
 			...config,
 			mutation,
 			onCompleted: (response, errors) => {
