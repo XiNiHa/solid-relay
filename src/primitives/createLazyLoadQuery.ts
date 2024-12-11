@@ -1,15 +1,16 @@
 import { type MaybeAccessor, access } from "@solid-primitives/utils";
-import RelayRuntime, {
-	__internal,
-	getPendingOperationsForFragment,
-	getRequest,
-	ReplaySubject,
+import {
 	type CacheConfig,
 	type FetchQueryFetchPolicy,
 	type GraphQLResponse,
 	type GraphQLTaggedNode,
+	Observable,
 	type OperationType,
+	ReplaySubject,
 	type VariablesOf,
+	__internal,
+	getPendingOperationsForFragment,
+	getRequest,
 } from "relay-runtime";
 import RelayRuntimeExperimental from "relay-runtime/experimental";
 import {
@@ -63,10 +64,7 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 	const [resource] = createResource(
 		operation,
 		async (operation) => {
-			const observable = RelayRuntime.__internal.fetchQuery(
-				environment,
-				operation,
-			);
+			const observable = __internal.fetchQuery(environment, operation);
 			const stream = new ReadableStream<GraphQLResponse>({
 				start(controller) {
 					observable.subscribe({
@@ -139,10 +137,7 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 					source: __internal.fetchQueryDeduped(
 						environment,
 						op.request.identifier,
-						() =>
-							RelayRuntime.Observable.create((sink) =>
-								replaySubject.subscribe(sink),
-							),
+						() => Observable.create((sink) => replaySubject.subscribe(sink)),
 					),
 				})
 				.subscribe({});

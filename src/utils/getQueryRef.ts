@@ -1,11 +1,16 @@
-import RelayRuntime, { type OperationDescriptor } from "relay-runtime";
+import {
+	FRAGMENTS_KEY,
+	FRAGMENT_OWNER_KEY,
+	ID_KEY,
+	type OperationDescriptor,
+} from "relay-runtime";
 import type { KeyType } from "relay-runtime/lib/store/ResolverFragments";
 
 export const getQueryRef = (operation: OperationDescriptor) =>
 	({
-		[RelayRuntime.ID_KEY]: operation.fragment.dataID,
-		[RelayRuntime.FRAGMENTS_KEY]: {
+		[ID_KEY]: operation.fragment.dataID,
+		[FRAGMENTS_KEY]: {
 			[operation.fragment.node.name]: operation.request.variables,
 		},
-		[RelayRuntime.FRAGMENT_OWNER_KEY]: operation.request,
+		[FRAGMENT_OWNER_KEY]: operation.request,
 	}) as unknown as KeyType;

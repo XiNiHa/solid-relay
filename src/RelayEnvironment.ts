@@ -1,5 +1,10 @@
 import type { IEnvironment } from "relay-runtime";
-import { type JSXElement, createContext, useContext } from "solid-js";
+import {
+	type JSXElement,
+	createComponent,
+	createContext,
+	useContext,
+} from "solid-js";
 import invariant from "tiny-invariant";
 
 interface Props {
@@ -12,11 +17,14 @@ const RelayContext = createContext<{
 }>();
 
 export function RelayEnvironmentProvider(props: Props) {
-	return (
-		<RelayContext.Provider value={{ environment: props.environment }}>
-			{props.children}
-		</RelayContext.Provider>
-	);
+	return createComponent(RelayContext.Provider, {
+		get value() {
+			return { environment: props.environment };
+		},
+		get children() {
+			return props.children;
+		},
+	});
 }
 
 export const useRelayEnvironment = () => {

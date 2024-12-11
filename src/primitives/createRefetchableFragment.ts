@@ -19,7 +19,7 @@ import {
 	getSelector,
 	getValueAtPath,
 } from "relay-runtime";
-import RelayRuntimeExperimental from "relay-runtime/experimental";
+import { waitForFragmentData } from "relay-runtime/experimental";
 import {
 	type Accessor,
 	batch,
@@ -189,7 +189,7 @@ export function createRefetchableFragment<
 		if (!obs) return;
 		obs.subscribe({
 			async complete() {
-				const data = await RelayRuntimeExperimental.waitForFragmentData(
+				const data = await waitForFragmentData(
 					environment(),
 					refetchableRequest.fragment,
 					getQueryRef(refetchQuery),

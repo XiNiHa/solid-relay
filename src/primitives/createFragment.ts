@@ -3,7 +3,7 @@ import type {
 	GraphQLTaggedNode,
 	Subscribable,
 } from "relay-runtime";
-import RelayRuntime from "relay-runtime/experimental";
+import { observeFragment } from "relay-runtime/experimental";
 import {
 	batch,
 	createComputed,
@@ -60,7 +60,7 @@ export function createFragmentInternal<TKey extends KeyType>(
 
 	const source = createMemo(() => {
 		const k = unwrap(key());
-		return k && RelayRuntime.observeFragment(environment, fragment, k);
+		return k && observeFragment(environment, fragment, k);
 	});
 
 	const [resource] = createResource(

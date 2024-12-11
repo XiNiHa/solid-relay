@@ -4,10 +4,10 @@
 		"moduleResolution": "bundler",
 		"strict": true,
 		"outDir": "dist",
-		"rootDir": "src",
 		"baseUrl": ".",
 		"isolatedModules": true,
 		"allowJs": true,
+		"skipLibCheck": true,
 		"jsx": "preserve",
 		"jsxImportSource": "solid-js"
 	},

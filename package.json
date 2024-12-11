@@ -14,15 +14,14 @@
 	"types": "./dist/types/index.d.ts",
 	"exports": {
 		".": {
-			"types": "./dist/types/index.d.ts",
-			"solid": "./dist/source/index.js",
-			"require": "./dist/cjs/index.cjs",
-			"import": "./dist/esm/index.mjs"
+			"types": "./dist/index.d.ts",
+			"require": "./dist/index.cjs",
+			"import": "./dist/index.js"
 		},
 		"./package.json": "./package.json"
 	},
 	"scripts": {
-		"build": "rollup -c",
+		"build": "rslib build",
 		"check": "biome check && tsc --noEmit",
 		"fix": "biome check --fix",
 		"ci:version": "changeset version && biome check --fix",
@@ -40,14 +39,12 @@
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
 		"@changesets/cli": "^2.27.10",
-		"@rollup/plugin-commonjs": "^28.0.1",
+		"@rslib/core": "^0.1.3",
 		"@types/deep-equal": "^1.0.4",
 		"@types/node": "^22.10.1",
 		"@types/relay-runtime": "^18.2.1",
 		"pkg-pr-new": "^0.0.35",
 		"relay-runtime": "^18.2.0",
-		"rollup": "^4.28.1",
-		"rollup-preset-solid": "^2.0.1",
 		"solid-js": "^1.9.3",
 		"typescript": "^5.7.2"
 	},
