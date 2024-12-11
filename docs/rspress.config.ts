@@ -5,6 +5,7 @@ import { defineConfig } from "rspress/config";
 export default defineConfig({
 	root: path.join(__dirname, "docs"),
 	title: "Solid Relay",
+	description: "SolidJS Bindings for Relay",
 	icon: "/favicon.png",
 	themeConfig: {
 		socialLinks: [
