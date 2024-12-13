@@ -9,7 +9,7 @@ export default defineConfig({
 			include: ["relay-runtime"],
 		},
 		ssr: {
-			noExternal: ["relay-runtime", "relay-runtime/experimental"],
+			noExternal: [/^relay-runtime(?:\/|$)/, /^solid-js(?:\/|$)/],
 			optimizeDeps: {
 				include: ["relay-runtime", "relay-runtime/experimental"],
 			},
