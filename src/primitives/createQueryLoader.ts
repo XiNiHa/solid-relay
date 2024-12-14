@@ -53,10 +53,12 @@ export function createQueryLoader<TQuery extends OperationType>(
 	createEffect(() => {
 		const ref = queryReference();
 		onCleanup(() => {
-			if (requestIsLiveQuery(preloadableRequest)) {
-				if ("dispose" in ref) ref.dispose();
-			} else {
-				if ("releaseQuery" in ref) ref.releaseQuery();
+			if ("controls" in ref) {
+				if (requestIsLiveQuery(preloadableRequest)) {
+					ref.controls?.value.dispose();
+				} else {
+					ref.controls?.value.releaseQuery();
+				}
 			}
 		});
 	});

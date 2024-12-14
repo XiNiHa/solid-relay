@@ -182,8 +182,8 @@ export function createRefetchableFragmentInternal<
 		if (!refetchQuery || !preloadedQuery) return;
 
 		const fetchObservable =
-			preloadedQuery.source != null
-				? preloadedQuery.source
+			preloadedQuery.controls?.value.source != null
+				? preloadedQuery.controls.value.source
 				: __internal.fetchQuery(environment(), refetchQuery);
 
 		const replaySubject = new ReplaySubject<GraphQLResponse>();

@@ -21,6 +21,7 @@ import {
 	getRequestIdentifier,
 } from "relay-runtime";
 import type { RequestIdentifier } from "relay-runtime/lib/util/getRequestIdentifier";
+import { OpaqueReference } from "seroval";
 import invariant from "tiny-invariant";
 
 export type PreloadFetchPolicy =
@@ -34,44 +35,35 @@ export type LoadQueryOptions = Readonly<{
 	onQueryAstLoadTimeout?: (() => void) | null | undefined;
 }>;
 
-export type EnvironmentProviderOptions<
-	T extends Record<string, unknown> = Record<string, unknown>,
-> = T;
-
-export interface PreloadedQuery<
-	TQuery extends OperationType,
-	TEnvironmentProviderOptions = EnvironmentProviderOptions,
-> extends Readonly<{
+export interface PreloadedQuery<TQuery extends OperationType>
+	extends Readonly<{
 		kind: "PreloadedQuery";
-		environment: IEnvironment;
-		environmentProviderOptions?: TEnvironmentProviderOptions | null | undefined;
+		id?: string | null | undefined;
+		name: string;
+		variables: VariablesOf<TQuery>;
 		fetchKey: string | number;
 		fetchPolicy: FetchPolicy;
 		networkCacheConfig?: CacheConfig | null | undefined;
-		id?: string | null | undefined;
-		name: string;
-		source?: Observable<GraphQLResponse> | null | undefined;
-		variables: VariablesOf<TQuery>;
-		dispose: DisposeFn;
-		releaseQuery: () => void;
-		cancelNetworkRequest: () => void;
-		isDisposed: boolean;
-		networkError: Error | null;
+		controls?:
+			| OpaqueReference<{
+					environment: IEnvironment;
+					source: Observable<GraphQLResponse> | undefined;
+					getNetworkError: () => Error | null;
+					dispose: DisposeFn;
+					isDisposed: () => boolean;
+					releaseQuery: () => void;
+			  }>
+			| undefined;
 	}> {}
 
 let fetchKey = 100001;
 
-export function loadQuery<
-	TQuery extends OperationType,
-	TEnvironmentProviderOptions extends
-		EnvironmentProviderOptions = EnvironmentProviderOptions,
->(
+export function loadQuery<TQuery extends OperationType>(
 	environment: IEnvironment,
 	preloadableRequest: GraphQLTaggedNode | PreloadableConcreteRequest<TQuery>,
 	variables: VariablesOf<TQuery>,
 	options?: LoadQueryOptions,
-	environmentProviderOptions?: TEnvironmentProviderOptions,
-): PreloadedQuery<TQuery, TEnvironmentProviderOptions> {
+): PreloadedQuery<TQuery> {
 	fetchKey++;
 
 	const fetchPolicy = options?.fetchPolicy ?? "store-or-network";
@@ -119,7 +111,7 @@ export function loadQuery<
 			},
 		);
 
-		const { unsubscribe } = observable.subscribe({
+		unsubscribeFromNetworkRequest = observable.subscribe({
 			error(err: Error) {
 				networkError = err;
 				subject.error(err);
@@ -130,8 +122,7 @@ export function loadQuery<
 			complete() {
 				subject.complete();
 			},
-		});
-		unsubscribeFromNetworkRequest = unsubscribe;
+		}).unsubscribe;
 		return Observable.create((sink) => {
 			const subjectSubscription = subject.subscribe(sink);
 			return () => {
@@ -265,28 +256,24 @@ export function loadQuery<
 	};
 	return {
 		kind: "PreloadedQuery",
-		environment,
-		environmentProviderOptions,
-		dispose() {
-			if (isDisposed) return;
-			releaseQuery();
-			cancelNetworkRequest();
-			isDisposed = true;
-		},
-		releaseQuery,
-		cancelNetworkRequest,
-		fetchKey,
 		id: queryId,
-		get isDisposed() {
-			return isDisposed || isReleased;
-		},
-		get networkError() {
-			return networkError;
-		},
 		name: params.name,
-		networkCacheConfig,
-		fetchPolicy,
-		source: didMakeNetworkRequest ? returnedObservable : undefined,
 		variables,
+		fetchKey,
+		fetchPolicy,
+		networkCacheConfig,
+		controls: new OpaqueReference({
+			environment,
+			source: didMakeNetworkRequest ? returnedObservable : undefined,
+			getNetworkError: () => networkError,
+			dispose: () => {
+				if (isDisposed) return;
+				releaseQuery();
+				cancelNetworkRequest();
+				isDisposed = true;
+			},
+			isDisposed: () => isDisposed || isReleased,
+			releaseQuery: releaseQuery,
+		}),
 	};
 }

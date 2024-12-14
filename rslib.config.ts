@@ -17,6 +17,6 @@ export default defineConfig({
 		sourceMap: {
 			js: "source-map",
 		},
-		externals: [/^solid-js/, /^relay-runtime/],
+		externals: [/^solid-js/, /^relay-runtime/, /^seroval/],
 	},
 });
