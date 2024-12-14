@@ -1,27 +1,33 @@
 import { type MaybeAccessor, access } from "@solid-primitives/utils";
 import {
 	type CacheConfig,
+	type Disposable,
+	type FetchPolicy,
 	type FetchQueryFetchPolicy,
 	type GraphQLResponse,
 	type GraphQLTaggedNode,
 	Observable,
+	type OperationDescriptor,
 	type OperationType,
+	type ReaderFragment,
 	ReplaySubject,
 	type VariablesOf,
 	__internal,
-	getPendingOperationsForFragment,
 	getRequest,
 } from "relay-runtime";
 import RelayRuntimeExperimental from "relay-runtime/experimental";
 import {
+	type Accessor,
 	batch,
 	createComputed,
+	createMemo,
 	createResource,
 	createSignal,
 	onCleanup,
 } from "solid-js";
 import { createStore, reconcile } from "solid-js/store";
 import { useRelayEnvironment } from "../RelayEnvironment";
+import { type QueryCacheEntry, getQueryCache } from "../queryCache";
 import { type DataProxy, makeDataProxy } from "../utils/dataProxy";
 import { getQueryRef } from "../utils/getQueryRef";
 import { createMemoOperationDescriptor } from "./createMemoOperationDescriptor";
@@ -52,62 +58,165 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 	},
 ): DataProxy<TQuery["response"]> {
 	const environment = useRelayEnvironment();
-
 	const operation = createMemoOperationDescriptor(
 		gqlQuery,
 		variables,
 		options?.networkCacheConfig,
 	);
-	const [serverData, setServerData] = createSignal<TQuery["response"]>();
-	const replaySubject = new ReplaySubject();
+	const fetchObservable = createMemo(() => {
+		const op = operation();
+		const env = environment();
+		if (!op || !env) return;
+		return __internal.fetchQuery(env, op);
+	});
 
-	const [resource] = createResource(
-		() => {
-			const op = operation();
-			const env = environment();
-			if (!op || !env) return;
-			return { operation: op, environment: env };
-		},
-		async ({ operation, environment }) => {
-			const observable = __internal.fetchQuery(environment, operation);
-			const stream = new ReadableStream<GraphQLResponse>({
-				start(controller) {
-					observable.subscribe({
-						next(response) {
-							controller.enqueue(response);
-						},
-						error(error: unknown) {
-							controller.error(error);
-						},
-						complete() {
-							controller.close();
+	return createLazyLoadQueryInternal({
+		query: operation,
+		fragment: () => getRequest(access(gqlQuery)).fragment,
+		fetchObservable,
+	});
+}
+
+export function createLazyLoadQueryInternal<
+	TQuery extends OperationType,
+>(params: {
+	query: Accessor<OperationDescriptor>;
+	fragment: Accessor<ReaderFragment>;
+	fetchObservable: Accessor<Observable<GraphQLResponse> | null | undefined>;
+	fetchKey?: Accessor<string | number | null | undefined>;
+	fetchPolicy?: Accessor<FetchPolicy | undefined>;
+}): DataProxy<TQuery["response"]> {
+	const environment = useRelayEnvironment();
+	const queryCache = createMemo(() => getQueryCache(environment()))
+	const [serverData, setServerData] = createSignal<TQuery["response"]>();
+
+	const isLiveQuery = createMemo(
+		() => params.query().request.node.params.metadata.live !== undefined,
+	);
+	const fetchPolicy = createMemo(
+		() =>
+			params.fetchPolicy?.() ??
+			(isLiveQuery() ? "store-and-network" : "store-or-network"),
+	);
+	const cacheKey = createMemo(() => {
+		return [
+			fetchPolicy(),
+			params.query().request.identifier,
+			params.fetchKey?.(),
+		]
+			.filter((v) => v != null)
+			.join("-");
+	});
+	const cacheEntry = createMemo(() => {
+		const cache = queryCache();
+		const existing = cache.get(cacheKey());
+		if (existing != null) return existing;
+
+		const operation = params.query();
+		const queryAvailablility = environment().check(operation);
+		const queryStatus = queryAvailablility.status;
+		const hasFullQuery = queryStatus === "available";
+
+		const shouldFetch = (() => {
+			switch (fetchPolicy()) {
+				case "store-only":
+					return false;
+				case "store-or-network":
+					return !hasFullQuery;
+				case "store-and-network":
+				case "network-only":
+					return true;
+			}
+		})();
+
+		let entry: QueryCacheEntry = false;
+		if (shouldFetch) {
+			const replaySubject = new ReplaySubject<GraphQLResponse>();
+			let subscriptionTarget = environment().executeWithSource({
+				operation,
+				source: __internal.fetchQueryDeduped(
+					environment(),
+					operation.request.identifier,
+					() => Observable.create((sink) => replaySubject.subscribe(sink)),
+				),
+			});
+			const [resource] = createResource(
+				params.fetchObservable,
+				async (observable) => {
+					subscriptionTarget = observable;
+					const stream = new ReadableStream<GraphQLResponse>({
+						start(controller) {
+							observable.subscribe({
+								next(response) {
+									controller.enqueue(response);
+								},
+								error(error: unknown) {
+									controller.error(error);
+								},
+								complete() {
+									controller.close();
+								},
+							});
 						},
 					});
+					await observable.toPromise();
+					return stream;
 				},
-			});
-			await observable.toPromise();
-			return stream;
-		},
-		{
-			onHydrated(operation, { value }) {
-				if (!operation || !value) return;
+				{
+					onHydrated(operation, { value }) {
+						if (!operation || !value) return;
 
-				(async () => {
-					for await (const response of value.values()) {
-						try {
-							replaySubject.next(response);
-						} catch (error) {
-							replaySubject.error(
-								error instanceof Error ? error : new Error(String(error)),
-							);
-							break;
-						}
+						(async () => {
+							for await (const response of value.values()) {
+								try {
+									replaySubject.next(response);
+								} catch (error) {
+									replaySubject.error(
+										error instanceof Error ? error : new Error(String(error)),
+									);
+									break;
+								}
+							}
+							replaySubject.complete();
+						})();
+					},
+				},
+			);
+
+			const subscription = subscriptionTarget.subscribe({});
+			let retainCount = 0;
+			let retention: Disposable | undefined;
+			entry = {
+				resource,
+				retain: (environment) => {
+					retainCount++;
+					if (retainCount === 1) {
+						retention = environment.retain(operation);
 					}
-					replaySubject.complete();
-				})();
-			},
-		},
-	);
+					return {
+						dispose: () => {
+							retainCount = Math.max(retainCount - 1, 0);
+							if (retainCount === 0) {
+								retention?.dispose();
+								if (isLiveQuery()) subscription.unsubscribe();
+								cache.delete(cacheKey());
+							}
+						},
+					};
+				},
+			};
+		}
+
+		cache.set(cacheKey(), entry);
+		return entry;
+	});
+
+	createComputed(() => {
+		const entry = cacheEntry();
+		if (!entry) return;
+		const retention = entry.retain(environment());
+		onCleanup(retention.dispose);
+	});
 
 	const initialResult: QueryResult<TQuery["response"]> = {
 		data: undefined,
@@ -126,31 +235,14 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 	createComputed(() => {
 		setResult(initialResult);
 
-		const op = operation();
+		const operation = params.query();
 		const env = environment();
-		if (!op || !env) return;
-
-		if (
-			!getPendingOperationsForFragment(
-				env,
-				getRequest(access(gqlQuery)).fragment,
-				op.request,
-			)
-		) {
-			env
-				.executeWithSource({
-					operation: op,
-					source: __internal.fetchQueryDeduped(env, op.request.identifier, () =>
-						Observable.create((sink) => replaySubject.subscribe(sink)),
-					),
-				})
-				.subscribe({});
-		}
+		if (!operation || !env) return;
 
 		const fragmentSubscription = RelayRuntimeExperimental.observeFragment(
 			env,
-			getRequest(access(gqlQuery)).fragment,
-			getQueryRef(op),
+			params.fragment(),
+			getQueryRef(operation),
 		).subscribe({
 			next(state) {
 				batch(() => {
@@ -166,16 +258,17 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 				});
 			},
 		});
-		const retainSubscription = env.retain(op);
 		onCleanup(() => {
 			fragmentSubscription.unsubscribe();
-			retainSubscription.dispose();
 		});
 	});
 
 	return makeDataProxy(
 		result,
-		resource,
+		() => {
+			const entry = cacheEntry();
+			if (entry) entry.resource();
+		},
 		typeof window === "undefined" ? serverData : undefined,
 	);
 }
