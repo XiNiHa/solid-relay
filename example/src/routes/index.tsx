@@ -1,11 +1,14 @@
+import { type RouteDefinition, query } from "@solidjs/router";
 import { graphql } from "relay-runtime";
 import { For, Show, Suspense, createSignal, useTransition } from "solid-js";
 import {
 	createFragment,
-	createLazyLoadQuery,
 	createMutation,
 	createPaginationFragment,
+	createPreloadedQuery,
 	createRefetchableFragment,
+	loadQuery,
+	useRelayEnvironment,
 } from "solid-relay";
 import type { routesAddTodoItemMutation } from "./__generated__/routesAddTodoItemMutation.graphql";
 import type { routesHomeQuery } from "./__generated__/routesHomeQuery.graphql";
@@ -13,17 +16,30 @@ import type { routesSiteStatistics$key } from "./__generated__/routesSiteStatist
 import type { routesTodoItem$key } from "./__generated__/routesTodoItem.graphql";
 import type { routesTodos$key } from "./__generated__/routesTodos.graphql";
 
+export const route = {
+	preload() {
+		void loadHomeQuery();
+	},
+} satisfies RouteDefinition;
+
+const HomeQuery = graphql`
+  query routesHomeQuery {
+    siteStatistics {
+      ...routesSiteStatistics
+    }
+    ...routesTodos @arguments(first: 2) @defer
+  }
+`;
+
+const loadHomeQuery = query(
+	() => loadQuery<routesHomeQuery>(useRelayEnvironment()(), HomeQuery, {}),
+	"HomeQuery",
+);
+
 export default function Home() {
-	const query = createLazyLoadQuery<routesHomeQuery>(
-		graphql`
-      query routesHomeQuery {
-        siteStatistics {
-          ...routesSiteStatistics
-        }
-        ...routesTodos @arguments(first: 2) @defer
-      }
-    `,
-		{},
+	const query = createPreloadedQuery<routesHomeQuery>(
+		HomeQuery,
+		loadHomeQuery(),
 	);
 
 	return (
