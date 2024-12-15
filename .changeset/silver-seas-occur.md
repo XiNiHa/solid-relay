@@ -1,5 +1,5 @@
 ---
-"solid-relay": patch
+"solid-relay": minor
 ---
 
 feat: add `createPreloadedQuery()`
