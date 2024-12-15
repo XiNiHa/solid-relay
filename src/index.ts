@@ -5,7 +5,7 @@ export { createPaginationFragment } from "./primitives/createPaginationFragment.
 export { createMutation } from "./primitives/createMutation";
 export { createPreloadedQuery } from "./primitives/createPreloadedQuery";
 export { createQueryLoader } from "./primitives/createQueryLoader";
-export { loadQuery } from "./loadQuery";
+export { loadQuery, type PreloadedQuery } from "./loadQuery";
 export {
 	RelayEnvironmentProvider,
 	useRelayEnvironment,
