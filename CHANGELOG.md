@@ -1,5 +1,20 @@
 # solid-relay
 
+## 0.3.0
+
+### Minor Changes
+
+- 8af0968: feat: make PreloadedQuery serializable
+- 6fcb2bf: feat: add `createSubscription()`
+- cedfb55: feat: add `createPaginationFragment()`
+- cbec836: fix: make useRelayEnvironment return an accessor
+- f277eab: feat: add `createPreloadedQuery()`
+
+### Patch Changes
+
+- 40a6756: feat: introduce query caching and deduping
+- e17ba84: fix: properly catch query errors while hydrating
+
 ## 0.2.2
 
 ### Patch Changes
