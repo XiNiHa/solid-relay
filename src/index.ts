@@ -6,6 +6,7 @@ export { createMutation } from "./primitives/createMutation";
 export { createPreloadedQuery } from "./primitives/createPreloadedQuery";
 export { createQueryLoader } from "./primitives/createQueryLoader";
 export { loadQuery, type PreloadedQuery } from "./loadQuery";
+export { createSubscription } from "./primitives/createSubscription";
 export {
 	RelayEnvironmentProvider,
 	useRelayEnvironment,
