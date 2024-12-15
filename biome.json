@@ -17,6 +17,14 @@
 		}
 	},
 	"files": {
-		"ignore": ["dist", ".changeset", "__generated__", "*.graphql", ".vinxi"]
+		"ignore": [
+			"dist",
+			".changeset",
+			"__generated__",
+			"*.graphql",
+			".vinxi",
+			"doc_build",
+			"docs/api"
+		]
 	}
 }
