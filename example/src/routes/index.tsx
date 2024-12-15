@@ -37,10 +37,7 @@ const loadHomeQuery = query(
 );
 
 export default function Home() {
-	const query = createPreloadedQuery<routesHomeQuery>(
-		HomeQuery,
-		loadHomeQuery(),
-	);
+	const query = createPreloadedQuery<routesHomeQuery>(HomeQuery, loadHomeQuery);
 
 	return (
 		<main>

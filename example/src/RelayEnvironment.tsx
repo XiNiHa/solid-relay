@@ -10,25 +10,36 @@ import type {
 	FetchFunction,
 	GraphQLResponse,
 	IEnvironment,
+	RequestParameters,
+	Variables,
 } from "relay-runtime";
+
+const fetchFnImpl = async (params: RequestParameters, variables: Variables) => {
+	"use server";
+
+	console.warn("Arbitrary 1sec delay on query is present!");
+	await new Promise((resolve) => setTimeout(resolve, 1000));
+
+	const response = await fetch("http://localhost:4000/graphql", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Accept: "application/json, multipart/mixed",
+		},
+		body: JSON.stringify({ query: params.text, variables }),
+	});
+
+	const parts = await meros(response);
+	if (Symbol.asyncIterator in parts) {
+		return parts[Symbol.asyncIterator]();
+	}
+	return (await parts.json()) as GraphQLResponse;
+};
 
 const fetchFn: FetchFunction = (params, variables) =>
 	Observable.create((sink) => {
 		void (async () => {
-			console.warn("Arbitrary 1sec delay on query is present!");
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-
-			const response = await fetch("http://localhost:4000/graphql", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Accept: "application/json, multipart/mixed",
-				},
-				body: JSON.stringify({ query: params.text, variables }),
-			});
-
-			const parts = await meros(response);
-
+			const parts = await fetchFnImpl(params, variables);
 			if (Symbol.asyncIterator in parts) {
 				for await (const part of parts) {
 					if (!part.json) {
@@ -41,7 +52,7 @@ const fetchFn: FetchFunction = (params, variables) =>
 					}
 				}
 			} else {
-				sink.next((await parts.json()) as GraphQLResponse);
+				sink.next(parts);
 			}
 
 			sink.complete();

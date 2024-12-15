@@ -7,17 +7,17 @@ import { createEnvironment } from "./RelayEnvironment";
 
 export default function App() {
 	return (
-		<Router
-			root={(props) => (
-				<RelayEnvironmentProvider environment={createEnvironment()}>
+		<RelayEnvironmentProvider environment={createEnvironment()}>
+			<Router
+				root={(props) => (
 					<MetaProvider>
 						<Title>solid-relay SSR example</Title>
 						<Suspense>{props.children}</Suspense>
 					</MetaProvider>
-				</RelayEnvironmentProvider>
-			)}
-		>
-			<FileRoutes />
-		</Router>
+				)}
+			>
+				<FileRoutes />
+			</Router>
+		</RelayEnvironmentProvider>
 	);
 }
