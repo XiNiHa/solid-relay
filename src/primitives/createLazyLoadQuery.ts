@@ -87,7 +87,7 @@ export function createLazyLoadQueryInternal<
 	fetchPolicy?: Accessor<FetchPolicy | undefined>;
 }): DataProxy<TQuery["response"]> {
 	const environment = useRelayEnvironment();
-	const queryCache = createMemo(() => getQueryCache(environment()))
+	const queryCache = createMemo(() => getQueryCache(environment()));
 	const [serverData, setServerData] = createSignal<TQuery["response"]>();
 
 	const isLiveQuery = createMemo(
@@ -167,17 +167,16 @@ export function createLazyLoadQueryInternal<
 						if (!operation || !value) return;
 
 						(async () => {
-							for await (const response of value.values()) {
-								try {
+							try {
+								for await (const response of value.values()) {
 									replaySubject.next(response);
-								} catch (error) {
-									replaySubject.error(
-										error instanceof Error ? error : new Error(String(error)),
-									);
-									break;
 								}
+								replaySubject.complete();
+							} catch (error) {
+								replaySubject.error(
+									error instanceof Error ? error : new Error(String(error)),
+								);
 							}
-							replaySubject.complete();
 						})();
 					},
 				},
