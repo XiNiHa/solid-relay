@@ -24,7 +24,8 @@
 			"*.graphql",
 			".vinxi",
 			"doc_build",
-			"docs/api"
+			"docs/api",
+			"coverage"
 		]
 	}
 }
