@@ -7,6 +7,18 @@ export default defineConfig({
 	title: "Solid Relay",
 	description: "SolidJS Bindings for Relay",
 	icon: "/favicon.png",
+	markdown: {
+		checkDeadLinks: true,
+	},
+	globalStyles: path.join(__dirname, "styles/global.css"),
+	plugins: [
+		pluginTypeDoc({
+			entryPoints: [path.join(__dirname, "src/index.ts")],
+		}),
+	],
+	route: {
+		cleanUrls: true,
+	},
 	themeConfig: {
 		socialLinks: [
 			{
@@ -16,10 +28,4 @@ export default defineConfig({
 			},
 		],
 	},
-	globalStyles: path.join(__dirname, "styles/global.css"),
-	plugins: [
-		pluginTypeDoc({
-			entryPoints: [path.join(__dirname, "src/index.ts")],
-		}),
-	],
 });
