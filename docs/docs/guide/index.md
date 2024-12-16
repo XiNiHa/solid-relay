@@ -1,3 +1,3 @@
 # Getting Started
 
-WIP, see the [API docs](/api/) for now!
+WIP, see the [API docs](/api/) and the [example project](https://github.com/XiNiHa/solid-relay/tree/main/example) for now!
