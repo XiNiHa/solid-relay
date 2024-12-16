@@ -1,0 +1,15 @@
+diff --git a/dist/changesets-assemble-release-plan.cjs.js b/dist/changesets-assemble-release-plan.cjs.js
+index e32a5e5d39c3bd920201b5694632d2b44c92d486..8b90f72e644adacc335f5dce37a01857dd171aab 100644
+--- a/dist/changesets-assemble-release-plan.cjs.js
++++ b/dist/changesets-assemble-release-plan.cjs.js
+@@ -665,7 +665,9 @@ function getPreInfo(changesets, packagesByName, config, preState) {
+   let preVersions = new Map();
+ 
+   for (const [, pkg] of packagesByName) {
+-    preVersions.set(pkg.packageJson.name, getPreVersion(pkg.packageJson.version));
++    if (pkg.packageJson.version) {
++      preVersions.set(pkg.packageJson.name, getPreVersion(pkg.packageJson.version));
++    }
+   }
+ 
+   for (let fixedGroup of config.fixed) {
