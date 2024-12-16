@@ -19,5 +19,6 @@ jobs:
       - run: pnpm check
       - name: Build
         run: pnpm build
+      - run: pnpm ci:test
       - name: Publish using pkg.pr.new
         run: pnpm pkg-pr-new publish

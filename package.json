@@ -25,6 +25,7 @@
 		"check": "biome check && tsc --noEmit",
 		"fix": "biome check --fix",
 		"test": "concurrently \"vitest --ui --coverage\" \"(cd tests && relay-compiler -w)\"",
+		"ci:test": "(cd tests && relay-compiler) && vitest run --coverage",
 		"ci:version": "changeset version && biome check --fix",
 		"ci:publish": "pnpm publish -r"
 	},
