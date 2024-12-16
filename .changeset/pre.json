@@ -1,0 +1,10 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "solid-relay": "0.3.0"
+  },
+  "changesets": [
+    "nine-guests-travel"
+  ]
+}

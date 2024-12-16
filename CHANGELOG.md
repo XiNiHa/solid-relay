@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.0
+
+### Major Changes
+
+- chore: start v1.0 beta phase
+
 ## 0.3.0
 
 ### Minor Changes
