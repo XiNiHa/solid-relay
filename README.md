@@ -1,8 +1,6 @@
 # solid-relay
 
-SolidJS bindings for Relay (Experimental)
-
-**Nothing is finalized yet and therefore everything (including APIs, error handling, and cache policy) is subject to change. Expect major breaking changes to happen.**
+SolidJS bindings for Relay
 
 ```jsx
 const App = () => {
