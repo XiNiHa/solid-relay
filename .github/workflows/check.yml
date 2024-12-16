@@ -20,5 +20,9 @@ jobs:
       - name: Build
         run: pnpm build
       - run: pnpm ci:test
+      - uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: XiNiHa/solid-relay
       - name: Publish using pkg.pr.new
         run: pnpm pkg-pr-new publish
