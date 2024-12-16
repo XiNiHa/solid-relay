@@ -3,3 +3,4 @@ dist/
 *.local
 __generated__/
 .pnpm-store/
+coverage/

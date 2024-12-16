@@ -1,0 +1,7 @@
+{
+	"src": ".",
+	"language": "typescript",
+	"schema": "./schema.graphql",
+	"eagerEsModules": true,
+	"exclude": ["**/node_modules/**", "**/__generated__/**"]
+}
