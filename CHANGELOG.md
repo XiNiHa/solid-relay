@@ -1,5 +1,12 @@
 # solid-relay
 
+## 1.0.0-beta.2
+
+### Patch Changes
+
+- 65eedeb: fix: throw error on DataProxy access if any
+- c5d0a1a: fix: respect fetchPolicy of `createLazyLoadQuery`
+
 ## 1.0.0-beta.1
 
 ### Patch Changes
