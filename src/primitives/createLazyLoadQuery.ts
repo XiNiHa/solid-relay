@@ -3,7 +3,6 @@ import {
 	type CacheConfig,
 	type Disposable,
 	type FetchPolicy,
-	type FetchQueryFetchPolicy,
 	type GraphQLResponse,
 	type GraphQLTaggedNode,
 	Observable,
@@ -53,7 +52,7 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 	gqlQuery: MaybeAccessor<GraphQLTaggedNode>,
 	variables: MaybeAccessor<VariablesOf<TQuery>>,
 	options?: {
-		fetchPolicy?: MaybeAccessor<FetchQueryFetchPolicy | undefined>;
+		fetchPolicy?: MaybeAccessor<FetchPolicy | undefined>;
 		networkCacheConfig?: MaybeAccessor<CacheConfig | undefined>;
 	},
 ): DataProxy<TQuery["response"]> {
@@ -74,6 +73,7 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 		query: operation,
 		fragment: () => getRequest(access(gqlQuery)).fragment,
 		fetchObservable,
+		fetchPolicy: () => access(options?.fetchPolicy),
 	});
 }
 
