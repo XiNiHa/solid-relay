@@ -27,9 +27,9 @@ import {
 import { createStore, reconcile } from "solid-js/store";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import { type QueryCacheEntry, getQueryCache } from "../queryCache";
+import { createMemoOperationDescriptor } from "../utils/createMemoOperationDescriptor";
 import { type DataProxy, makeDataProxy } from "../utils/dataProxy";
 import { getQueryRef } from "../utils/getQueryRef";
-import { createMemoOperationDescriptor } from "./createMemoOperationDescriptor";
 
 type QueryResult<T> =
 	| {

@@ -8,9 +8,9 @@ import {
 import invariant from "tiny-invariant";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import type { PreloadedQuery } from "../loadQuery";
+import { createMemoOperationDescriptor } from "../utils/createMemoOperationDescriptor";
 import type { DataProxy } from "../utils/dataProxy";
 import { createLazyLoadQueryInternal } from "./createLazyLoadQuery";
-import { createMemoOperationDescriptor } from "./createMemoOperationDescriptor";
 
 export function createPreloadedQuery<TQuery extends OperationType>(
 	query: GraphQLTaggedNode,

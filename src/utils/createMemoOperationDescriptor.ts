@@ -1,6 +1,6 @@
 import { access } from "@solid-primitives/utils";
 import type { MaybeAccessor } from "@solid-primitives/utils";
-import deepEqual from "deep-equal";
+import { dequal } from "dequal/lite";
 import {
 	type CacheConfig,
 	type GraphQLTaggedNode,
@@ -18,10 +18,10 @@ export function createMemoOperationDescriptor(
 	cacheConfig?: MaybeAccessor<CacheConfig | undefined>,
 ): Accessor<OperationDescriptor> {
 	const memoizedVariables = createMemo(() => access(variables), undefined, {
-		equals: deepEqual,
+		equals: dequal,
 	});
 	const memoizedCacheConfig = createMemo(() => access(cacheConfig), undefined, {
-		equals: deepEqual,
+		equals: dequal,
 	});
 	return createMemo(() =>
 		createOperationDescriptor(
