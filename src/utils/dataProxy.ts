@@ -31,6 +31,8 @@ export const makeDataProxy = <
 ): DataProxy<T> => {
 	const readData = () => {
 		void resource();
+		const error = Reflect.get(store, "error");
+		if (error) throw error;
 		return data ? data() : Reflect.get(store, "data");
 	};
 
