@@ -55,7 +55,7 @@
 		"happy-dom": "^15.11.7",
 		"pkg-pr-new": "^0.0.35",
 		"relay-compiler": "^18.2.0",
-		"relay-runtime": "^18.2.0",
+		"relay-runtime": "main",
 		"relay-test-utils": "^18.2.0",
 		"solid-js": "^1.9.3",
 		"typescript": "^5.7.2",

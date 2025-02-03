@@ -72,8 +72,8 @@ importers:
         specifier: ^18.2.0
         version: 18.2.0
       relay-runtime:
-        specifier: ^18.2.0
-        version: 18.2.0
+        specifier: main
+        version: 0.0.0-main-b6291f97
       relay-test-utils:
         specifier: ^18.2.0
         version: 18.2.0
@@ -124,8 +124,8 @@ importers:
         specifier: ^1.3.0
         version: 1.3.0(@types/node@22.10.1)
       relay-runtime:
-        specifier: ^18.2.0
-        version: 18.2.0
+        specifier: main
+        version: 0.0.0-main-b6291f97
       solid-js:
         specifier: ^1.9.3
         version: 1.9.3
@@ -3942,6 +3942,9 @@ packages:
   relay-compiler@18.2.0:
     resolution: {integrity: sha512-P3o5/Gv/oLC9hckUaz/a+KvDgbFERpjtz5lgsJSIQILg9paaF3k1yaX9qSxErGuU4icZvjoK5G82a/bfPgGZpA==}
     hasBin: true
+
+  relay-runtime@0.0.0-main-b6291f97:
+    resolution: {integrity: sha512-HNjQ+ruUsarP0rg3BcEdoPdbYP1mpQq5av8l/H7eNmPprAuAByU/2cyNIa6w/XMobIzr3yA6c1WrhZpIp8TK/Q==}
 
   relay-runtime@18.2.0:
     resolution: {integrity: sha512-r4FYWlx1dPwFW+KQnuF1ugwVKR4toIFduCGheEf2paRc6nEEcCIgd2p2Jx2gRF+4niO3mCbRZvqdCoKaznUDzg==}
@@ -9398,6 +9401,14 @@ snapshots:
       unist-util-visit: 5.0.0
 
   relay-compiler@18.2.0: {}
+
+  relay-runtime@0.0.0-main-b6291f97:
+    dependencies:
+      '@babel/runtime': 7.26.0
+      fbjs: 3.0.5
+      invariant: 2.2.4
+    transitivePeerDependencies:
+      - encoding
 
   relay-runtime@18.2.0:
     dependencies:
