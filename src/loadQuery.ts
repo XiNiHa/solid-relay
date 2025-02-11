@@ -197,17 +197,14 @@ export function loadQuery<TQuery extends OperationType>(
 			`Relay: \`loadQuery\` requires that preloadable query \`${params.name}\` has a persisted query id`,
 		);
 
-		const preloadableQueryRegistry =
-			// @ts-expect-error - Broken DT types, fix on https://github.com/DefinitelyTyped/DefinitelyTyped/pull/71341
-			PreloadableQueryRegistry as PreloadableQueryRegistry;
-		const module = preloadableQueryRegistry.get(queryId);
+		const module = PreloadableQueryRegistry.get(queryId);
 
 		if (module != null) {
 			checkAvailabilityAndExecute(module);
 		} else {
 			const networkObservable =
 				fetchPolicy === "store-only" ? null : makeNetworkRequest(params);
-			cancelOnLoadCallback = preloadableQueryRegistry.onLoad(
+			cancelOnLoadCallback = PreloadableQueryRegistry.onLoad(
 				queryId,
 				(preloadedModule) => {
 					cancelOnLoadCallback();
