@@ -23,6 +23,7 @@
 			"__generated__",
 			"*.graphql",
 			".vinxi",
+			".output",
 			"doc_build",
 			"docs/api",
 			"coverage"
