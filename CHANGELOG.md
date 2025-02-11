@@ -1,5 +1,12 @@
 # solid-relay
 
+## 1.0.0-beta.3
+
+### Patch Changes
+
+- 17975ef: chore: replace deep-equal with dequal
+- 8292d3d: chore: bump dependencies
+
 ## 1.0.0-beta.2
 
 ### Patch Changes
