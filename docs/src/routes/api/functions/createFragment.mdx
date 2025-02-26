@@ -1,0 +1,53 @@
+# Function: createFragment()
+
+## Call Signature
+
+> **createFragment**\<`TKey`\>(`fragment`, `key`): `DataProxy`\<`KeyTypeData`\<`TKey`\>\>
+
+Defined in: dist/primitives/createFragment.d.ts:5
+
+### Type Parameters
+
+#### TKey
+
+`TKey` *extends* `Readonly`\<\{ ` $data`: `unknown`; ` $fragmentSpreads`: `unknown`; \}\>
+
+### Parameters
+
+#### fragment
+
+`GraphQLTaggedNode`
+
+#### key
+
+`Accessor`\<`TKey`\>
+
+### Returns
+
+`DataProxy`\<`KeyTypeData`\<`TKey`\>\>
+
+## Call Signature
+
+> **createFragment**\<`TKey`\>(`fragment`, `key`): `DataProxy`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`\>\>
+
+Defined in: dist/primitives/createFragment.d.ts:6
+
+### Type Parameters
+
+#### TKey
+
+`TKey` *extends* `Readonly`\<\{ ` $data`: `unknown`; ` $fragmentSpreads`: `unknown`; \}\>
+
+### Parameters
+
+#### fragment
+
+`GraphQLTaggedNode`
+
+#### key
+
+`Accessor`\<`undefined` \| `null` \| `TKey`\>
+
+### Returns
+
+`DataProxy`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`\>\>
