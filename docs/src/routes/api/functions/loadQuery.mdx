@@ -1,0 +1,33 @@
+# Function: loadQuery()
+
+> **loadQuery**\<`TQuery`\>(`environment`, `preloadableRequest`, `variables`, `options?`): [`PreloadedQuery`](../interfaces/PreloadedQuery.mdx)\<`TQuery`\>
+
+Defined in: dist/index.d.ts:110
+
+## Type Parameters
+
+### TQuery
+
+`TQuery` *extends* `OperationType`
+
+## Parameters
+
+### environment
+
+`Environment`
+
+### preloadableRequest
+
+`GraphQLTaggedNode` | `PreloadableConcreteRequest`\<`TQuery`\>
+
+### variables
+
+`VariablesOf`\<`TQuery`\>
+
+### options?
+
+`Readonly`\<\{ `fetchPolicy?`: `null` \| `FetchPolicy`; `networkCacheConfig?`: `null` \| `CacheConfig`; `onQueryAstLoadTimeout?`: `null` \| () => `void`; \}\>
+
+## Returns
+
+[`PreloadedQuery`](../interfaces/PreloadedQuery.mdx)\<`TQuery`\>

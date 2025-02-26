@@ -1,0 +1,10 @@
+{
+	"entryPoints": ["src/index.ts"],
+	"plugin": ["typedoc-plugin-markdown", "./typedoc-rewrite-links.js"],
+	"out": "./src/routes/api",
+	"readme": "none",
+	"entryFileName": "index",
+	"fileExtension": ".mdx",
+	"hidePageHeader": true,
+	"hideBreadcrumbs": true
+}

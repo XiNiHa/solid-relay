@@ -1,0 +1,25 @@
+# Function: createSubscription()
+
+> **createSubscription**\<`TSubscriptionPayload`\>(`config`, `requestSubscriptionFn?`): `void`
+
+Defined in: dist/index.d.ts:125
+
+## Type Parameters
+
+### TSubscriptionPayload
+
+`TSubscriptionPayload` *extends* `OperationType`
+
+## Parameters
+
+### config
+
+`MaybeAccessor`\<`GraphQLSubscriptionConfig`\<`TSubscriptionPayload`\>\>
+
+### requestSubscriptionFn?
+
+\<`TSubscription`\>(`environment`, `config`) => `Disposable`
+
+## Returns
+
+`void`

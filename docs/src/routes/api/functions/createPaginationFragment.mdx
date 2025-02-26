@@ -1,0 +1,61 @@
+# Function: createPaginationFragment()
+
+## Call Signature
+
+> **createPaginationFragment**\<`TQuery`, `TKey`\>(`fragment`, `key`): `CreatePaginationFragmentReturn`\<`TQuery`, `TKey`, `KeyTypeData`\<`TKey`, `unknown`\>\>
+
+Defined in: dist/index.d.ts:79
+
+### Type Parameters
+
+#### TQuery
+
+`TQuery` *extends* `OperationType`
+
+#### TKey
+
+`TKey` *extends* `Readonly`\<\{ ` $data?`: `unknown`; ` $fragmentSpreads`: `unknown`; \}\>
+
+### Parameters
+
+#### fragment
+
+`GraphQLTaggedNode`
+
+#### key
+
+`Accessor`\<`TKey`\>
+
+### Returns
+
+`CreatePaginationFragmentReturn`\<`TQuery`, `TKey`, `KeyTypeData`\<`TKey`, `unknown`\>\>
+
+## Call Signature
+
+> **createPaginationFragment**\<`TQuery`, `TKey`\>(`fragment`, `key`): `CreatePaginationFragmentReturn`\<`TQuery`, `null` \| `TKey`, `undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>
+
+Defined in: dist/index.d.ts:80
+
+### Type Parameters
+
+#### TQuery
+
+`TQuery` *extends* `OperationType`
+
+#### TKey
+
+`TKey` *extends* `Readonly`\<\{ ` $data?`: `unknown`; ` $fragmentSpreads`: `unknown`; \}\>
+
+### Parameters
+
+#### fragment
+
+`GraphQLTaggedNode`
+
+#### key
+
+`Accessor`\<`undefined` \| `null` \| `TKey`\>
+
+### Returns
+
+`CreatePaginationFragmentReturn`\<`TQuery`, `null` \| `TKey`, `undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>
