@@ -1,17 +1,30 @@
 {
 	"name": "solid-relay-docs",
+	"type": "module",
 	"private": true,
 	"scripts": {
-		"dev": "rspress dev",
-		"build": "rspress build",
-		"preview": "rspress preview"
+		"dev": "vinxi dev",
+		"build": "typedoc && vinxi build",
+		"preview": "vinxi preview"
 	},
 	"dependencies": {
-		"rspress": "^1.44.0"
+		"@fontsource-variable/inter": "^5.2.5",
+		"@fontsource-variable/jetbrains-mono": "^5.2.5",
+		"@fontsource-variable/lexend": "^5.2.7",
+		"@kobalte/solidbase": "^0.2.11",
+		"@solidjs/meta": "^0.29.4",
+		"@solidjs/router": "^0.15.3",
+		"@solidjs/start": "^1.1.4",
+		"@vinxi/plugin-mdx": "^3.7.2",
+		"solid-js": "^1.9.7",
+		"solid-mdx": "^0.0.7",
+		"vinxi": "^0.5.6"
 	},
 	"devDependencies": {
-		"@rspress/plugin-typedoc": "^1.44.0",
+		"@iconify-json/ri": "^1.2.5",
 		"@types/node": "^22.15.21",
-		"solid-relay": "workspace:^"
+		"solid-relay": "workspace:^",
+		"typedoc": "^0.28.4",
+		"typedoc-plugin-markdown": "^4.6.3"
 	}
 }

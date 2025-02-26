@@ -1,0 +1,109 @@
+# Interface: PreloadedQuery\<TQuery\>
+
+Defined in: dist/index.d.ts:93
+
+## Extends
+
+- `Readonly`\<\{ `controls?`: `OpaqueReference`\<\{ `dispose`: `DisposeFn`; `environment`: `IEnvironment`; `getNetworkError`: () => `Error` \| `null`; `isDisposed`: () => `boolean`; `releaseQuery`: () => `void`; `source`: `Observable`\<`GraphQLResponse`\> \| `undefined`; \}\>; `fetchKey`: `string` \| `number`; `fetchPolicy`: `FetchPolicy`; `id?`: `string` \| `null`; `kind`: `"PreloadedQuery"`; `name`: `string`; `networkCacheConfig?`: `CacheConfig` \| `null`; `variables`: `VariablesOf`\<`TQuery`\>; \}\>
+
+## Type Parameters
+
+### TQuery
+
+`TQuery` *extends* `OperationType`
+
+## Properties
+
+### controls?
+
+> `readonly` `optional` **controls**: `OpaqueReference`\<\{ `dispose`: `DisposeFn`; `environment`: `Environment`; `getNetworkError`: () => `null` \| `Error`; `isDisposed`: () => `boolean`; `releaseQuery`: () => `void`; `source`: `undefined` \| `RelayObservable`\<`GraphQLResponse`\>; \}, `undefined`\>
+
+Defined in: dist/index.d.ts:101
+
+#### Inherited from
+
+`Readonly.controls`
+
+***
+
+### fetchKey
+
+> `readonly` **fetchKey**: `string` \| `number`
+
+Defined in: dist/index.d.ts:98
+
+#### Inherited from
+
+`Readonly.fetchKey`
+
+***
+
+### fetchPolicy
+
+> `readonly` **fetchPolicy**: `FetchPolicy`
+
+Defined in: dist/index.d.ts:99
+
+#### Inherited from
+
+`Readonly.fetchPolicy`
+
+***
+
+### id?
+
+> `readonly` `optional` **id**: `null` \| `string`
+
+Defined in: dist/index.d.ts:95
+
+#### Inherited from
+
+`Readonly.id`
+
+***
+
+### kind
+
+> `readonly` **kind**: `"PreloadedQuery"`
+
+Defined in: dist/index.d.ts:94
+
+#### Inherited from
+
+`Readonly.kind`
+
+***
+
+### name
+
+> `readonly` **name**: `string`
+
+Defined in: dist/index.d.ts:96
+
+#### Inherited from
+
+`Readonly.name`
+
+***
+
+### networkCacheConfig?
+
+> `readonly` `optional` **networkCacheConfig**: `null` \| `CacheConfig`
+
+Defined in: dist/index.d.ts:100
+
+#### Inherited from
+
+`Readonly.networkCacheConfig`
+
+***
+
+### variables
+
+> `readonly` **variables**: `VariablesOf`\<`TQuery`\>
+
+Defined in: dist/index.d.ts:97
+
+#### Inherited from
+
+`Readonly.variables`

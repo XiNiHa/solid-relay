@@ -1,0 +1,25 @@
+# Function: createQueryLoader()
+
+> **createQueryLoader**\<`TQuery`\>(`preloadableRequest`, `initialQueryReference?`): \[`Accessor`\<`undefined` \| `null` \| [`PreloadedQuery`](../interfaces/PreloadedQuery.mdx)\<`TQuery`\>\>, (`variables`, `options?`) => `void`, `DisposeFn`\]
+
+Defined in: dist/index.d.ts:119
+
+## Type Parameters
+
+### TQuery
+
+`TQuery` *extends* `OperationType`
+
+## Parameters
+
+### preloadableRequest
+
+`GraphQLTaggedNode` | `PreloadableConcreteRequest`\<`TQuery`\>
+
+### initialQueryReference?
+
+`null` | [`PreloadedQuery`](../interfaces/PreloadedQuery.mdx)\<`TQuery`\>
+
+## Returns
+
+\[`Accessor`\<`undefined` \| `null` \| [`PreloadedQuery`](../interfaces/PreloadedQuery.mdx)\<`TQuery`\>\>, (`variables`, `options?`) => `void`, `DisposeFn`\]

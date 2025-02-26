@@ -1,0 +1,61 @@
+# Function: createRefetchableFragment()
+
+## Call Signature
+
+> **createRefetchableFragment**\<`TQuery`, `TKey`\>(`fragment`, `key`): \[`DataProxy`\<`KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
+
+Defined in: dist/index.d.ts:62
+
+### Type Parameters
+
+#### TQuery
+
+`TQuery` *extends* `OperationType`
+
+#### TKey
+
+`TKey` *extends* `Readonly`\<\{ ` $data?`: `unknown`; ` $fragmentSpreads`: `unknown`; \}\>
+
+### Parameters
+
+#### fragment
+
+`GraphQLTaggedNode`
+
+#### key
+
+`Accessor`\<`TKey`\>
+
+### Returns
+
+\[`DataProxy`\<`KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
+
+## Call Signature
+
+> **createRefetchableFragment**\<`TQuery`, `TKey`\>(`fragment`, `key`): \[`DataProxy`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
+
+Defined in: dist/index.d.ts:63
+
+### Type Parameters
+
+#### TQuery
+
+`TQuery` *extends* `OperationType`
+
+#### TKey
+
+`TKey` *extends* `Readonly`\<\{ ` $data?`: `unknown`; ` $fragmentSpreads`: `unknown`; \}\>
+
+### Parameters
+
+#### fragment
+
+`GraphQLTaggedNode`
+
+#### key
+
+`Accessor`\<`undefined` \| `null` \| `TKey`\>
+
+### Returns
+
+\[`DataProxy`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
