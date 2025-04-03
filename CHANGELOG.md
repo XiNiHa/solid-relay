@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.5
+
+### Patch Changes
+
+- 3cd5a7e: fix: hydrate correctly on loader suspend
+
 ## 1.0.0-beta.4
 
 ### Patch Changes
