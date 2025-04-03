@@ -34,6 +34,7 @@ export function createPreloadedQuery<TQuery extends OperationType>(
 		query: operation,
 		fragment: () => getRequest(query).fragment,
 		fetchKey: () => maybePreloaded.latest?.fetchKey,
+		fetchPolicy: () => maybePreloaded.latest?.fetchPolicy,
 		fetchObservable: () => {
 			const preloaded = maybePreloaded.latest;
 			if (!preloaded) return;
