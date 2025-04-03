@@ -31,7 +31,7 @@ export function RelayEnvironmentProvider(props: Props) {
 	});
 }
 
-export const useRelayEnvironment = () => {
+export function useRelayEnvironment() {
 	const context = useContext(RelayContext);
 
 	invariant(
@@ -45,4 +45,4 @@ export const useRelayEnvironment = () => {
 	);
 
 	return context.environment;
-};
+}
