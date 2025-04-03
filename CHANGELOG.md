@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.6
+
+### Patch Changes
+
+- cafa7e1: chore: make useRelayEnvironment as a normal function
+
 ## 1.0.0-beta.5
 
 ### Patch Changes
