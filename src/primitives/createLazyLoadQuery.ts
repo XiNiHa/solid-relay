@@ -129,60 +129,62 @@ export function createLazyLoadQueryInternal<
 			}
 		})();
 
+		const replaySubject = new ReplaySubject<GraphQLResponse>();
+		let subscriptionTarget = shouldFetch
+			? environment().executeWithSource({
+					operation,
+					source: __internal.fetchQueryDeduped(
+						environment(),
+						operation.request.identifier,
+						() => Observable.create((sink) => replaySubject.subscribe(sink)),
+					),
+				})
+			: undefined;
+		const [resource] = createResource(
+			() => shouldFetch && params.fetchObservable(),
+			async (observable) => {
+				subscriptionTarget = observable;
+				const stream = new ReadableStream<GraphQLResponse>({
+					start(controller) {
+						observable.subscribe({
+							next(response) {
+								controller.enqueue(response);
+							},
+							error(error: unknown) {
+								controller.error(error);
+							},
+							complete() {
+								controller.close();
+							},
+						});
+					},
+				});
+				await observable.toPromise();
+				return stream;
+			},
+			{
+				onHydrated(operation, { value }) {
+					if (!operation || !value) return;
+
+					(async () => {
+						try {
+							for await (const response of value.values()) {
+								replaySubject.next(response);
+							}
+							replaySubject.complete();
+						} catch (error) {
+							replaySubject.error(
+								error instanceof Error ? error : new Error(String(error)),
+							);
+						}
+					})();
+				},
+			},
+		);
+
 		let entry: QueryCacheEntry = false;
 		if (shouldFetch) {
-			const replaySubject = new ReplaySubject<GraphQLResponse>();
-			let subscriptionTarget = environment().executeWithSource({
-				operation,
-				source: __internal.fetchQueryDeduped(
-					environment(),
-					operation.request.identifier,
-					() => Observable.create((sink) => replaySubject.subscribe(sink)),
-				),
-			});
-			const [resource] = createResource(
-				params.fetchObservable,
-				async (observable) => {
-					subscriptionTarget = observable;
-					const stream = new ReadableStream<GraphQLResponse>({
-						start(controller) {
-							observable.subscribe({
-								next(response) {
-									controller.enqueue(response);
-								},
-								error(error: unknown) {
-									controller.error(error);
-								},
-								complete() {
-									controller.close();
-								},
-							});
-						},
-					});
-					await observable.toPromise();
-					return stream;
-				},
-				{
-					onHydrated(operation, { value }) {
-						if (!operation || !value) return;
-
-						(async () => {
-							try {
-								for await (const response of value.values()) {
-									replaySubject.next(response);
-								}
-								replaySubject.complete();
-							} catch (error) {
-								replaySubject.error(
-									error instanceof Error ? error : new Error(String(error)),
-								);
-							}
-						})();
-					},
-				},
-			);
-
-			const subscription = subscriptionTarget.subscribe({});
+			const subscription = subscriptionTarget?.subscribe({});
 			let retainCount = 0;
 			let retention: Disposable | undefined;
 			entry = {
@@ -197,7 +199,7 @@ export function createLazyLoadQueryInternal<
 							retainCount = Math.max(retainCount - 1, 0);
 							if (retainCount === 0) {
 								retention?.dispose();
-								if (isLiveQuery()) subscription.unsubscribe();
+								if (isLiveQuery()) subscription?.unsubscribe();
 								cache.delete(cacheKey());
 							}
 						},
