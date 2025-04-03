@@ -1,5 +1,13 @@
 # solid-relay
 
+## 1.0.0-beta.4
+
+### Patch Changes
+
+- 95dbcba: fix: support preloaded queries wrapped in promise
+- 119daf0: chore: use bundleless mode for production build
+- b3c8837: fix: respect fetchPolicy in preloaded queries
+
 ## 1.0.0-beta.3
 
 ### Patch Changes
