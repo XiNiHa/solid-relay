@@ -4,11 +4,13 @@ export default defineConfig({
 	lib: [
 		{
 			format: "esm",
+			bundle: false,
 			autoExternal: false,
 			dts: true,
 		},
 		{
 			format: "cjs",
+			bundle: false,
 			autoExternal: false,
 		},
 	],
