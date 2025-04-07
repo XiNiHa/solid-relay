@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`createLazyLoadQuery SSR > renders 1`] = `
+[
+  "<!--!$e000010--><template id="pl-0000100"></template>Fallback<!--pl-0000100--><!--!$/e000010--><script>self.$R=self.$R||[];_$HY.r["00000"]=$R[0]=($R[1]=(s,f,p)=>((p=new Promise((a,b)=>{s=a,f=b})).s=s,p.f=f,p))();_$HY.r["0000100"]=$R[2]=$R[1]();</script>",
+  "<template id="0000100"><h1 data-hk=00001000 data-testid="name">Alice</h1></template>",
+  "<script>$df("0000100");function $df(e,n,o,t){if(n=document.getElementById(e),o=document.getElementById("pl-"+e)){for(;o&&8!==o.nodeType&&o.nodeValue!=="pl-"+e;)t=o.nextSibling,o.remove(),o=t;_$HY.done?o.remove():o.replaceWith(n.content)}n.remove(),_$HY.fe(e)};($R[7]=(p,d)=>{p.s(d),p.status="success",p.value=d;delete p.s;delete p.f})($R[0],$R[3]=($R[4]=d=>new ReadableStream({start:c=>{d.on({next:v=>{c.enqueue(v)},throw:v=>{c.error(v)},return:()=>{c.close()}})}}))($R[5]=($R[6]=(b,a,s,l,p,f,e,n)=>(b=[],a=!0,s=!1,l=[],p=0,f=(v,m,x)=>{for(x=0;x<p;x++)l[x]&&l[x][m](v)},n=(o,x,z,c)=>{for(x=0,z=b.length;x<z;x++)(c=b[x],(!a&&x===z-1)?o[s?"return":"throw"](c):o.next(c))},e=(o,t)=>(a&&(l[t=p++]=o),n(o),()=>{a&&(l[t]=void 0)}),{__SEROVAL_STREAM__:!0,on:o=>e(o),next:v=>{a&&(b.push(v),f(v,"next"))},throw:v=>{a&&(b.push(v),f(v,"throw"),a=s=!1,l.length=0)},return:v=>{a&&(b.push(v),f(v,"return"),a=!1,s=!0,l.length=0)}}))()));$R[7]($R[2],!0);$R[5].next($R[8]={data:$R[9]={node:$R[10]={__typename:"User",id:"1",name:"Alice"}}});$R[5].return(void 0);</script>",
+]
+`;
