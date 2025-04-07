@@ -1,0 +1,9 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"composite": true,
+		"types": ["vitest/globals", "@vitest/browser/providers/playwright"]
+	},
+	"include": ["tests", "vitest.config.ts", "vitest.setup.ts"],
+	"exclude": ["**/*.test.ssr.tsx"]
+}

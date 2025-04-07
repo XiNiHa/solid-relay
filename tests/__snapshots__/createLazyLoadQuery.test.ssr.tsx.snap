@@ -1,0 +1,108 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`createLazyLoadQuery SSR > renders 1`] = `
+[
+  "<!--!$e000010--><template id="pl-0000100"></template>Fallback<!--pl-0000100--><!--!$/e000010--><script>self.$R=self.$R||[];_$HY.r["00000"]=$R[0]=($R[1]=($R[2]=() => {
+  const resolver = {
+    p: 0,
+    s: 0,
+    f: 0
+  };
+  resolver.p = new Promise((resolve, reject) => {
+    resolver.s = resolve;
+    resolver.f = reject;
+  });
+  return resolver;
+})()).p;_$HY.r["0000100"]=$R[3]=($R[4]=$R[2]()).p;</script>",
+  "<template id="0000100"><h1 data-hk="00001000" data-testid="name">Alice</h1></template>",
+  "<script>$df("0000100");function $df(e,n,o,t){if(n=document.getElementById(e),o=document.getElementById("pl-"+e)){for(;o&&8!==o.nodeType&&o.nodeValue!=="pl-"+e;)t=o.nextSibling,o.remove(),o=t;_$HY.done?o.remove():o.replaceWith(n.content)}n.remove(),_$HY.fe(e)};($R[9]=(resolver, data) => {
+  resolver.s(data);
+  resolver.p.s = 1;
+  resolver.p.v = data;
+})($R[1],$R[5]=($R[6]=(stream) => new ReadableStream({
+  start: (controller) => {
+    stream.on({
+      next: (value) => {
+        try {
+          controller.enqueue(value);
+        } catch (_error) {
+        }
+      },
+      throw: (value) => {
+        controller.error(value);
+      },
+      return: () => {
+        try {
+          controller.close();
+        } catch (_error) {
+        }
+      }
+    });
+  }
+}))($R[7]=($R[8]=() => {
+  const buffer = [];
+  const listeners = [];
+  let alive = true;
+  let success = false;
+  let count = 0;
+  const flush = (value, mode, x) => {
+    for (x = 0; x < count; x++) {
+      if (listeners[x]) {
+        listeners[x][mode](value);
+      }
+    }
+  };
+  const up = (listener, x, z, current) => {
+    for (x = 0, z = buffer.length; x < z; x++) {
+      current = buffer[x];
+      if (!alive && x === z - 1) {
+        listener[success ? "return" : "throw"](current);
+      } else {
+        listener.next(current);
+      }
+    }
+  };
+  const on = (listener, temp) => {
+    if (alive) {
+      temp = count++;
+      listeners[temp] = listener;
+    }
+    up(listener);
+    return () => {
+      if (alive) {
+        listeners[temp] = listeners[count];
+        listeners[count--] = void 0;
+      }
+    };
+  };
+  return {
+    __SEROVAL_STREAM__: true,
+    on: (listener) => on(listener),
+    next: (value) => {
+      if (alive) {
+        buffer.push(value);
+        flush(value, "next");
+      }
+    },
+    throw: (value) => {
+      if (alive) {
+        buffer.push(value);
+        flush(value, "throw");
+        alive = false;
+        success = false;
+        listeners.length = 0;
+      }
+    },
+    return: (value) => {
+      if (alive) {
+        buffer.push(value);
+        flush(value, "return");
+        alive = false;
+        success = true;
+        listeners.length = 0;
+      }
+    }
+  };
+})()));$R[9]($R[4],!0);$R[7].next($R[10]={data:$R[11]={node:$R[12]={__typename:"User",id:"1",name:"Alice"}}});$R[7].return(void 0);</script>",
+]
+`;
