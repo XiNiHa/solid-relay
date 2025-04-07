@@ -1,4 +1,3 @@
-import { render } from "@solidjs/testing-library";
 import {
 	type ConcreteRequest,
 	createOperationDescriptor,
@@ -11,7 +10,9 @@ import {
 import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
 import { ErrorBoundary, type JSXElement, Suspense } from "solid-js";
 import { createLazyLoadQuery, RelayEnvironmentProvider } from "solid-relay";
+import { page } from "vitest/browser";
 import type { createLazyLoadQueryTestQuery } from "./__generated__/createLazyLoadQueryTestQuery.graphql";
+import { renderToBody, wait } from "./utils";
 
 let environment: MockEnvironment;
 const View = (props: { children: JSXElement }) => (
@@ -19,12 +20,6 @@ const View = (props: { children: JSXElement }) => (
 		{props.children}
 	</RelayEnvironmentProvider>
 );
-
-async function wait(times: number) {
-	if (times <= 0) return;
-	await Promise.resolve();
-	return await wait(times - 1);
-}
 
 describe("createLazyLoadQuery", () => {
 	const gqlQuery = graphql`
@@ -65,33 +60,33 @@ describe("createLazyLoadQuery", () => {
 	});
 
 	describe("fetchPolicy: store-or-network", () => {
-		const renderScreen = () =>
-			render(() => (
+		const render = () =>
+			renderToBody(() => (
 				<View>
 					<Comp gqlQuery={gqlQuery} fetchPolicy="store-or-network" />
 				</View>
 			));
 
 		it("fetches and renders the query data", async () => {
-			const screen = renderScreen();
-			expect(screen.getByText("Fallback")).toBeInTheDocument();
+			render();
+			await expect.element(page.getByText("Fallback")).toBeInTheDocument();
 			environment.mock.resolve(gqlQuery, {
 				data: { node: { __typename: "User", id: "1", name: "Alice" } },
 			});
 			await wait(2);
-			expect(screen.getByText("Alice")).toBeInTheDocument();
-			expect(screen.queryByText("Fallback")).not.toBeInTheDocument();
+			await expect.element(page.getByText("Alice")).toBeInTheDocument();
+			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
 		});
 
 		it("still renders when the data is partially missing", async () => {
-			const screen = renderScreen();
-			expect(screen.getByText("Fallback")).toBeInTheDocument();
+			render();
+			await expect.element(page.getByText("Fallback")).toBeInTheDocument();
 			environment.mock.resolve(gqlQuery, {
 				data: { node: { __typename: "User", id: "1", name: null } },
 			});
 			await wait(2);
-			expect(screen.getByTestId("name")).toBeEmptyDOMElement();
-			expect(screen.queryByText("Fallback")).not.toBeInTheDocument();
+			await expect.element(page.getByTestId("name")).toBeEmptyDOMElement();
+			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
 		});
 
 		it("returns without suspending if the data is present", async () => {
@@ -99,40 +94,42 @@ describe("createLazyLoadQuery", () => {
 				node: { __typename: "User", id: "1", name: "Alice" },
 			});
 
-			const screen = renderScreen();
-			expect(screen.getByText("Alice")).toBeInTheDocument();
-			expect(screen.queryByText("Fallback")).not.toBeInTheDocument();
+			render();
+			await expect.element(page.getByText("Alice")).toBeInTheDocument();
+			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
 		});
 
 		it("throws on network error and gets caught by ErrorBoundary", async () => {
-			const screen = renderScreen();
-			expect(screen.getByText("Fallback")).toBeInTheDocument();
+			render();
+			await expect.element(page.getByText("Fallback")).toBeInTheDocument();
 
 			environment.mock.reject(gqlQuery, new Error("Network error"));
 			await wait(2);
-			expect(screen.getByTestId("error")).toHaveTextContent("Network error");
-			expect(screen.queryByText("name")).not.toBeInTheDocument();
-			expect(screen.queryByText("Fallback")).not.toBeInTheDocument();
+			await expect
+				.element(page.getByTestId("error"))
+				.toHaveTextContent("Network error");
+			await expect.element(page.getByText("name")).not.toBeInTheDocument();
+			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
 		});
 
 		it("ignores field error and render null", async () => {
-			const screen = renderScreen();
-			expect(screen.getByText("Fallback")).toBeInTheDocument();
+			render();
+			await expect.element(page.getByText("Fallback")).toBeInTheDocument();
 
 			environment.mock.resolve(gqlQuery, {
 				data: { node: null },
 				errors: [{ message: "Field error", path: ["node"] }],
 			});
 			await wait(2);
-			expect(screen.getByTestId("name")).toBeEmptyDOMElement();
-			expect(screen.queryByTestId("error")).not.toBeInTheDocument();
-			expect(screen.queryByText("Fallback")).not.toBeInTheDocument();
+			await expect.element(page.getByTestId("name")).toBeEmptyDOMElement();
+			await expect.element(page.getByTestId("error")).not.toBeInTheDocument();
+			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
 		});
 	});
 
 	describe("fetchPolicy: store-only", async () => {
-		const renderScreen = () =>
-			render(() => (
+		const render = () =>
+			renderToBody(() => (
 				<View>
 					<Comp gqlQuery={gqlQuery} fetchPolicy="store-only" />
 				</View>
@@ -142,30 +139,30 @@ describe("createLazyLoadQuery", () => {
 			environment.commitPayload(query, {
 				node: { id: "1", __typename: "User", name: "Alice" },
 			});
-			const screen = renderScreen();
-			expect(screen.queryByText("Fallback")).not.toBeInTheDocument();
-			expect(screen.getByTestId("name")).toHaveTextContent("Alice");
+			render();
+			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
+			await expect.element(page.getByTestId("name")).toHaveTextContent("Alice");
 		});
 
 		it("doesn't trigger fetch even on no data", async () => {
-			const screen = renderScreen();
+			render();
 			expect(environment.mock.isLoading(query, {})).toBe(false);
-			expect(screen.queryByText("Fallback")).not.toBeInTheDocument();
-			expect(screen.getByTestId("name")).toBeEmptyDOMElement();
+			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
+			await expect.element(page.getByTestId("name")).toBeEmptyDOMElement();
 		});
 
 		it("updates correctly even had no data initially", async () => {
-			const screen = renderScreen();
+			render();
 			expect(environment.mock.isLoading(query, {})).toBe(false);
-			expect(screen.queryByText("Fallback")).not.toBeInTheDocument();
-			expect(screen.getByTestId("name")).toBeEmptyDOMElement();
+			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
+			await expect.element(page.getByTestId("name")).toBeEmptyDOMElement();
 
 			environment.commitPayload(query, {
 				node: { id: "1", __typename: "User", name: "Alice" },
 			});
 			await wait(2);
-			expect(screen.queryByText("Fallback")).not.toBeInTheDocument();
-			expect(screen.getByTestId("name")).toHaveTextContent("Alice");
+			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
+			await expect.element(page.getByTestId("name")).toHaveTextContent("Alice");
 		});
 	});
 
@@ -181,35 +178,35 @@ describe("createLazyLoadQuery", () => {
 			}
 		` as GraphQLTaggedNode & ConcreteRequest;
 		const renderScreen = (fetchPolicy: FetchPolicy = "store-or-network") =>
-			render(() => (
+			renderToBody(() => (
 				<View>
 					<Comp gqlQuery={gqlQuery} fetchPolicy={fetchPolicy} />
 				</View>
 			));
 
 		it("throws on field error and gets caught by ErrorBoundary", async () => {
-			const screen = renderScreen();
-			expect(screen.getByText("Fallback")).toBeInTheDocument();
+			renderScreen();
+			await expect.element(page.getByText("Fallback")).toBeInTheDocument();
 
 			environment.mock.resolve(gqlQuery, {
 				data: { node: null },
 				errors: [{ message: "Field error", path: ["node"] }],
 			});
 			await wait(2);
-			expect(screen.getByTestId("error").textContent).toMatch(
-				"Unexpected response payload",
-			);
-			expect(screen.queryByText("name")).not.toBeInTheDocument();
-			expect(screen.queryByText("Fallback")).not.toBeInTheDocument();
+			await expect
+				.element(page.getByTestId("error"))
+				.toHaveTextContent("Unexpected response payload");
+			await expect.element(page.getByText("name")).not.toBeInTheDocument();
+			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
 		});
 
 		it("throws on missing data and gets caught by ErrorBoundary", async () => {
-			const screen = renderScreen("store-only");
-			expect(screen.getByTestId("error").textContent).toMatch(
-				"Missing expected data",
-			);
-			expect(screen.queryByText("name")).not.toBeInTheDocument();
-			expect(screen.queryByText("Fallback")).not.toBeInTheDocument();
+			renderScreen("store-only");
+			await expect
+				.element(page.getByTestId("error"))
+				.toHaveTextContent("Missing expected data");
+			await expect.element(page.getByText("name")).not.toBeInTheDocument();
+			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
 		});
 	});
 });
