@@ -1,0 +1,35 @@
+# Function: createLazyLoadQuery()
+
+> **createLazyLoadQuery**\<`TQuery`\>(`gqlQuery`, `variables`, `options`?): `DataProxy`\<`TQuery`\[`"response"`\]\>
+
+Defined in: dist/primitives/createLazyLoadQuery.d.ts:5
+
+## Type Parameters
+
+### TQuery
+
+`TQuery` *extends* `OperationType`
+
+## Parameters
+
+### gqlQuery
+
+`MaybeAccessor`\<`GraphQLTaggedNode`\>
+
+### variables
+
+`MaybeAccessor`\<`VariablesOf`\<`TQuery`\>\>
+
+### options?
+
+#### fetchPolicy?
+
+`MaybeAccessor`\<`undefined` \| `FetchPolicy`\>
+
+#### networkCacheConfig?
+
+`MaybeAccessor`\<`undefined` \| `CacheConfig`\>
+
+## Returns
+
+`DataProxy`\<`TQuery`\[`"response"`\]\>

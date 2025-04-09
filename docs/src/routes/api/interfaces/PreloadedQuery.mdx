@@ -1,0 +1,109 @@
+# Interface: PreloadedQuery\<TQuery\>
+
+Defined in: dist/loadQuery.d.ts:9
+
+## Extends
+
+- `Readonly`\<\{ `controls`: `OpaqueReference`\<\{ `dispose`: `DisposeFn`; `environment`: `IEnvironment`; `getNetworkError`: () => `Error` \| `null`; `isDisposed`: () => `boolean`; `releaseQuery`: () => `void`; `source`: `Observable`\<`GraphQLResponse`\> \| `undefined`; \}\>; `fetchKey`: `string` \| `number`; `fetchPolicy`: `FetchPolicy`; `id`: `string` \| `null`; `kind`: `"PreloadedQuery"`; `name`: `string`; `networkCacheConfig`: `CacheConfig` \| `null`; `variables`: `VariablesOf`\<`TQuery`\>; \}\>
+
+## Type Parameters
+
+### TQuery
+
+`TQuery` *extends* `OperationType`
+
+## Properties
+
+### controls?
+
+> `readonly` `optional` **controls**: `OpaqueReference`\<\{ `dispose`: `DisposeFn`; `environment`: `Environment`; `getNetworkError`: () => `null` \| `Error`; `isDisposed`: () => `boolean`; `releaseQuery`: () => `void`; `source`: `undefined` \| `RelayObservable`\<`GraphQLResponse`\>; \}, `undefined`\>
+
+Defined in: dist/loadQuery.d.ts:17
+
+#### Inherited from
+
+`Readonly.controls`
+
+***
+
+### fetchKey
+
+> `readonly` **fetchKey**: `string` \| `number`
+
+Defined in: dist/loadQuery.d.ts:14
+
+#### Inherited from
+
+`Readonly.fetchKey`
+
+***
+
+### fetchPolicy
+
+> `readonly` **fetchPolicy**: `FetchPolicy`
+
+Defined in: dist/loadQuery.d.ts:15
+
+#### Inherited from
+
+`Readonly.fetchPolicy`
+
+***
+
+### id?
+
+> `readonly` `optional` **id**: `null` \| `string`
+
+Defined in: dist/loadQuery.d.ts:11
+
+#### Inherited from
+
+`Readonly.id`
+
+***
+
+### kind
+
+> `readonly` **kind**: `"PreloadedQuery"`
+
+Defined in: dist/loadQuery.d.ts:10
+
+#### Inherited from
+
+`Readonly.kind`
+
+***
+
+### name
+
+> `readonly` **name**: `string`
+
+Defined in: dist/loadQuery.d.ts:12
+
+#### Inherited from
+
+`Readonly.name`
+
+***
+
+### networkCacheConfig?
+
+> `readonly` `optional` **networkCacheConfig**: `null` \| `CacheConfig`
+
+Defined in: dist/loadQuery.d.ts:16
+
+#### Inherited from
+
+`Readonly.networkCacheConfig`
+
+***
+
+### variables
+
+> `readonly` **variables**: `VariablesOf`\<`TQuery`\>
+
+Defined in: dist/loadQuery.d.ts:13
+
+#### Inherited from
+
+`Readonly.variables`
