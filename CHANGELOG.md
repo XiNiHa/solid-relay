@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.7
+
+### Patch Changes
+
+- 8ac1baa: fix: use .js import for relay-runtime/experimental
+
 ## 1.0.0-beta.6
 
 ### Patch Changes

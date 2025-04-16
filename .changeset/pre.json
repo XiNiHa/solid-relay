@@ -5,6 +5,7 @@
     "solid-relay": "0.3.0"
   },
   "changesets": [
+    "bumpy-tigers-grow",
     "curvy-fireants-smash",
     "lazy-turtles-fail",
     "nine-guests-travel",
