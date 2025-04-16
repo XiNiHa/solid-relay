@@ -3,7 +3,7 @@ import type {
 	GraphQLTaggedNode,
 	Subscribable,
 } from "relay-runtime";
-import { observeFragment } from "relay-runtime/experimental";
+import { observeFragment } from "relay-runtime/experimental.js";
 import {
 	batch,
 	createComputed,

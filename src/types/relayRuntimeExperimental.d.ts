@@ -1,4 +1,4 @@
-declare module "relay-runtime/experimental" {
+declare module "relay-runtime/experimental.js" {
 	import type {
 		GraphQLTaggedNode,
 		IEnvironment,

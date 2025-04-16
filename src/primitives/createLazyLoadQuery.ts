@@ -14,7 +14,7 @@ import {
 	__internal,
 	getRequest,
 } from "relay-runtime";
-import RelayRuntimeExperimental from "relay-runtime/experimental";
+import { observeFragment } from "relay-runtime/experimental.js";
 import {
 	type Accessor,
 	batch,
@@ -240,7 +240,7 @@ export function createLazyLoadQueryInternal<
 		const env = environment();
 		if (!operation || !env) return;
 
-		const fragmentSubscription = RelayRuntimeExperimental.observeFragment(
+		const fragmentSubscription = observeFragment(
 			env,
 			params.fragment(),
 			getQueryRef(operation),

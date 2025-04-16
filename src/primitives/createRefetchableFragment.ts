@@ -19,7 +19,7 @@ import {
 	getSelector,
 	getValueAtPath,
 } from "relay-runtime";
-import { waitForFragmentData } from "relay-runtime/experimental";
+import { waitForFragmentData } from "relay-runtime/experimental.js";
 import {
 	type Accessor,
 	batch,
