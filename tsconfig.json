@@ -5,8 +5,9 @@
 		"strict": true,
 		"outDir": "dist",
 		"baseUrl": ".",
+		"declaration": true,
 		"isolatedModules": true,
-		"allowJs": true,
+		"isolatedDeclarations": true,
 		"skipLibCheck": true,
 		"jsx": "preserve",
 		"jsxImportSource": "solid-js"

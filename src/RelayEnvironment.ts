@@ -18,7 +18,7 @@ const RelayContext = createContext<{
 	environment: Accessor<IEnvironment>;
 }>();
 
-export function RelayEnvironmentProvider(props: Props) {
+export function RelayEnvironmentProvider(props: Props): JSXElement {
 	const environment = createMemo(() => props.environment);
 
 	return createComponent(RelayContext.Provider, {
@@ -31,7 +31,7 @@ export function RelayEnvironmentProvider(props: Props) {
 	});
 }
 
-export function useRelayEnvironment() {
+export function useRelayEnvironment(): () => IEnvironment {
 	const context = useContext(RelayContext);
 
 	invariant(
