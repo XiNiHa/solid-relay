@@ -1,4 +1,3 @@
-import { type MaybeAccessor, access } from "@solid-primitives/utils";
 import {
 	type GraphQLTaggedNode,
 	type OperationType,
@@ -9,6 +8,7 @@ import { createResource } from "solid-js";
 import invariant from "tiny-invariant";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import type { PreloadedQuery } from "../loadQuery";
+import { type MaybeAccessor, access } from "../utils/access";
 import { createMemoOperationDescriptor } from "../utils/createMemoOperationDescriptor";
 import type { DataProxy } from "../utils/dataProxy";
 import { createLazyLoadQueryInternal } from "./createLazyLoadQuery";

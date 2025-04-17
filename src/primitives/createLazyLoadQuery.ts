@@ -1,4 +1,3 @@
-import { type MaybeAccessor, access } from "@solid-primitives/utils";
 import {
 	type CacheConfig,
 	type Disposable,
@@ -27,6 +26,7 @@ import {
 import { createStore, reconcile } from "solid-js/store";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import { type QueryCacheEntry, getQueryCache } from "../queryCache";
+import { type MaybeAccessor, access } from "../utils/access";
 import { createMemoOperationDescriptor } from "../utils/createMemoOperationDescriptor";
 import { type DataProxy, makeDataProxy } from "../utils/dataProxy";
 import { getQueryRef } from "../utils/getQueryRef";

@@ -1,5 +1,3 @@
-import { access } from "@solid-primitives/utils";
-import type { MaybeAccessor } from "@solid-primitives/utils";
 import { dequal } from "dequal/lite";
 import {
 	type CacheConfig,
@@ -11,6 +9,7 @@ import {
 } from "relay-runtime";
 import { createMemo } from "solid-js";
 import type { Accessor } from "solid-js";
+import { type MaybeAccessor, access } from "./access";
 
 export function createMemoOperationDescriptor(
 	gqlQuery: MaybeAccessor<GraphQLTaggedNode>,

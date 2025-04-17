@@ -1,7 +1,12 @@
 import type { Subscription } from "relay-runtime";
 import { createSignal, onCleanup } from "solid-js";
 
-export function createFetchTracker() {
+export function createFetchTracker(): {
+	disposeFetch: () => void;
+	startFetch: (subscription: Subscription) => void;
+	completeFetch: () => void;
+	isFetching: () => boolean;
+} {
 	let currentSubscription: Subscription | null = null;
 	const [isFetching, setIsFetching] = createSignal(false);
 
