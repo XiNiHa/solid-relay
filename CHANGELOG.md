@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.8
+
+### Patch Changes
+
+- 5272058: chore: migrate to tsdown
+
 ## 1.0.0-beta.7
 
 ### Patch Changes
