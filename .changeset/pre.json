@@ -5,6 +5,7 @@
     "solid-relay": "0.3.0"
   },
   "changesets": [
+    "big-clowns-help",
     "bumpy-tigers-grow",
     "curvy-fireants-smash",
     "lazy-turtles-fail",
