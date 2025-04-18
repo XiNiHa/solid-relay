@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.9
+
+### Patch Changes
+
+- cfcc463: fix: warn correctly when loading more pages
+
 ## 1.0.0-beta.8
 
 ### Patch Changes
