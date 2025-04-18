@@ -305,10 +305,10 @@ function createLoadMore<TQuery extends OperationType, TKey extends KeyType>({
 
 			if (identifierInfo != null) {
 				const value = untrack(identifierValue);
-				if (typeof value === "string") {
+				if (typeof value !== "string") {
 					console.warn(
 						"Relay: Expected result to have a string  " +
-							`\`${identifierInfo.identifierField}\` in order to refetch, got \`${identifierValue}\`.`,
+							`\`${identifierInfo.identifierField}\` in order to refetch, got \`${value}\`.`,
 					);
 				}
 				paginationVariables[identifierInfo.identifierQueryVariableName] = value;
