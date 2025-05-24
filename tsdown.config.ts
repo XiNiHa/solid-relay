@@ -106,5 +106,21 @@ export default defineConfig({
 				};
 			},
 		},
+		{
+			name: "rewrite-relay-runtime-imports",
+			async transform(code, id) {
+				if (/\.d\.[mc]?tsx?(?:$|\?)/.test(id)) return;
+
+				const ms = new MagicString(code);
+				ms.replaceAll(/from\s+['"]relay-runtime['"]/g, (s) =>
+					s.replace("relay-runtime", "relay-runtime/index.js"),
+				);
+
+				return {
+					code: ms.toString(),
+					map: ms.generateMap({ hires: true }),
+				};
+			},
+		},
 	],
 });
