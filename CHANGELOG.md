@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.10
+
+### Patch Changes
+
+- aea69e9: chore: bump dependencies with Relay 19 support
+
 ## 1.0.0-beta.9
 
 ### Patch Changes
