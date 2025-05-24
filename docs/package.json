@@ -7,11 +7,11 @@
 		"preview": "rspress preview"
 	},
 	"dependencies": {
-		"rspress": "^1.43.10"
+		"rspress": "^1.44.0"
 	},
 	"devDependencies": {
-		"@rspress/plugin-typedoc": "^1.43.10",
-		"@types/node": "^22.14.0",
+		"@rspress/plugin-typedoc": "^1.44.0",
+		"@types/node": "^22.15.21",
 		"solid-relay": "workspace:^"
 	}
 }
