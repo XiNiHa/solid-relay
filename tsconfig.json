@@ -13,5 +13,8 @@
 		"jsxImportSource": "solid-js"
 	},
 	"include": ["src/**/*"],
-	"references": [{ "path": "./tsconfig.test.json" }]
+	"references": [
+		{ "path": "./tsconfig.test.browser.json" },
+		{ "path": "./tsconfig.test.ssr.json" }
+	]
 }
