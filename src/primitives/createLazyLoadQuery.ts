@@ -20,15 +20,14 @@ import {
 	createComputed,
 	createMemo,
 	createResource,
-	createSignal,
 	onCleanup,
 } from "solid-js";
-import { createStore, reconcile } from "solid-js/store";
+import { reconcile } from "solid-js/store";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import { type QueryCacheEntry, getQueryCache } from "../queryCache";
 import { type MaybeAccessor, access } from "../utils/access";
 import { createMemoOperationDescriptor } from "../utils/createMemoOperationDescriptor";
-import { type DataProxy, makeDataProxy } from "../utils/dataProxy";
+import { type DataStore, createDataStore } from "../utils/dataStore";
 import { getQueryRef } from "../utils/getQueryRef";
 
 type QueryResult<T> =
@@ -55,7 +54,7 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 		fetchPolicy?: MaybeAccessor<FetchPolicy | undefined>;
 		networkCacheConfig?: MaybeAccessor<CacheConfig | undefined>;
 	},
-): DataProxy<TQuery["response"]> {
+): DataStore<TQuery["response"]> {
 	const environment = useRelayEnvironment();
 	const operation = createMemoOperationDescriptor(
 		gqlQuery,
@@ -85,10 +84,9 @@ export function createLazyLoadQueryInternal<
 	fetchObservable: Accessor<Observable<GraphQLResponse> | null | undefined>;
 	fetchKey?: Accessor<string | number | null | undefined>;
 	fetchPolicy?: Accessor<FetchPolicy | undefined>;
-}): DataProxy<TQuery["response"]> {
+}): DataStore<TQuery["response"]> {
 	const environment = useRelayEnvironment();
 	const queryCache = createMemo(() => getQueryCache(environment()));
-	const [serverData, setServerData] = createSignal<TQuery["response"]>();
 
 	const isLiveQuery = createMemo(
 		() => params.query().request.node.params.metadata.live !== undefined,
@@ -182,7 +180,7 @@ export function createLazyLoadQueryInternal<
 			},
 		);
 
-		let entry: QueryCacheEntry = false;
+		let entry: QueryCacheEntry = null;
 		if (shouldFetch) {
 			const subscription = subscriptionTarget?.subscribe({});
 			let retainCount = 0;
@@ -224,14 +222,10 @@ export function createLazyLoadQueryInternal<
 		error: undefined,
 		pending: true,
 	};
-	const [result, setResult] =
-		createStore<QueryResult<TQuery["response"]>>(initialResult);
-
-	const updateData = (data: TQuery["response"]) => {
-		if (typeof window !== "undefined") {
-			setResult("data", reconcile(data, { key: "__id", merge: true }));
-		} else setServerData(() => data);
-	};
+	const [result, setResult] = createDataStore<QueryResult<TQuery["response"]>>(
+		initialResult,
+		() => cacheEntry()?.resource,
+	);
 
 	createComputed(() => {
 		setResult(initialResult);
@@ -250,9 +244,12 @@ export function createLazyLoadQueryInternal<
 					if (state.state === "ok") {
 						setResult("error", undefined);
 						setResult("pending", false);
-						updateData(state.value);
+						setResult(
+							"data",
+							reconcile(state.value, { key: "__id", merge: true }),
+						);
 					} else if (state.state === "error") {
-						updateData(undefined);
+						setResult("data", undefined);
 						setResult("error", state.error);
 						setResult("pending", false);
 					}
@@ -264,12 +261,5 @@ export function createLazyLoadQueryInternal<
 		});
 	});
 
-	return makeDataProxy(
-		result,
-		() => {
-			const entry = cacheEntry();
-			if (entry) entry.resource();
-		},
-		typeof window === "undefined" ? serverData : undefined,
-	);
+	return result;
 }
