@@ -29,7 +29,7 @@ import invariant from "tiny-invariant";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import type { KeyType, KeyTypeData } from "../types/keyType";
 import { createFetchTracker } from "../utils/createFetchTracker";
-import type { DataProxy } from "../utils/dataProxy";
+import type { DataStore } from "../utils/dataStore";
 import { getConnectionState } from "../utils/getConnectionState";
 import { useIsMounted } from "../utils/useIsMounted";
 import { useIsOperationNodeActive } from "../utils/useIsOperationNodeActive";
@@ -43,7 +43,7 @@ type CreatePaginationFragmentReturn<
 	TQuery extends OperationType,
 	TKey extends KeyType | null | undefined,
 	TFragmentData,
-> = DataProxy<TFragmentData> & {
+> = DataStore<TFragmentData> & {
 	loadNext: LoadMoreFn<TQuery>;
 	loadPrevious: LoadMoreFn<TQuery>;
 	hasNext: boolean;
@@ -169,7 +169,7 @@ function createLoadMore<TQuery extends OperationType, TKey extends KeyType>({
 	fragmentNode: ReaderFragment;
 	fragmentRef: Accessor<TKey | null | undefined>;
 	fragmentIdentifier: Accessor<string>;
-	fragmentData: DataProxy<KeyTypeData<TKey>>;
+	fragmentData: DataStore<KeyTypeData<TKey>>;
 	connectionPathInFragmentData: readonly (string | number)[];
 	paginationRequest: ConcreteRequest;
 	paginationMetadata: ReaderPaginationMetadata;

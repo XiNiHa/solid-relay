@@ -2,6 +2,7 @@ import type { IEnvironment } from "relay-runtime";
 import {
 	type Accessor,
 	type JSXElement,
+	type Resource,
 	createComponent,
 	createContext,
 	createMemo,
@@ -16,6 +17,7 @@ interface Props {
 
 const RelayContext = createContext<{
 	environment: Accessor<IEnvironment>;
+	dataStores: WeakMap<Resource<unknown>, unknown>;
 }>();
 
 export function RelayEnvironmentProvider(props: Props): JSXElement {
@@ -23,7 +25,7 @@ export function RelayEnvironmentProvider(props: Props): JSXElement {
 
 	return createComponent(RelayContext.Provider, {
 		get value() {
-			return { environment };
+			return { environment, dataStores: new WeakMap() };
 		},
 		get children() {
 			return props.children;
@@ -45,4 +47,11 @@ export function useRelayEnvironment(): () => IEnvironment {
 	);
 
 	return context.environment;
+}
+
+export function useDataStores():
+	| WeakMap<Resource<unknown>, unknown>
+	| undefined {
+	const context = useContext(RelayContext);
+	return context?.dataStores;
 }

@@ -10,7 +10,7 @@ import { useRelayEnvironment } from "../RelayEnvironment";
 import type { PreloadedQuery } from "../loadQuery";
 import { type MaybeAccessor, access } from "../utils/access";
 import { createMemoOperationDescriptor } from "../utils/createMemoOperationDescriptor";
-import type { DataProxy } from "../utils/dataProxy";
+import type { DataStore } from "../utils/dataStore";
 import { createLazyLoadQueryInternal } from "./createLazyLoadQuery";
 
 type MaybePromise<T> = T | Promise<T>;
@@ -18,7 +18,7 @@ type MaybePromise<T> = T | Promise<T>;
 export function createPreloadedQuery<TQuery extends OperationType>(
 	query: GraphQLTaggedNode,
 	preloadedQuery: MaybeAccessor<MaybePromise<PreloadedQuery<TQuery>>>,
-): DataProxy<TQuery["response"]> {
+): DataStore<TQuery["response"]> {
 	const environment = useRelayEnvironment();
 	const [maybePreloaded] = createResource(
 		() => access(preloadedQuery),

@@ -30,9 +30,10 @@ import {
 	untrack,
 } from "solid-js";
 import { unwrap } from "solid-js/store";
+import { isServer } from "solid-js/web";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import type { KeyType, KeyTypeData } from "../types/keyType";
-import type { DataProxy } from "../utils/dataProxy";
+import type { DataStore } from "../utils/dataStore";
 import { getQueryRef } from "../utils/getQueryRef";
 import { useIsMounted } from "../utils/useIsMounted";
 import { createFragmentInternal } from "./createFragment";
@@ -86,7 +87,7 @@ export function createRefetchableFragment<
 >(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey>,
-): [DataProxy<KeyTypeData<TKey>>, RefetchFnDynamic<TQuery, TKey>];
+): [DataStore<KeyTypeData<TKey>>, RefetchFnDynamic<TQuery, TKey>];
 export function createRefetchableFragment<
 	TQuery extends OperationType,
 	TKey extends KeyType,
@@ -94,7 +95,7 @@ export function createRefetchableFragment<
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
 ): [
-	DataProxy<KeyTypeData<TKey> | null | undefined>,
+	DataStore<KeyTypeData<TKey> | null | undefined>,
 	RefetchFnDynamic<TQuery, TKey>,
 ];
 export function createRefetchableFragment<
@@ -104,7 +105,7 @@ export function createRefetchableFragment<
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
 ): [
-	DataProxy<KeyTypeData<TKey> | null | undefined>,
+	DataStore<KeyTypeData<TKey> | null | undefined>,
 	RefetchFnDynamic<TQuery, TKey>,
 ] {
 	const { fragmentData, refetch } = createRefetchableFragmentInternal(
@@ -122,7 +123,7 @@ export function createRefetchableFragmentInternal<
 	key: Accessor<TKey | null | undefined>,
 	componentDisplayName = "createRefetchableFragment()",
 ): {
-	fragmentData: DataProxy<KeyTypeData<TKey> | null | undefined>;
+	fragmentData: DataStore<KeyTypeData<TKey> | null | undefined>;
 	fragmentRef: Accessor<TKey | null | undefined>;
 	refetch: RefetchFnDynamic<TQuery, TKey>;
 } {
@@ -267,9 +268,13 @@ export function createRefetchableFragmentInternal<
 		}
 	});
 
-	const fragmentData = createFragmentInternal(fragment, fragmentRef, () => ({
-		parentOperation: refetchObservable(),
-	}));
+	const fragmentData = createFragmentInternal(
+		fragment,
+		isServer ? parentFragmentRef : fragmentRef,
+		() => ({
+			parentOperation: refetchObservable(),
+		}),
+	);
 
 	return {
 		fragmentData,
