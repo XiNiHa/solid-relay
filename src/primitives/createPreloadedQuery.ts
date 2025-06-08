@@ -4,7 +4,6 @@ import {
 	__internal,
 	getRequest,
 } from "relay-runtime";
-import { createResource } from "solid-js";
 import invariant from "tiny-invariant";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import type { PreloadedQuery } from "../loadQuery";
@@ -13,31 +12,24 @@ import { createMemoOperationDescriptor } from "../utils/createMemoOperationDescr
 import type { DataStore } from "../utils/dataStore";
 import { createLazyLoadQueryInternal } from "./createLazyLoadQuery";
 
-type MaybePromise<T> = T | Promise<T>;
-
 export function createPreloadedQuery<TQuery extends OperationType>(
 	query: GraphQLTaggedNode,
-	preloadedQuery: MaybeAccessor<MaybePromise<PreloadedQuery<TQuery>>>,
+	preloadedQuery: MaybeAccessor<PreloadedQuery<TQuery>>,
 ): DataStore<TQuery["response"]> {
 	const environment = useRelayEnvironment();
-	const [maybePreloaded] = createResource(
-		() => access(preloadedQuery),
-		(v) => v,
-	);
 	const operation = createMemoOperationDescriptor(
 		query,
-		() => maybePreloaded.latest?.variables,
-		() => maybePreloaded.latest?.networkCacheConfig ?? undefined,
+		() => access(preloadedQuery).variables,
+		() => access(preloadedQuery).networkCacheConfig ?? undefined,
 	);
 
 	return createLazyLoadQueryInternal({
 		query: operation,
 		fragment: () => getRequest(query).fragment,
-		fetchKey: () => maybePreloaded.latest?.fetchKey,
-		fetchPolicy: () => maybePreloaded.latest?.fetchPolicy,
+		fetchKey: () => access(preloadedQuery).fetchKey,
+		fetchPolicy: () => access(preloadedQuery).fetchPolicy,
 		fetchObservable: () => {
-			const preloaded = maybePreloaded.latest;
-			if (!preloaded) return;
+			const preloaded = access(preloadedQuery);
 
 			invariant(
 				preloaded.controls == null || !preloaded.controls?.value.isDisposed(),
