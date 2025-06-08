@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.13
+
+### Patch Changes
+
+- 8eaa276: feat: re-add support for async preloaded queries
+
 ## 1.0.0-beta.12
 
 ### Patch Changes
