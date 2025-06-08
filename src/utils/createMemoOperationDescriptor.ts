@@ -13,20 +13,24 @@ import { type MaybeAccessor, access } from "./access";
 
 export function createMemoOperationDescriptor(
 	gqlQuery: MaybeAccessor<GraphQLTaggedNode>,
-	variables: MaybeAccessor<Variables>,
+	variables: MaybeAccessor<Variables | undefined>,
 	cacheConfig?: MaybeAccessor<CacheConfig | undefined>,
-): Accessor<OperationDescriptor> {
+): Accessor<OperationDescriptor | undefined> {
 	const memoizedVariables = createMemo(() => access(variables), undefined, {
 		equals: dequal,
 	});
 	const memoizedCacheConfig = createMemo(() => access(cacheConfig), undefined, {
 		equals: dequal,
 	});
-	return createMemo(() =>
-		createOperationDescriptor(
+
+	return createMemo(() => {
+		const variables = memoizedVariables();
+		if (!variables) return;
+
+		return createOperationDescriptor(
 			getRequest(access(gqlQuery)),
-			memoizedVariables(),
+			variables,
 			memoizedCacheConfig(),
-		),
-	);
+		);
+	});
 }

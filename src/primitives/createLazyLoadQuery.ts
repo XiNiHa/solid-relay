@@ -79,7 +79,7 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 export function createLazyLoadQueryInternal<
 	TQuery extends OperationType,
 >(params: {
-	query: Accessor<OperationDescriptor>;
+	query: Accessor<OperationDescriptor | undefined>;
 	fragment: Accessor<ReaderFragment>;
 	fetchObservable: Accessor<Observable<GraphQLResponse> | null | undefined>;
 	fetchKey?: Accessor<string | number | null | undefined>;
@@ -89,7 +89,7 @@ export function createLazyLoadQueryInternal<
 	const queryCache = createMemo(() => getQueryCache(environment()));
 
 	const isLiveQuery = createMemo(
-		() => params.query().request.node.params.metadata.live !== undefined,
+		() => params.query()?.request.node.params.metadata.live !== undefined,
 	);
 	const fetchPolicy = createMemo(
 		() =>
@@ -97,20 +97,22 @@ export function createLazyLoadQueryInternal<
 			(isLiveQuery() ? "store-and-network" : "store-or-network"),
 	);
 	const cacheKey = createMemo(() => {
-		return [
-			fetchPolicy(),
-			params.query().request.identifier,
-			params.fetchKey?.(),
-		]
+		const query = params.query();
+		if (!query) return;
+
+		return [fetchPolicy(), query.request.identifier, params.fetchKey?.()]
 			.filter((v) => v != null)
 			.join("-");
 	});
 	const cacheEntry = createMemo(() => {
+		const operation = params.query();
+		const key = cacheKey();
+		if (!operation || !key) return;
+
 		const cache = queryCache();
-		const existing = cache.get(cacheKey());
+		const existing = cache.get(key);
 		if (existing != null) return existing;
 
-		const operation = params.query();
 		const queryAvailablility = environment().check(operation);
 		const queryStatus = queryAvailablility.status;
 		const hasFullQuery = queryStatus === "available";
@@ -198,7 +200,7 @@ export function createLazyLoadQueryInternal<
 							if (retainCount === 0) {
 								retention?.dispose();
 								if (isLiveQuery()) subscription?.unsubscribe();
-								cache.delete(cacheKey());
+								cache.delete(key);
 							}
 						},
 					};
@@ -206,7 +208,7 @@ export function createLazyLoadQueryInternal<
 			};
 		}
 
-		cache.set(cacheKey(), entry);
+		cache.set(key, entry);
 		return entry;
 	});
 

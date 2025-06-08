@@ -4,6 +4,7 @@ import {
 	__internal,
 	getRequest,
 } from "relay-runtime";
+import { createResource } from "solid-js";
 import invariant from "tiny-invariant";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import type { PreloadedQuery } from "../loadQuery";
@@ -12,24 +13,32 @@ import { createMemoOperationDescriptor } from "../utils/createMemoOperationDescr
 import type { DataStore } from "../utils/dataStore";
 import { createLazyLoadQueryInternal } from "./createLazyLoadQuery";
 
+type MaybePromise<T> = T | Promise<T>;
+
 export function createPreloadedQuery<TQuery extends OperationType>(
 	query: GraphQLTaggedNode,
-	preloadedQuery: MaybeAccessor<PreloadedQuery<TQuery>>,
+	preloadedQuery: MaybeAccessor<MaybePromise<PreloadedQuery<TQuery>>>,
 ): DataStore<TQuery["response"]> {
 	const environment = useRelayEnvironment();
+	const [maybePreloaded] = createResource(
+		() => access(preloadedQuery),
+		(v) => v,
+	);
 	const operation = createMemoOperationDescriptor(
 		query,
-		() => access(preloadedQuery).variables,
-		() => access(preloadedQuery).networkCacheConfig ?? undefined,
+		() => maybePreloaded.latest?.variables,
+		() => maybePreloaded.latest?.networkCacheConfig ?? undefined,
 	);
 
 	return createLazyLoadQueryInternal({
 		query: operation,
 		fragment: () => getRequest(query).fragment,
-		fetchKey: () => access(preloadedQuery).fetchKey,
-		fetchPolicy: () => access(preloadedQuery).fetchPolicy,
+		fetchKey: () => maybePreloaded.latest?.fetchKey,
+		fetchPolicy: () => maybePreloaded.latest?.fetchPolicy,
 		fetchObservable: () => {
-			const preloaded = access(preloadedQuery);
+			const preloaded = maybePreloaded.latest;
+			const op = operation();
+			if (!preloaded || !op) return;
 
 			invariant(
 				preloaded.controls == null || !preloaded.controls?.value.isDisposed(),
@@ -38,7 +47,7 @@ export function createPreloadedQuery<TQuery extends OperationType>(
 					"collection, and as such query results may no longer be present in the Relay store.",
 			);
 
-			const fallback = __internal.fetchQuery(environment(), operation());
+			const fallback = __internal.fetchQuery(environment(), op);
 			if (preloaded.controls?.value.source == null) return fallback;
 
 			invariant(
