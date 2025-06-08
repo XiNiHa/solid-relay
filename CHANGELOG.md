@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.12
+
+### Patch Changes
+
+- 354ca39: fix!: drop support for async preloaded queries
+
 ## 1.0.0-beta.11
 
 ### Minor Changes
