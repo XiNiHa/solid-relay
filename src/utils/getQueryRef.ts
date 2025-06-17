@@ -4,7 +4,7 @@ import {
 	ID_KEY,
 	type OperationDescriptor,
 } from "relay-runtime";
-import type { KeyType } from "relay-runtime/lib/store/ResolverFragments";
+import type { KeyType } from "relay-runtime/lib/store/FragmentTypes";
 
 export const getQueryRef = (operation: OperationDescriptor) =>
 	({
