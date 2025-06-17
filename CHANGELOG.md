@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.14
+
+### Patch Changes
+
+- 0bd2f0b: chore: be explicitly compatible with Relay 20
+
 ## 1.0.0-beta.13
 
 ### Patch Changes
