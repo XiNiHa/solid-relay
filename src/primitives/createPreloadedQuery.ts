@@ -4,7 +4,7 @@ import {
 	__internal,
 	getRequest,
 } from "relay-runtime";
-import { createResource } from "solid-js";
+import { createEffect, createResource, onCleanup } from "solid-js";
 import invariant from "tiny-invariant";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import type { PreloadedQuery } from "../loadQuery";
@@ -29,6 +29,15 @@ export function createPreloadedQuery<TQuery extends OperationType>(
 		() => maybePreloaded.latest?.variables,
 		() => maybePreloaded.latest?.networkCacheConfig ?? undefined,
 	);
+
+	createEffect(() => {
+		const preloaded = maybePreloaded.latest;
+		if (preloaded) {
+			onCleanup(() => {
+				preloaded.controls?.value.dispose();
+			});
+		}
+	});
 
 	return createLazyLoadQueryInternal({
 		query: operation,
