@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.15
+
+### Minor Changes
+
+- 01220c0: feat: auto dispose queryRefs in `createPreloadedQuery()`
+
 ## 1.0.0-beta.14
 
 ### Patch Changes
