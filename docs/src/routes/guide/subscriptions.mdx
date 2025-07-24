@@ -45,14 +45,12 @@ const fetchFn: FetchFunction = async (params, variables) => {
   // ... (same as before)
 };
 
-function createRelayEnvironment() {
+export function createRelayEnvironment() {
   return new Environment({
     network: Network.create(fetchFn, subscribeFn),
     store: new Store(new RecordSource()),
   });
 }
-
-export const RelayEnvironment = createRelayEnvironment();
 ```
 
 ## `createSubscription`

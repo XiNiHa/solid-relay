@@ -14,20 +14,10 @@ First, you need to install the necessary packages. `solid-relay` requires `solid
 npm install solid-relay solid-js relay-runtime
 ```
 
-You will also need to set up the Relay compiler. The easiest way to do this is to use the `relay-compiler-language-typescript` package.
+You will also need to set up the Relay compiler.
 
 ```bash
-npm install --save-dev relay-compiler relay-compiler-language-typescript
-```
-
-Next, add a `relay` script to your `package.json`:
-
-```json
-{
-  "scripts": {
-    "relay": "relay-compiler"
-  }
-}
+npm install --save-dev relay-compiler
 ```
 
 And create a `relay.config.json` file in your project root:
@@ -37,14 +27,15 @@ And create a `relay.config.json` file in your project root:
   "src": "./src",
   "schema": "./schema.graphql",
   "language": "typescript",
-  "artifactDirectory": "./src/__generated__"
+  "artifactDirectory": "./src/__generated__",
+  "eagerEsModules": true
 }
 ```
 
 Now you can run the compiler with:
 
 ```bash
-npm run relay
+npx relay-compiler
 ```
 
 ## Setting up the Relay Environment
@@ -78,28 +69,28 @@ const fetchFn: FetchFunction = async (params, variables) => {
   return response.json();
 };
 
-function createRelayEnvironment() {
+export function createRelayEnvironment() {
   return new Environment({
     network: Network.create(fetchFn),
     store: new Store(new RecordSource()),
   });
 }
-
-export const RelayEnvironment = createRelayEnvironment();
 ```
 
-Now you need to provide the environment to your application using the `RelayEnvironmentProvider`.
+Now you need to provide the environment to your application using the `RelayEnvironmentProvider`. It's recommended to create the environment in a context to ensure it's not shared between requests on the server.
 
 ```tsx
 // index.tsx
 import { render } from "solid-js/web";
 import { RelayEnvironmentProvider } from "solid-relay";
-import { RelayEnvironment } from "./RelayEnvironment";
+import { createRelayEnvironment } from "./RelayEnvironment";
 import App from "./App";
+
+const relayEnvironment = createRelayEnvironment();
 
 render(
   () => (
-    <RelayEnvironmentProvider environment={RelayEnvironment}>
+    <RelayEnvironmentProvider environment={relayEnvironment}>
       <App />
     </RelayEnvironmentProvider>
   ),
