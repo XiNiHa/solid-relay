@@ -1,0 +1,92 @@
+---
+title: Queries
+---
+
+# Queries
+
+`solid-relay` provides two ways to fetch data: `createLazyLoadQuery` and `createPreloadedQuery`.
+
+## `createLazyLoadQuery`
+
+`createLazyLoadQuery` is the simplest way to fetch data. It fetches the data when the component is rendered.
+
+```tsx
+import { Show } from "solid-js";
+import { createLazyLoadQuery } from "solid-relay";
+import { graphql } from "relay-runtime";
+import type { AppQuery } from "./__generated__/AppQuery.graphql";
+
+const App = () => {
+  const query = createLazyLoadQuery<AppQuery>(
+    graphql`
+      query AppQuery {
+        viewer {
+          login
+        }
+      }
+    `,
+    {}
+  );
+
+  return (
+    <Show when={query()}>
+      {(data) => <p>Logged in as: {data().viewer.login}</p>}
+    </Show>
+  );
+};
+```
+
+The first argument to `createLazyLoadQuery` is the GraphQL query, and the second argument is the variables. It returns a Solid `Resource` that resolves to the query data.
+
+## `createPreloadedQuery`
+
+`createPreloadedQuery` allows you to start loading data before the component is rendered. This can improve performance by reducing the time it takes to display the data.
+
+To use `createPreloadedQuery`, you first need to create a query loader.
+
+```typescript
+// loaders.ts
+import { createQueryLoader } from "solid-relay";
+import { graphql } from "relay-runtime";
+import type { UserQuery } from "./__generated__/UserQuery.graphql";
+
+export const userQuery = createQueryLoader<UserQuery>(
+  graphql`
+    query UserQuery($id: ID!) {
+      user(id: $id) {
+        name
+      }
+    }
+  `
+);
+```
+
+Then you can use the `load` method of the query loader to start loading the data.
+
+```typescript
+// index.tsx
+import { userQuery } from "./loaders";
+
+userQuery.load({ id: "1" });
+```
+
+Finally, you can use `createPreloadedQuery` to get the data in your component.
+
+```tsx
+// User.tsx
+import { Show } from "solid-js";
+import { createPreloadedQuery } from "solid-relay";
+import { userQuery } from "./loaders";
+
+const User = () => {
+  const query = createPreloadedQuery(userQuery);
+
+  return (
+    <Show when={query()}>
+      {(data) => <p>{data().user.name}</p>}
+    </Show>
+  );
+};
+```
+
+This will render the component with the preloaded data. If the data is not yet available, the component will suspend.

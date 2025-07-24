@@ -1,0 +1,51 @@
+---
+title: Mutations
+---
+
+# Mutations
+
+Mutations are used to modify data on the server. `solid-relay` provides a `createMutation` hook to perform mutations.
+
+## `createMutation`
+
+`createMutation` takes a GraphQL mutation and returns a tuple. The first element is a function to execute the mutation, and the second element is a boolean that indicates whether the mutation is in flight.
+
+```tsx
+// LikeButton.tsx
+import { createMutation } from "solid-relay";
+import { graphql } from "relay-runtime";
+import type { LikeButtonMutation } from "./__generated__/LikeButtonMutation.graphql";
+
+const LikeButton = (props: { post: { id: string } }) => {
+  const [commit, isInFlight] = createMutation<LikeButtonMutation>(
+    graphql`
+      mutation LikeButtonMutation($input: LikePostInput!) {
+        likePost(input: $input) {
+          post {
+            id
+            likes
+          }
+        }
+      }
+    `
+  );
+
+  const handleClick = () => {
+    commit({
+      variables: {
+        input: {
+          postId: props.post.id,
+        },
+      },
+    });
+  };
+
+  return (
+    <button onClick={handleClick} disabled={isInFlight()}>
+      Like
+    </button>
+  );
+};
+```
+
+The `commit` function takes an object with `variables` and an optional `onCompleted` callback. The `onCompleted` callback is called when the mutation is successfully completed.

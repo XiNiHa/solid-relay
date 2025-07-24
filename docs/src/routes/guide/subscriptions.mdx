@@ -1,0 +1,89 @@
+---
+title: Subscriptions
+---
+
+# Subscriptions
+
+Subscriptions are used to listen for real-time updates from the server. `solid-relay` provides a `createSubscription` hook to listen for subscriptions.
+
+## Setting up the Network for Subscriptions
+
+To use subscriptions, you need to configure your Relay Environment to handle them. This usually involves setting up a WebSocket connection.
+
+```typescript
+// RelayEnvironment.ts
+import {
+  Environment,
+  FetchFunction,
+  Network,
+  RecordSource,
+  Store,
+  SubscribeFunction,
+} from "relay-runtime";
+import { createClient } from "graphql-ws";
+
+const wsClient = createClient({
+  url: "ws://localhost:4000/subscriptions",
+});
+
+const subscribeFn: SubscribeFunction = (operation, variables) => {
+  return {
+    subscribe: (sink) => {
+      return wsClient.subscribe(
+        {
+          operationName: operation.name,
+          query: operation.text!,
+          variables,
+        },
+        sink
+      );
+    },
+  };
+};
+
+const fetchFn: FetchFunction = async (params, variables) => {
+  // ... (same as before)
+};
+
+function createRelayEnvironment() {
+  return new Environment({
+    network: Network.create(fetchFn, subscribeFn),
+    store: new Store(new RecordSource()),
+  });
+}
+
+export const RelayEnvironment = createRelayEnvironment();
+```
+
+## `createSubscription`
+
+`createSubscription` takes a GraphQL subscription and variables, and it sets up a subscription to the server.
+
+```tsx
+// CommentNotification.tsx
+import { createSubscription } from "solid-relay";
+import { graphql } from "relay-runtime";
+import type { CommentNotificationSubscription } from "./__generated__/CommentNotificationSubscription.graphql";
+
+const CommentNotification = () => {
+  createSubscription<CommentNotificationSubscription>(
+    graphql`
+      subscription CommentNotificationSubscription($postId: ID!) {
+        commentAdded(postId: $postId) {
+          id
+          body
+        }
+      }
+    `,
+    {
+      variables: {
+        postId: "1",
+      },
+    }
+  );
+
+  return null;
+};
+```
+
+The `createSubscription` hook doesn't return anything. It will automatically update the Relay store with the new data from the server. Any components that are subscribed to that data will be updated automatically.

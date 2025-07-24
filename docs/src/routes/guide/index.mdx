@@ -4,4 +4,140 @@ title: Getting Started
 
 # Getting Started
 
-WIP, see the [API docs](/api/) and the [example project](https://github.com/XiNiHa/solid-relay/tree/main/example) for now!
+This guide will help you get started with `solid-relay`.
+
+## Installation
+
+First, you need to install the necessary packages. `solid-relay` requires `solid-js` and `relay-runtime`.
+
+```bash
+npm install solid-relay solid-js relay-runtime
+```
+
+You will also need to set up the Relay compiler. The easiest way to do this is to use the `relay-compiler-language-typescript` package.
+
+```bash
+npm install --save-dev relay-compiler relay-compiler-language-typescript
+```
+
+Next, add a `relay` script to your `package.json`:
+
+```json
+{
+  "scripts": {
+    "relay": "relay-compiler"
+  }
+}
+```
+
+And create a `relay.config.json` file in your project root:
+
+```json
+{
+  "src": "./src",
+  "schema": "./schema.graphql",
+  "language": "typescript",
+  "artifactDirectory": "./src/__generated__"
+}
+```
+
+Now you can run the compiler with:
+
+```bash
+npm run relay
+```
+
+## Setting up the Relay Environment
+
+The Relay Environment is the central piece of Relay. It manages the cache and the network layer. You need to create an environment and provide it to your application.
+
+Here is an example of how to create a basic Relay Environment:
+
+```typescript
+// RelayEnvironment.ts
+import {
+  Environment,
+  FetchFunction,
+  Network,
+  RecordSource,
+  Store,
+} from "relay-runtime";
+
+const fetchFn: FetchFunction = async (params, variables) => {
+  const response = await fetch("http://localhost:4000/graphql", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      query: params.text,
+      variables,
+    }),
+  });
+
+  return response.json();
+};
+
+function createRelayEnvironment() {
+  return new Environment({
+    network: Network.create(fetchFn),
+    store: new Store(new RecordSource()),
+  });
+}
+
+export const RelayEnvironment = createRelayEnvironment();
+```
+
+Now you need to provide the environment to your application using the `RelayEnvironmentProvider`.
+
+```tsx
+// index.tsx
+import { render } from "solid-js/web";
+import { RelayEnvironmentProvider } from "solid-relay";
+import { RelayEnvironment } from "./RelayEnvironment";
+import App from "./App";
+
+render(
+  () => (
+    <RelayEnvironmentProvider environment={RelayEnvironment}>
+      <App />
+    </RelayEnvironmentProvider>
+  ),
+  document.getElementById("root")!
+);
+```
+
+## Basic Usage
+
+Now you can use `solid-relay` to fetch data in your components. Here is a basic example of how to use `createLazyLoadQuery`:
+
+```tsx
+// App.tsx
+import { Show } from "solid-js";
+import { createLazyLoadQuery } from "solid-relay";
+import { graphql } from "relay-runtime";
+import type { AppQuery } from "./__generated__/AppQuery.graphql";
+
+const App = () => {
+  const query = createLazyLoadQuery<AppQuery>(
+    graphql`
+      query AppQuery {
+        viewer {
+          login
+        }
+      }
+    `,
+    {}
+  );
+
+  return (
+    <Show when={query()}>
+      {(data) => <p>Logged in as: {data().viewer.login}</p>}
+    </Show>
+  );
+};
+
+export default App;
+```
+
+This is just a basic example. The following sections will go into more detail about the different features of `solid-relay`.

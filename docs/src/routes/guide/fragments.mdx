@@ -1,0 +1,109 @@
+---
+title: Fragments
+---
+
+# Fragments
+
+Fragments are reusable pieces of queries. They allow you to share query logic between components.
+
+## `createFragment`
+
+`createFragment` is the simplest way to use a fragment. It takes a fragment and a fragment reference, and it returns the data for that fragment.
+
+```tsx
+// User.tsx
+import { createFragment } from "solid-relay";
+import { graphql } from "relay-runtime";
+import type { User_user } from "./__generated__/User_user.graphql";
+
+const User = (props: { user: User_user }) => {
+  const user = createFragment(
+    graphql`
+      fragment User_user on User {
+        name
+        email
+      }
+    `,
+    () => props.user
+  );
+
+  return (
+    <div>
+      <p>Name: {user().name}</p>
+      <p>Email: {user().email}</p>
+    </div>
+  );
+};
+```
+
+## `createRefetchableFragment`
+
+`createRefetchableFragment` is similar to `createFragment`, but it also allows you to refetch the fragment with new variables.
+
+```tsx
+// Post.tsx
+import { createRefetchableFragment } from "solid-relay";
+import { graphql } from "relay-runtime";
+import type { Post_post } from "./__generated__/Post_post.graphql";
+
+const Post = (props: { post: Post_post }) => {
+  const [post, refetch] = createRefetchableFragment(
+    graphql`
+      fragment Post_post on Post @refetchable(queryName: "PostRefetchQuery") {
+        title
+        body
+      }
+    `,
+    () => props.post
+  );
+
+  return (
+    <div>
+      <h2>{post().title}</h2>
+      <p>{post().body}</p>
+      <button onClick={() => refetch({ id: props.post.id })}>Refetch</button>
+    </div>
+  );
+};
+```
+
+## `createPaginationFragment`
+
+`createPaginationFragment` is used for paginating over a list of items. It provides a `loadNext` function to load more items.
+
+```tsx
+// Comments.tsx
+import { For } from "solid-js";
+import { createPaginationFragment } from "solid-relay";
+import { graphql } from "relay-runtime";
+import type { Comments_post } from "./__generated__/Comments_post.graphql";
+
+const Comments = (props: { post: Comments_post }) => {
+  const [data, { loadNext }] = createPaginationFragment(
+    graphql`
+      fragment Comments_post on Post @refetchable(queryName: "CommentsPaginationQuery") {
+        comments(first: 10) @connection(key: "Comments_comments") {
+          edges {
+            node {
+              id
+              body
+            }
+          }
+        }
+      }
+    `,
+    () => props.post
+  );
+
+  return (
+    <div>
+      <ul>
+        <For each={data().comments.edges}>
+          {(edge) => <li>{edge.node.body}</li>}
+        </For>
+      </ul>
+      <button onClick={() => loadNext(10)}>Load More</button>
+    </div>
+  );
+};
+```
