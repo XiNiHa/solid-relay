@@ -1,13 +1,15 @@
 import { MetaProvider, Title } from "@solidjs/meta";
 import { Router } from "@solidjs/router";
-import { FileRoutes } from "@solidjs/start/router";
 import { Suspense } from "solid-js";
 import { RelayEnvironmentProvider } from "solid-relay";
 import { createEnvironment } from "./RelayEnvironment";
+import { Routes } from "./routes";
 
 export default function App() {
+	const environment = createEnvironment();
+
 	return (
-		<RelayEnvironmentProvider environment={createEnvironment()}>
+		<RelayEnvironmentProvider environment={environment}>
 			<Router
 				root={(props) => (
 					<MetaProvider>
@@ -16,7 +18,7 @@ export default function App() {
 					</MetaProvider>
 				)}
 			>
-				<FileRoutes />
+				<Routes />
 			</Router>
 		</RelayEnvironmentProvider>
 	);
