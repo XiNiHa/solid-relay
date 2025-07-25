@@ -1,0 +1,591 @@
+---
+title: Pagination
+---
+
+# Pagination
+
+Relay provides powerful pagination features that work seamlessly with GraphQL connections. This guide covers how to implement efficient pagination using Solid Relay.
+
+## Basic Pagination with createPaginationFragment
+
+Use `createPaginationFragment` to implement pagination with the connection pattern:
+
+```tsx
+import { createPaginationFragment } from 'solid-relay';
+import { graphql } from 'relay-runtime';
+
+const UserList_query = graphql`
+  fragment UserList_query on Query
+  @refetchable(queryName: "UserListPaginationQuery") {
+    users(
+      first: $count
+      after: $cursor
+    ) @connection(key: "UserList_users") {
+      edges {
+        node {
+          id
+          name
+          email
+          avatar
+        }
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+`;
+
+function UserList(props: { query: any }) {
+  const [data, { loadNext, loadPrevious, hasNext, hasPrevious, isLoadingNext, isLoadingPrevious }] =
+    createPaginationFragment(UserList_query, props.query);
+
+  const handleLoadMore = () => {
+    if (hasNext() && !isLoadingNext()) {
+      loadNext(10); // Load 10 more items
+    }
+  };
+
+  const handleLoadPrevious = () => {
+    if (hasPrevious() && !isLoadingPrevious()) {
+      loadPrevious(10); // Load 10 previous items
+    }
+  };
+
+  return (
+    <div>
+      <Show when={hasPrevious()}>
+        <button
+          onClick={handleLoadPrevious}
+          disabled={isLoadingPrevious()}
+        >
+          {isLoadingPrevious() ? 'Loading...' : 'Load Previous'}
+        </button>
+      </Show>
+
+      <div class="user-list">
+        <For each={data().users.edges}>
+          {(edge) => (
+            <div class="user-card">
+              <img src={edge.node.avatar} alt={edge.node.name} />
+              <h3>{edge.node.name}</h3>
+              <p>{edge.node.email}</p>
+            </div>
+          )}
+        </For>
+      </div>
+
+      <Show when={hasNext()}>
+        <button
+          onClick={handleLoadMore}
+          disabled={isLoadingNext()}
+        >
+          {isLoadingNext() ? 'Loading...' : 'Load More'}
+        </button>
+      </Show>
+    </div>
+  );
+}
+```
+
+## Setting Up the Parent Query
+
+The parent query needs to define the pagination variables:
+
+```tsx
+const UserListPageQuery = graphql`
+  query UserListPageQuery($count: Int!, $cursor: String) {
+    ...UserList_query
+  }
+`;
+
+function UserListPage() {
+  const data = createLazyLoadQuery(UserListPageQuery, {
+    count: 20, // Initial page size
+    cursor: null // Start from the beginning
+  });
+
+  return (
+    <div>
+      <h1>All Users</h1>
+      <UserList query={data} />
+    </div>
+  );
+}
+```
+
+## Bidirectional Pagination
+
+Support both forward and backward pagination:
+
+```tsx
+const PostList_query = graphql`
+  fragment PostList_query on Query
+  @refetchable(queryName: "PostListPaginationQuery") {
+    posts(
+      first: $first
+      after: $after
+      last: $last
+      before: $before
+    ) @connection(key: "PostList_posts") {
+      edges {
+        node {
+          id
+          title
+          excerpt
+          createdAt
+          author {
+            name
+          }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        hasPreviousPage
+        startCursor
+        endCursor
+      }
+    }
+  }
+`;
+
+function PostList(props: { query: any }) {
+  const [data, pagination] = createPaginationFragment(PostList_query, props.query);
+
+  return (
+    <div>
+      <div class="pagination-controls">
+        <button
+          onClick={() => pagination.loadPrevious(5)}
+          disabled={!pagination.hasPrevious() || pagination.isLoadingPrevious()}
+        >
+          ← Previous
+        </button>
+
+        <span>
+          {pagination.isLoadingNext() || pagination.isLoadingPrevious()
+            ? 'Loading...'
+            : `${data().posts.edges.length} posts`
+          }
+        </span>
+
+        <button
+          onClick={() => pagination.loadNext(5)}
+          disabled={!pagination.hasNext() || pagination.isLoadingNext()}
+        >
+          Next →
+        </button>
+      </div>
+
+      <div class="post-list">
+        <For each={data().posts.edges}>
+          {(edge) => (
+            <article class="post-preview">
+              <h2>{edge.node.title}</h2>
+              <p>{edge.node.excerpt}</p>
+              <small>By {edge.node.author.name} on {edge.node.createdAt}</small>
+            </article>
+          )}
+        </For>
+      </div>
+    </div>
+  );
+}
+```
+
+## Infinite Scrolling
+
+Implement infinite scrolling with intersection observer:
+
+```tsx
+function InfiniteUserList(props: { query: any }) {
+  const [data, { loadNext, hasNext, isLoadingNext }] =
+    createPaginationFragment(UserList_query, props.query);
+
+  let loadMoreRef: HTMLDivElement;
+
+  createEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNext() && !isLoadingNext()) {
+          loadNext(10);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef) {
+      observer.observe(loadMoreRef);
+    }
+
+    onCleanup(() => {
+      if (loadMoreRef) {
+        observer.unobserve(loadMoreRef);
+      }
+    });
+  });
+
+  return (
+    <div>
+      <div class="user-list">
+        <For each={data().users.edges}>
+          {(edge) => (
+            <UserCard user={edge.node} />
+          )}
+        </For>
+      </div>
+
+      <Show when={hasNext()}>
+        <div
+          ref={loadMoreRef!}
+          class="load-more-trigger"
+        >
+          <Show
+            when={isLoadingNext()}
+            fallback={<div>Scroll to load more...</div>}
+          >
+            <div>Loading more users...</div>
+          </Show>
+        </div>
+      </Show>
+    </div>
+  );
+}
+```
+
+## Search with Pagination
+
+Combine search functionality with pagination:
+
+```tsx
+const SearchResults_query = graphql`
+  fragment SearchResults_query on Query
+  @refetchable(queryName: "SearchResultsPaginationQuery")
+  @argumentDefinitions(
+    searchTerm: { type: "String!" }
+  ) {
+    searchUsers(
+      query: $searchTerm
+      first: $count
+      after: $cursor
+    ) @connection(key: "SearchResults_searchUsers") {
+      edges {
+        node {
+          id
+          name
+          email
+          avatar
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+`;
+
+function SearchResults(props: { query: any }) {
+  const [searchTerm, setSearchTerm] = createSignal('');
+  const [data, { loadNext, hasNext, isLoadingNext, refetch }] =
+    createPaginationFragment(SearchResults_query, props.query);
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    refetch(
+      { searchTerm: term },
+      { fetchPolicy: 'network-only' }
+    );
+  };
+
+  return (
+    <div>
+      <input
+        type="text"
+        placeholder="Search users..."
+        value={searchTerm()}
+        onInput={(e) => handleSearch(e.target.value)}
+      />
+
+      <div class="search-results">
+        <For each={data().searchUsers.edges}>
+          {(edge) => (
+            <UserCard user={edge.node} />
+          )}
+        </For>
+      </div>
+
+      <Show when={hasNext()}>
+        <button
+          onClick={() => loadNext(10)}
+          disabled={isLoadingNext()}
+        >
+          {isLoadingNext() ? 'Loading...' : 'Load More Results'}
+        </button>
+      </Show>
+    </div>
+  );
+}
+```
+
+## Pagination with Filtering
+
+Implement pagination with filters:
+
+```tsx
+const FilteredPosts_query = graphql`
+  fragment FilteredPosts_query on Query
+  @refetchable(queryName: "FilteredPostsPaginationQuery")
+  @argumentDefinitions(
+    category: { type: "String" }
+    sortBy: { type: "PostSortField", defaultValue: "CREATED_AT" }
+  ) {
+    posts(
+      category: $category
+      sortBy: $sortBy
+      first: $count
+      after: $cursor
+    ) @connection(key: "FilteredPosts_posts") {
+      edges {
+        node {
+          id
+          title
+          category
+          createdAt
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+`;
+
+function FilteredPosts(props: { query: any }) {
+  const [category, setCategory] = createSignal<string | null>(null);
+  const [sortBy, setSortBy] = createSignal('CREATED_AT');
+
+  const [data, { loadNext, hasNext, isLoadingNext, refetch }] =
+    createPaginationFragment(FilteredPosts_query, props.query);
+
+  const applyFilters = () => {
+    refetch(
+      {
+        category: category(),
+        sortBy: sortBy()
+      },
+      { fetchPolicy: 'network-only' }
+    );
+  };
+
+  return (
+    <div>
+      <div class="filters">
+        <select
+          value={category() || ''}
+          onChange={(e) => setCategory(e.target.value || null)}
+        >
+          <option value="">All Categories</option>
+          <option value="tech">Technology</option>
+          <option value="design">Design</option>
+          <option value="business">Business</option>
+        </select>
+
+        <select
+          value={sortBy()}
+          onChange={(e) => setSortBy(e.target.value)}
+        >
+          <option value="CREATED_AT">Newest First</option>
+          <option value="TITLE">Alphabetical</option>
+          <option value="POPULARITY">Most Popular</option>
+        </select>
+
+        <button onClick={applyFilters}>
+          Apply Filters
+        </button>
+      </div>
+
+      <div class="posts">
+        <For each={data().posts.edges}>
+          {(edge) => (
+            <PostCard post={edge.node} />
+          )}
+        </For>
+      </div>
+
+      <Show when={hasNext()}>
+        <button
+          onClick={() => loadNext(10)}
+          disabled={isLoadingNext()}
+        >
+          Load More
+        </button>
+      </Show>
+    </div>
+  );
+}
+```
+
+## Performance Optimization
+
+### Virtualization for Large Lists
+
+For very large lists, consider using virtualization:
+
+```tsx
+import { createVirtualizer } from '@tanstack/solid-virtual';
+
+function VirtualizedUserList(props: { query: any }) {
+  const [data, { loadNext, hasNext, isLoadingNext }] =
+    createPaginationFragment(UserList_query, props.query);
+
+  let parentRef: HTMLDivElement;
+
+  const virtualizer = createVirtualizer(() => ({
+    count: data().users.edges.length,
+    getScrollElement: () => parentRef,
+    estimateSize: () => 80, // Estimated item height
+    overscan: 5,
+  }));
+
+  // Load more when approaching the end
+  createEffect(() => {
+    const items = virtualizer.getVirtualItems();
+    const lastItem = items[items.length - 1];
+
+    if (lastItem && lastItem.index >= data().users.edges.length - 10) {
+      if (hasNext() && !isLoadingNext()) {
+        loadNext(20);
+      }
+    }
+  });
+
+  return (
+    <div
+      ref={parentRef!}
+      style={{ height: '400px', overflow: 'auto' }}
+    >
+      <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+        <For each={virtualizer.getVirtualItems()}>
+          {(virtualItem) => (
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: `${virtualItem.size}px`,
+                transform: `translateY(${virtualItem.start}px)`,
+              }}
+            >
+              <UserCard user={data().users.edges[virtualItem.index].node} />
+            </div>
+          )}
+        </For>
+      </div>
+    </div>
+  );
+}
+```
+
+## Best Practices
+
+### 1. Use Appropriate Page Sizes
+
+Choose page sizes based on your use case:
+
+```tsx
+// For mobile: smaller pages
+const MOBILE_PAGE_SIZE = 10;
+
+// For desktop: larger pages
+const DESKTOP_PAGE_SIZE = 20;
+
+// For infinite scroll: medium pages
+const INFINITE_SCROLL_PAGE_SIZE = 15;
+```
+
+### 2. Handle Loading States Gracefully
+
+Provide clear feedback during loading:
+
+```tsx
+<Show
+  when={isLoadingNext()}
+  fallback={
+    <button onClick={() => loadNext(10)}>
+      Load More ({data().users.edges.length} loaded)
+    </button>
+  }
+>
+  <div class="loading-indicator">
+    <Spinner /> Loading more items...
+  </div>
+</Show>
+```
+
+### 3. Implement Error Handling
+
+Handle pagination errors appropriately:
+
+```tsx
+function PaginatedList(props: { query: any }) {
+  const [error, setError] = createSignal<string | null>(null);
+  const [data, { loadNext, hasNext, isLoadingNext }] =
+    createPaginationFragment(UserList_query, props.query);
+
+  const handleLoadMore = () => {
+    setError(null);
+    loadNext(10, {
+      onError: (err) => {
+        setError(err.message);
+      }
+    });
+  };
+
+  return (
+    <div>
+      {/* List items */}
+
+      <Show when={error()}>
+        <div class="error">
+          {error()}
+          <button onClick={handleLoadMore}>Retry</button>
+        </div>
+      </Show>
+
+      <Show when={hasNext() && !error()}>
+        <button onClick={handleLoadMore} disabled={isLoadingNext()}>
+          Load More
+        </button>
+      </Show>
+    </div>
+  );
+}
+```
+
+### 4. Cache Management
+
+Be mindful of memory usage with large paginated lists:
+
+```tsx
+// Consider implementing cache cleanup for very large lists
+const MAX_CACHED_ITEMS = 1000;
+
+createEffect(() => {
+  if (data().users.edges.length > MAX_CACHED_ITEMS) {
+    // Implement cleanup logic or notify user
+    console.warn('Large list detected, consider implementing cleanup');
+  }
+});
+```
+
+## Next Steps
+
+- [Subscriptions](/guide/subscriptions) - Work with real-time data
+- [Querying Data](/guide/querying) - Learn more about data fetching
+- [Fragments](/guide/fragments) - Understand fragment composition

@@ -1,0 +1,499 @@
+---
+title: Mutations
+---
+
+# Mutations
+
+Mutations allow you to modify data on your GraphQL server and update your local Relay store. This guide covers how to perform mutations effectively using Solid Relay.
+
+## Basic Mutations with createMutation
+
+Use `createMutation` to perform GraphQL mutations:
+
+```tsx
+import { createMutation } from 'solid-relay';
+import { graphql } from 'relay-runtime';
+
+const CreatePostMutation = graphql`
+  mutation CreatePostMutation($input: CreatePostInput!) {
+    createPost(input: $input) {
+      post {
+        id
+        title
+        content
+        author {
+          name
+        }
+      }
+      errors {
+        message
+        field
+      }
+    }
+  }
+`;
+
+function CreatePostForm() {
+  const [createPost, isPending] = createMutation(CreatePostMutation);
+
+  const [title, setTitle] = createSignal('');
+  const [content, setContent] = createSignal('');
+
+  const handleSubmit = (e: Event) => {
+    e.preventDefault();
+
+    createPost({
+      variables: {
+        input: {
+          title: title(),
+          content: content(),
+        }
+      },
+      onCompleted: (response) => {
+        if (response.createPost.errors.length === 0) {
+          console.log('Post created!', response.createPost.post);
+          setTitle('');
+          setContent('');
+        }
+      },
+      onError: (error) => {
+        console.error('Mutation failed:', error);
+      }
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        value={title()}
+        onInput={(e) => setTitle(e.target.value)}
+        placeholder="Post title"
+        disabled={isPending()}
+      />
+      <textarea
+        value={content()}
+        onInput={(e) => setContent(e.target.value)}
+        placeholder="Post content"
+        disabled={isPending()}
+      />
+      <button type="submit" disabled={isPending()}>
+        {isPending() ? 'Creating...' : 'Create Post'}
+      </button>
+    </form>
+  );
+}
+```
+
+## Optimistic Updates
+
+Provide immediate feedback with optimistic updates:
+
+```tsx
+const LikePostMutation = graphql`
+  mutation LikePostMutation($input: LikePostInput!) {
+    likePost(input: $input) {
+      post {
+        id
+        likeCount
+        isLikedByViewer
+      }
+    }
+  }
+`;
+
+function LikeButton(props: { post: any }) {
+  const [likePost] = createMutation(LikePostMutation);
+
+  const handleLike = () => {
+    const currentLikeCount = props.post.likeCount;
+    const isLiked = props.post.isLikedByViewer;
+
+    likePost({
+      variables: {
+        input: { postId: props.post.id }
+      },
+      optimisticResponse: {
+        likePost: {
+          post: {
+            id: props.post.id,
+            likeCount: isLiked ? currentLikeCount - 1 : currentLikeCount + 1,
+            isLikedByViewer: !isLiked,
+          }
+        }
+      },
+      onError: () => {
+        // The optimistic update will be rolled back automatically
+        console.error('Failed to like post');
+      }
+    });
+  };
+
+  return (
+    <button onClick={handleLike}>
+      {props.post.isLikedByViewer ? '❤️' : '🤍'} {props.post.likeCount}
+    </button>
+  );
+}
+```
+
+## Updating the Store
+
+### Automatic Updates
+
+Relay automatically updates the store when mutations return updated objects with IDs:
+
+```tsx
+const UpdateUserMutation = graphql`
+  mutation UpdateUserMutation($input: UpdateUserInput!) {
+    updateUser(input: $input) {
+      user {
+        id          # Required for automatic updates
+        name
+        email
+        avatar
+      }
+    }
+  }
+`;
+```
+
+### Manual Store Updates with Updater Functions
+
+For more complex scenarios, use updater functions:
+
+```tsx
+const DeletePostMutation = graphql`
+  mutation DeletePostMutation($input: DeletePostInput!) {
+    deletePost(input: $input) {
+      deletedPostId
+      user {
+        id
+        postCount
+      }
+    }
+  }
+`;
+
+function DeletePostButton(props: { postId: string; userId: string }) {
+  const [deletePost] = createMutation(DeletePostMutation);
+
+  const handleDelete = () => {
+    deletePost({
+      variables: {
+        input: { postId: props.postId }
+      },
+      updater: (store) => {
+        // Remove the post from the store
+        store.delete(props.postId);
+
+        // Update the user's post list
+        const user = store.get(props.userId);
+        if (user) {
+          const posts = user.getLinkedRecords('posts');
+          if (posts) {
+            const updatedPosts = posts.filter(post =>
+              post && post.getDataID() !== props.postId
+            );
+            user.setLinkedRecords(updatedPosts, 'posts');
+          }
+        }
+      },
+      onCompleted: () => {
+        console.log('Post deleted successfully');
+      }
+    });
+  };
+
+  return (
+    <button onClick={handleDelete}>
+      Delete Post
+    </button>
+  );
+}
+```
+
+### Connection Updates
+
+Update connections (paginated lists) using connection utilities:
+
+```tsx
+import { ConnectionHandler } from 'relay-runtime';
+
+const AddPostMutation = graphql`
+  mutation AddPostMutation($input: CreatePostInput!, $connections: [ID!]!) {
+    createPost(input: $input) {
+      post @appendNode(connections: $connections, edgeTypeName: "PostEdge") {
+        id
+        title
+        content
+        createdAt
+      }
+    }
+  }
+`;
+
+function CreatePostForm(props: { userId: string }) {
+  const [createPost] = createMutation(AddPostMutation);
+
+  const handleSubmit = (formData: FormData) => {
+    // Get the connection ID
+    const connectionID = ConnectionHandler.getConnectionID(
+      props.userId,
+      'UserPosts_posts'
+    );
+
+    createPost({
+      variables: {
+        input: {
+          title: formData.get('title'),
+          content: formData.get('content'),
+        },
+        connections: [connectionID]
+      }
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* form fields */}
+    </form>
+  );
+}
+```
+
+## Error Handling
+
+Handle different types of mutation errors:
+
+```tsx
+function CreatePostForm() {
+  const [createPost, isPending] = createMutation(CreatePostMutation);
+  const [errors, setErrors] = createSignal<string[]>([]);
+
+  const handleSubmit = (formData: any) => {
+    setErrors([]);
+
+    createPost({
+      variables: { input: formData },
+      onCompleted: (response, errors) => {
+        // GraphQL errors
+        if (errors) {
+          setErrors(errors.map(e => e.message));
+          return;
+        }
+
+        // Application errors from the mutation payload
+        if (response.createPost.errors.length > 0) {
+          setErrors(response.createPost.errors.map(e => e.message));
+          return;
+        }
+
+        // Success
+        console.log('Post created successfully!');
+      },
+      onError: (error) => {
+        // Network or parsing errors
+        setErrors([error.message]);
+      }
+    });
+  };
+
+  return (
+    <div>
+      <Show when={errors().length > 0}>
+        <div class="error-list">
+          <For each={errors()}>
+            {(error) => <div class="error">{error}</div>}
+          </For>
+        </div>
+      </Show>
+
+      <form onSubmit={handleSubmit}>
+        {/* form fields */}
+      </form>
+    </div>
+  );
+}
+```
+
+## Multiple Mutations
+
+Handle multiple mutations in sequence or parallel:
+
+```tsx
+function BatchActions() {
+  const [likePost] = createMutation(LikePostMutation);
+  const [followUser] = createMutation(FollowUserMutation);
+  const [isProcessing, setIsProcessing] = createSignal(false);
+
+  // Sequential mutations
+  const handleLikeAndFollow = async (postId: string, userId: string) => {
+    setIsProcessing(true);
+
+    try {
+      // First, like the post
+      await new Promise((resolve, reject) => {
+        likePost({
+          variables: { input: { postId } },
+          onCompleted: resolve,
+          onError: reject
+        });
+      });
+
+      // Then, follow the user
+      await new Promise((resolve, reject) => {
+        followUser({
+          variables: { input: { userId } },
+          onCompleted: resolve,
+          onError: reject
+        });
+      });
+
+      console.log('Both actions completed!');
+    } catch (error) {
+      console.error('One of the actions failed:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Parallel mutations
+  const handleParallelActions = (postId: string, userId: string) => {
+    setIsProcessing(true);
+
+    const promises = [
+      new Promise((resolve, reject) => {
+        likePost({
+          variables: { input: { postId } },
+          onCompleted: resolve,
+          onError: reject
+        });
+      }),
+      new Promise((resolve, reject) => {
+        followUser({
+          variables: { input: { userId } },
+          onCompleted: resolve,
+          onError: reject
+        });
+      })
+    ];
+
+    Promise.all(promises)
+      .then(() => console.log('All actions completed!'))
+      .catch(error => console.error('Some actions failed:', error))
+      .finally(() => setIsProcessing(false));
+  };
+
+  return (
+    <div>
+      <button
+        onClick={() => handleLikeAndFollow('post1', 'user1')}
+        disabled={isProcessing()}
+      >
+        Like then Follow
+      </button>
+
+      <button
+        onClick={() => handleParallelActions('post1', 'user1')}
+        disabled={isProcessing()}
+      >
+        Like and Follow (Parallel)
+      </button>
+    </div>
+  );
+}
+```
+
+## Best Practices
+
+### 1. Always Handle Loading States
+
+Provide feedback during mutation execution:
+
+```tsx
+function ActionButton() {
+  const [performAction, isPending] = createMutation(SomeMutation);
+
+  return (
+    <button
+      onClick={() => performAction({ variables: {} })}
+      disabled={isPending()}
+    >
+      {isPending() ? 'Processing...' : 'Perform Action'}
+    </button>
+  );
+}
+```
+
+### 2. Use Optimistic Updates for Better UX
+
+Implement optimistic updates for actions that are likely to succeed:
+
+```tsx
+// Good for: likes, follows, simple toggles
+// Avoid for: complex validations, payment processing
+```
+
+### 3. Validate Input Before Mutations
+
+Validate on the client side before sending mutations:
+
+```tsx
+function CreatePostForm() {
+  const [title, setTitle] = createSignal('');
+  const [isValid, setIsValid] = createSignal(false);
+
+  createEffect(() => {
+    setIsValid(title().trim().length >= 3);
+  });
+
+  const handleSubmit = () => {
+    if (!isValid()) return;
+    // Proceed with mutation
+  };
+
+  return (
+    <form>
+      <input
+        value={title()}
+        onInput={(e) => setTitle(e.target.value)}
+      />
+      <button disabled={!isValid()}>
+        Create Post
+      </button>
+    </form>
+  );
+}
+```
+
+### 4. Clean Up Resources
+
+Clean up any resources or subscriptions when components unmount:
+
+```tsx
+function SomeComponent() {
+  const [mutate] = createMutation(SomeMutation);
+  let disposeFn: (() => void) | null = null;
+
+  onCleanup(() => {
+    if (disposeFn) {
+      disposeFn();
+    }
+  });
+
+  const handleAction = () => {
+    disposeFn = mutate({
+      variables: {},
+      // ... other options
+    });
+  };
+
+  return <button onClick={handleAction}>Action</button>;
+}
+```
+
+## Next Steps
+
+- [Pagination](/guide/pagination) - Implement efficient list pagination
+- [Subscriptions](/guide/subscriptions) - Work with real-time data
+- [Querying Data](/guide/querying) - Learn more about data fetching
