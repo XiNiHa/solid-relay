@@ -30,7 +30,7 @@ relay-compiler @types/relay-runtime vite-plugin-relay-lite
 
 ## Project Setup
 
-### SolidStart Apps
+### SolidStart
 
 For SolidStart applications, configure your `app.config.ts`:
 
@@ -40,41 +40,14 @@ import relay from "vite-plugin-relay-lite";
 
 export default defineConfig({
   vite: () => ({
-    plugins: [
-      relay({
-        // Optional: disable code generation if you're handling it separately
-        codegen: true,
-        // Optional: path to your relay config
-        relayConfig: "./relay.config.json"
-      }),
-    ],
+    plugins: [relay()],
   }),
 });
 ```
 
-### Vite SPAs with Solid Router
+### Vite
 
-For Vite-based Single Page Applications using Solid Router, configure your `vite.config.ts`:
-
-```typescript
-import { defineConfig } from 'vite';
-import solid from 'vite-plugin-solid';
-import relay from 'vite-plugin-relay-lite';
-
-export default defineConfig({
-  plugins: [
-    solid(),
-    relay({
-      codegen: true,
-      relayConfig: "./relay.config.json"
-    }),
-  ],
-});
-```
-
-### Vite SPAs with TanStack Router
-
-For Vite-based SPAs using TanStack Router, the configuration is similar:
+For Vite-based applications, configure your `vite.config.ts`:
 
 ```typescript
 import { defineConfig } from 'vite';
@@ -84,31 +57,8 @@ import relay from 'vite-plugin-relay-lite';
 export default defineConfig({
   plugins: [
     solid(),
-    relay({
-      codegen: true,
-      relayConfig: "./relay.config.json"
-    }),
+    relay(),
   ],
-});
-```
-
-### TanStack Start
-
-For TanStack Start applications, configure your build setup:
-
-```typescript
-import { defineConfig } from '@tanstack/start/config';
-import relay from 'vite-plugin-relay-lite';
-
-export default defineConfig({
-  vite: {
-    plugins: [
-      relay({
-        codegen: true,
-        relayConfig: "./relay.config.json"
-      }),
-    ],
-  },
 });
 ```
 
@@ -120,7 +70,7 @@ Create a `relay.config.json` file in your project root:
 {
   "src": "./src",
   "schema": "./schema.graphql",
-  "exclude": ["**/node_modules/**", "**/__mocks__/**", "**/__generated__/**"],
+  "exclude": ["**/node_modules/**", "**/__generated__/**"],
   "language": "typescript",
   "eagerEsModules": true
 }
@@ -132,17 +82,17 @@ Create a Relay environment to configure your GraphQL client:
 
 ```typescript
 // src/RelayEnvironment.ts
-import { Environment, Network, RecordSource, Store } from 'relay-runtime';
+import { Environment, type FetchFunction, Network, RecordSource, Store } from 'relay-runtime';
 
 // Define your fetch function
-async function fetchQuery(operation: any, variables: any) {
+const fetchFn: FetchFunction = async (params, variables) => {
   const response = await fetch('/graphql', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      query: operation.text,
+      query: params.text,
       variables,
     }),
   });
@@ -150,13 +100,13 @@ async function fetchQuery(operation: any, variables: any) {
   return await response.json();
 }
 
-// Create Relay environment
-const environment = new Environment({
-  network: Network.create(fetchQuery),
-  store: new Store(new RecordSource()),
-});
-
-export default environment;
+export function createRelayEnvironment() {
+  // Create Relay environment
+  return new Environment({
+    network: Network.create(fetchFn),
+    store: new Store(new RecordSource()),
+  });
+}
 ```
 
 ## Provider Setup
@@ -166,9 +116,11 @@ Wrap your app with the Relay Environment Provider:
 ```tsx
 // src/app.tsx
 import { RelayEnvironmentProvider } from 'solid-relay';
-import environment from './RelayEnvironment';
+import { createRelayEnvironment } from './RelayEnvironment';
 
 function App() {
+	const environment = createRelayEnvironment();
+
   return (
     <RelayEnvironmentProvider environment={environment}>
       {/* Your app components */}
@@ -177,20 +129,6 @@ function App() {
 }
 
 export default App;
-```
-
-## Running the Relay Compiler
-
-Add scripts to your `package.json`:
-
-```json
-{
-  "scripts": {
-    "relay": "relay-compiler",
-    "relay:watch": "relay-compiler --watch",
-    "dev": "concurrently \"vite dev\" \"relay-compiler --watch\""
-  }
-}
 ```
 
 ## Next Steps
@@ -217,11 +155,11 @@ The main difference is in the component-level APIs, which Solid Relay provides a
 
 ### Plugin Choice
 
-This guide uses `vite-plugin-relay-lite` instead of `vite-plugin-relay`. The lite version is recommended as it provides:
+This guide uses [`vite-plugin-relay-lite`](https://github.com/cometkim/vite-plugin-relay-lite) instead of `vite-plugin-relay`. The lite version is recommended as it provides:
 
-- Smaller bundle size
-- Better performance
-- Essential Relay features without unnecessary overhead
+- Better bundler performance
+- Smaller install size
 - Better integration with modern build tools
+- Automatic codegen with Relay Compiler
 
 If you need additional features not available in the lite version, you can switch to `vite-plugin-relay`, but `vite-plugin-relay-lite` covers most use cases effectively.
