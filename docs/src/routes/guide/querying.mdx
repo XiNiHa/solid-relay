@@ -8,11 +8,13 @@ Solid Relay provides several primitives for fetching GraphQL data in your SolidJ
 
 ## Basic Queries with createLazyLoadQuery
 
-The most straightforward way to fetch data is using `createLazyLoadQuery`. This primitive loads data when the component renders and suspends until the data is available.
+The most simple way to fetch data is using `createLazyLoadQuery`. This primitive loads data when the component renders and suspends until the data is available.
 
 ```tsx
-import { createLazyLoadQuery } from 'solid-relay';
-import { graphql } from 'relay-runtime';
+import { Show } from "solid-js";
+import { createLazyLoadQuery } from "solid-relay";
+import { graphql } from "relay-runtime";
+import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
 
 const UserQuery = graphql`
   query UserQuery($userId: ID!) {
@@ -26,14 +28,19 @@ const UserQuery = graphql`
 `;
 
 function UserProfile(props: { userId: string }) {
-  const data = createLazyLoadQuery(UserQuery, { userId: props.userId });
+  const data = createLazyLoadQuery<UserQuery>(UserQuery, { userId: props.userId });
 
   return (
-    <div>
-      <h1>{data().user.name}</h1>
-      <p>{data().user.email}</p>
-      <img src={data().user.avatar} alt={data().user.name} />
-    </div>
+    // data() is undefined when loading
+    <Show when={data()}>
+      {(data) => (
+        <div>
+          <h1>{data().user.name}</h1>
+          <p>{data().user.email}</p>
+          <img src={data().user.avatar} alt={data().user.name} />
+        </div>
+      )}
+    </Show>
   );
 }
 ```
@@ -43,12 +50,14 @@ function UserProfile(props: { userId: string }) {
 Variables can be reactive signals or static values:
 
 ```tsx
-import { createSignal } from 'solid-js';
+import { createSignal, For, Show, Suspense } from "solid-js";
+import { createLazyLoadQuery } from "solid-relay";
+import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
 
 function SearchResults() {
-  const [searchTerm, setSearchTerm] = createSignal('');
+  const [searchTerm, setSearchTerm] = createSignal<string>("");
 
-  const data = createLazyLoadQuery(
+  const data = createLazyLoadQuery<UserQuery>(
     SearchQuery,
     () => ({ term: searchTerm() }) // Reactive variables
   );
@@ -60,11 +69,17 @@ function SearchResults() {
         onInput={(e) => setSearchTerm(e.target.value)}
         placeholder="Search..."
       />
-      <div>
-        <For each={data().search.results}>
-          {(result) => <div>{result.title}</div>}
-        </For>
-      </div>
+      <Suspense fallback="Loading...">
+        <Show when={data()}>
+          {(data) => (
+            <div>
+              <For each={data().search.results}>
+                {(result) => <div>{result.title}</div>}
+              </For>
+            </div>
+          )}
+        </Show>
+      </Suspense>
     </div>
   );
 }
@@ -85,15 +100,74 @@ const data = createLazyLoadQuery(
 );
 ```
 
-## Preloaded Queries
+## Preloading Queries
 
-For better performance, preload queries before they're needed:
+For better performance, you can consider preloading queries before they're needed.
+
+### Using loadQuery
+
+Preloading page-level queries using the router hook is the recommended pattern of query loading in Relay,
+as it allows loading all data required for the page as soon as possible.
+While the example shows the pattern applied for SolidStart with Solid Router,
+this pattern could be also applied to different router libraries and frameworks, such as standalone Solid Router, TanStack Router, and TanStack Start.
 
 ```tsx
-import { createQueryLoader, createPreloadedQuery } from 'solid-relay';
+import { query, type RouteDefinition } from "@solidjs/router";
+import { Show } from "solid-js";
+import { createPreloadedQuery, loadQuery, useRelayEnvironment } from "solid-relay";
+import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
+
+// Example using SolidStart with Solid Router
+export const route = {
+  preload() {
+    // With this, you can start preloading the query in many cases, including link hovers
+    // You can also use route params to set the variables for the preload
+    void loadUserQuery('123');
+  }
+} satisfies RouteDefinition
+
+const loadUserQuery = query(
+  async (userId: string) => loadQuery<UserQuery>(
+    // The first call returns the accessor for the environment,
+    // and the second call reads the accessor to get the environment
+    useRelayEnvironment()(),
+    UserQuery,
+    { userId }
+  ),
+  "UserQuery"
+);
+
+export default function Page() {
+  // The preloaded queries passed into `createPreloadedQuery`
+  // get disposed automatically when the user navigates away
+  // or the fetch variable changes
+  const data = createPreloadedQuery(UserQuery, () => loadUserQuery('123'));
+
+  return (
+    <Show when={data()}>
+      {(data) => (
+        <div>
+          <h1>{data().user.name}</h1>
+          <p>{data().user.email}</p>
+        </div>
+      )}
+    </Show>
+  );
+}
+```
+
+### Using createQueryLoader
+
+`createQueryLoader` can be useful if you want to lazily preload additional queries.
+
+```tsx
+import { Show } from "solid-js";
+import { createPreloadedQuery, createQueryLoader, type PreloadedQuery } from "solid-relay";
+import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
 
 function App() {
-  const [loadQuery, queryRef] = createQueryLoader(UserQuery);
+	// The preloaded queries auto-disposes when `App` unmounts
+  const [queryRef, loadQuery] = createQueryLoader<UserQuery>(UserQuery);
 
   const handleLoadUser = (userId: string) => {
     loadQuery({ userId }); // Start loading immediately
@@ -103,43 +177,24 @@ function App() {
     <div>
       <button onClick={() => handleLoadUser('123')}>Load User</button>
       <Show when={queryRef()}>
-        <UserProfile queryRef={queryRef()!} />
+        {(queryRef) => <UserProfile queryRef={queryRef()} />}
       </Show>
     </div>
   );
 }
 
-function UserProfile(props: { queryRef: any }) {
-  const data = createPreloadedQuery(UserQuery, props.queryRef);
+function UserProfile(props: { queryRef: PreloadedQuery<UserQuery> }) {
+  const data = createPreloadedQuery(UserQuery, () => props.queryRef);
 
   return (
-    <div>
-      <h1>{data().user.name}</h1>
-      <p>{data().user.email}</p>
-    </div>
-  );
-}
-```
-
-## Refetching Data
-
-Refetch queries when data changes:
-
-```tsx
-import { createLazyLoadQuery } from 'solid-relay';
-
-function UserProfile(props: { userId: string }) {
-  const [data, { refetch }] = createLazyLoadQuery(UserQuery, { userId: props.userId });
-
-  const handleRefresh = () => {
-    refetch({ userId: props.userId }); // Refetch with same or new variables
-  };
-
-  return (
-    <div>
-      <h1>{data().user.name}</h1>
-      <button onClick={handleRefresh}>Refresh</button>
-    </div>
+    <Show when={data()}>
+      {(data) => (
+        <div>
+          <h1>{data().user.name}</h1>
+          <p>{data().user.email}</p>
+        </div>
+      )}
+    </Show>
   );
 }
 ```
@@ -154,10 +209,9 @@ import { ErrorBoundary } from 'solid-js';
 function App() {
   return (
     <ErrorBoundary
-      fallback={(error) => (
+      fallback={() => (
         <div>
-          <h2>Something went wrong:</h2>
-          <p>{error.message}</p>
+          <h2>Something went wrong</h2>
         </div>
       )}
     >
@@ -182,107 +236,3 @@ function App() {
   );
 }
 ```
-
-## Query Composition
-
-Compose multiple queries using fragments:
-
-```tsx
-const UserQuery = graphql`
-  query UserQuery($userId: ID!) {
-    user(id: $userId) {
-      ...UserProfile_user
-      ...UserPosts_user
-    }
-  }
-`;
-
-function UserPage(props: { userId: string }) {
-  const data = createLazyLoadQuery(UserQuery, { userId: props.userId });
-
-  return (
-    <div>
-      <UserProfile user={data().user} />
-      <UserPosts user={data().user} />
-    </div>
-  );
-}
-```
-
-## Best Practices
-
-### 1. Use TypeScript
-
-Always use TypeScript for better type safety:
-
-```tsx
-import type { UserQuery as UserQueryType } from './__generated__/UserQuery.graphql';
-
-const data = createLazyLoadQuery<UserQueryType>(UserQuery, { userId: props.userId });
-```
-
-### 2. Colocate Queries
-
-Keep queries close to the components that use them:
-
-```tsx
-// UserProfile.tsx
-const UserProfileQuery = graphql`
-  query UserProfileQuery($userId: ID!) {
-    user(id: $userId) {
-      id
-      name
-      email
-    }
-  }
-`;
-
-export function UserProfile(props: { userId: string }) {
-  // Component implementation
-}
-```
-
-### 3. Use Fragments for Reusability
-
-Break down queries into reusable fragments:
-
-```tsx
-const UserProfile_user = graphql`
-  fragment UserProfile_user on User {
-    id
-    name
-    email
-    avatar
-  }
-`;
-
-const UserQuery = graphql`
-  query UserQuery($userId: ID!) {
-    user(id: $userId) {
-      ...UserProfile_user
-    }
-  }
-`;
-```
-
-### 4. Handle Loading and Error States
-
-Always provide good UX with proper loading and error handling:
-
-```tsx
-function UserApp() {
-  return (
-    <ErrorBoundary fallback={<ErrorMessage />}>
-      <Suspense fallback={<LoadingSpinner />}>
-        <UserProfile userId="123" />
-      </Suspense>
-    </ErrorBoundary>
-  );
-}
-```
-
-## Next Steps
-
-- [Fragments](/guide/fragments) - Learn about fragment composition and masking
-- [Mutations](/guide/mutations) - Handle data modifications
-- [Pagination](/guide/pagination) - Implement efficient list pagination
