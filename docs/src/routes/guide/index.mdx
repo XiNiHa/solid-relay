@@ -25,7 +25,7 @@ solid-relay relay-runtime
 Install development dependencies:
 
 ```package-install-dev
-relay-compiler @types/relay-runtime vite-plugin-relay-lite
+relay-compiler @types/relay-runtime vite-plugin-relay-lite vite-plugin-cjs-interop
 ```
 
 ## Project Setup
@@ -37,10 +37,15 @@ For SolidStart applications, configure your `app.config.ts`:
 ```typescript
 import { defineConfig } from "@solidjs/start/config";
 import relay from "vite-plugin-relay-lite";
+import { cjsInterop } from "vite-plugin-cjs-interop";
 
 export default defineConfig({
   vite: () => ({
-    plugins: [relay()],
+    plugins: [
+    	relay(),
+      // required since Relay only gets published in CJS
+     	cjsInterop({ dependencies: ["relay-runtime"] }),
+    ],
   }),
 });
 ```
@@ -53,11 +58,14 @@ For Vite-based applications, configure your `vite.config.ts`:
 import { defineConfig } from 'vite';
 import solid from 'vite-plugin-solid';
 import relay from 'vite-plugin-relay-lite';
+import { cjsInterop } from 'vite-plugin-cjs-interop';
 
 export default defineConfig({
   plugins: [
     solid(),
     relay(),
+    // required since Relay only gets published in CJS
+   	cjsInterop({ dependencies: ["relay-runtime"] }),
   ],
 });
 ```
