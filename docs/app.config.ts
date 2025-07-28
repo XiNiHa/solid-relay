@@ -56,6 +56,26 @@ export default defineConfig(
 									title: "Getting Started",
 									link: "/",
 								},
+								{
+									title: "Querying",
+									link: "/querying",
+								},
+								{
+									title: "Fragments",
+									link: "/fragments",
+								},
+								{
+									title: "Pagination",
+									link: "/pagination",
+								},
+								{
+									title: "Mutations",
+									link: "/mutations",
+								},
+								{
+									title: "Subscriptions",
+									link: "/subscriptions",
+								},
 							],
 						},
 					],
