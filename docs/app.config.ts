@@ -39,7 +39,6 @@ export default defineConfig(
 			},
 			themeConfig: {
 				socialLinks: {
-					// @ts-ignore
 					github: "https://github.com/XiNiHa/solid-relay",
 				},
 				nav: [
