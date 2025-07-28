@@ -31,9 +31,14 @@ export default defineConfig(
 			lang: "en",
 			issueAutolink: "https://github.com/XiNiHa/solid-relay/issues/:issue",
 			editPath: "https://github.com/XiNiHa/solid-relay/edit/main/docs/:path",
+			markdown: {
+				packageManagers: {
+					// disable Deno until https://github.com/kobaltedev/solidbase/pull/102 lands
+					show: ["npm", "pnpm", "yarn", "bun"],
+				},
+			},
 			themeConfig: {
 				socialLinks: {
-					// @ts-ignore
 					github: "https://github.com/XiNiHa/solid-relay",
 				},
 				nav: [
@@ -55,6 +60,26 @@ export default defineConfig(
 								{
 									title: "Getting Started",
 									link: "/",
+								},
+								{
+									title: "Querying",
+									link: "/querying",
+								},
+								{
+									title: "Fragments",
+									link: "/fragments",
+								},
+								{
+									title: "Pagination",
+									link: "/pagination",
+								},
+								{
+									title: "Mutations",
+									link: "/mutations",
+								},
+								{
+									title: "Subscriptions",
+									link: "/subscriptions",
 								},
 							],
 						},
