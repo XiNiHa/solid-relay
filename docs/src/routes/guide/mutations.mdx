@@ -1,0 +1,331 @@
+---
+title: Mutations
+---
+
+# Mutations
+
+Mutations allow you to modify data on your GraphQL server and update your local Relay store. This guide covers how to perform mutations effectively using Solid Relay.
+
+## Basic Mutations with createMutation
+
+Use `createMutation` to perform GraphQL mutations:
+
+```tsx
+import { createMutation } from 'solid-relay';
+import { graphql } from 'relay-runtime';
+import type { CreatePostMutation } from './__generated__/CreatePostMutation.graphql';
+
+const CreatePostMutation = graphql`
+  mutation CreatePostMutation($input: CreatePostInput!) {
+    createPost(input: $input) {
+      post {
+        id
+        title
+        content
+        author {
+          name
+        }
+      }
+    }
+  }
+`;
+
+function CreatePostForm() {
+  const [createPost, isPending] = createMutation<CreatePostMutation>(CreatePostMutation);
+
+  const [title, setTitle] = createSignal('');
+  const [content, setContent] = createSignal('');
+
+  const handleSubmit = (e: Event) => {
+    e.preventDefault();
+
+    createPost({
+      variables: {
+        input: {
+          title: title(),
+          content: content(),
+        },
+      },
+      onCompleted: (response) => {
+        if (response.createPost) {
+          console.log('Post created!', response.createPost.post);
+          setTitle('');
+          setContent('');
+        }
+      },
+      onError: (error) => {
+        console.error('Mutation failed:', error);
+      },
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        value={title()}
+        onInput={(e) => setTitle(e.target.value)}
+        placeholder="Post title"
+        disabled={isPending()}
+      />
+      <textarea
+        value={content()}
+        onInput={(e) => setContent(e.target.value)}
+        placeholder="Post content"
+        disabled={isPending()}
+      />
+      <button type="submit" disabled={isPending()}>
+        {isPending() ? 'Creating...' : 'Create Post'}
+      </button>
+    </form>
+  );
+}
+```
+
+## Optimistic Updates
+
+Provide immediate feedback with optimistic updates:
+
+```tsx
+const LikePostMutation = graphql`
+  mutation LikePostMutation($input: LikePostInput!) {
+    likePost(input: $input) {
+      post {
+        id
+        likeCount
+        isLikedByViewer
+      }
+    }
+  }
+`;
+
+function LikeButton(props: { $post: LikeButton_post$key }) {
+  const post = createFragment(
+    graphql`
+      fragment LikeButton_post on Post {
+        id
+        likeCount
+        isLikedByViewer
+      }
+    `,
+    () => props.$post,
+  );
+
+  const [likePost] = createMutation<LikePostMutation>(LikePostMutation);
+
+  const handleLike = () => {
+    const postData = post();
+    if (!postData) return;
+
+    const currentLikeCount = postData.likeCount;
+    const isLiked = postData.isLikedByViewer;
+
+    likePost({
+      variables: {
+        input: { postId: postData.id },
+      },
+      optimisticResponse: {
+        likePost: {
+          post: {
+            id: postData.id,
+            likeCount: isLiked ? currentLikeCount - 1 : currentLikeCount + 1,
+            isLikedByViewer: !isLiked,
+          },
+        },
+      },
+      onError: () => {
+        // The optimistic update will be rolled back automatically
+        console.error('Failed to like post');
+      },
+    });
+  };
+
+  return (
+    <Show when={post()}>
+      {(post) => (
+        <button onClick={handleLike}>
+          {post().isLikedByViewer ? '❤️' : '🤍'} {post().likeCount}
+        </button>
+      )}
+    </Show>
+  );
+}
+```
+
+## Updating the Store
+
+### Automatic Updates
+
+Relay automatically updates the store when mutations return updated objects with IDs:
+
+```graphql
+mutation UpdateUserMutation($input: UpdateUserInput!) {
+  updateUser(input: $input) {
+    user {
+      id          # Required for automatic updates
+      name
+      email
+      avatar
+    }
+  }
+}
+```
+
+### Manual Store Updates with Updater Functions
+
+For more complex scenarios, use updater functions:
+
+```tsx
+const DeletePostMutation = graphql`
+  mutation DeletePostMutation($input: DeletePostInput!) {
+    deletePost(input: $input) {
+      deletedPostId
+      user {
+        id
+        postCount
+      }
+    }
+  }
+`;
+
+function DeletePostButton(props: { postId: string; userId: string }) {
+  const [deletePost] = createMutation<DeletePostMutation>(DeletePostMutation);
+
+  const handleDelete = () => {
+    const postId = props.postId;
+
+    deletePost({
+      variables: {
+        input: { postId },
+      },
+      updater: (store) => {
+        // Remove the post from the store
+        store.delete(postId);
+
+        // Update the user's post list
+        const user = store.get(userId);
+        if (user) {
+          const posts = user.getLinkedRecords('posts');
+          if (posts) {
+            const updatedPosts = posts.filter(post =>
+              post && post.getDataID() !== postId
+            );
+            user.setLinkedRecords(updatedPosts, 'posts');
+          }
+        }
+      },
+      onCompleted: () => {
+        console.log('Post deleted successfully');
+      },
+    });
+  };
+
+  return (
+    <button onClick={handleDelete}>
+      Delete Post
+    </button>
+  );
+}
+```
+
+### Connection Updates
+
+Update connections (paginated lists) using connection utilities:
+
+```tsx
+import { ConnectionHandler } from 'relay-runtime';
+
+const AddPostMutation = graphql`
+  mutation AddPostMutation($input: CreatePostInput!, $connections: [ID!]!) {
+    createPost(input: $input) {
+      post @appendNode(connections: $connections, edgeTypeName: "PostEdge") {
+        id
+        title
+        content
+        createdAt
+      }
+    }
+  }
+`;
+
+function CreatePostForm(props: { userId: string }) {
+  const [createPost] = createMutation<AddPostMutation>(AddPostMutation);
+
+  const handleSubmit = (e: SubmitEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+
+    // Get the connection ID
+    const connectionID = ConnectionHandler.getConnectionID(
+      props.userId,
+      'UserPosts_posts'
+    );
+
+    createPost({
+      variables: {
+        input: {
+          title: formData.get('title'),
+          content: formData.get('content'),
+        },
+        connections: [connectionID],
+      },
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* form fields */}
+    </form>
+  );
+}
+```
+
+## Error Handling
+
+Handle different types of mutation errors:
+
+```tsx
+function CreatePostForm() {
+  const [createPost, isPending] = createMutation<CreatePostMutation>(CreatePostMutation);
+  const [errors, setErrors] = createSignal<string[]>([]);
+
+  const handleSubmit = (e: SubmitEvent) => {
+    e.preventDefault();
+    setErrors([]);
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+
+    createPost({
+      variables: { input: makeCreatePostParams(formData) },
+      onCompleted: (response, errors) => {
+        // GraphQL errors
+        if (errors) {
+          setErrors(errors.map(e => e.message));
+          return;
+        }
+
+        // Success
+        console.log('Post created successfully!');
+      },
+      onError: (error) => {
+        // Network or parsing errors
+        setErrors([error.message]);
+      },
+    });
+  };
+
+  return (
+    <div>
+      <Show when={errors().length > 0}>
+        <div>
+          <For each={errors()}>
+            {(error) => <div>{error}</div>}
+          </For>
+        </div>
+      </Show>
+
+      <form onSubmit={handleSubmit}>
+        {/* form fields */}
+      </form>
+    </div>
+  );
+}
+```

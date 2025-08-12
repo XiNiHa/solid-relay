@@ -1,0 +1,163 @@
+---
+title: Subscriptions
+---
+
+# Subscriptions
+
+GraphQL subscriptions enable real-time communication between your client and server. This guide covers how to implement subscriptions using Solid Relay for live data updates.
+
+## Basic Subscriptions with createSubscription
+
+Use `createSubscription` to listen for real-time updates:
+
+```tsx
+import { createSubscription } from 'solid-relay';
+import { graphql, readInlineData } from 'relay-runtime';
+import type { MessageSubscription } from "./__generated__/MessageSubscription.graphql";
+import type {
+  ChatRoom_message$data,
+  ChatRoom_message$key,
+} from "./__generated__/ChatRoom_message.graphql";
+
+const MessageSubscription = graphql`
+  subscription MessageSubscription($chatId: ID!) {
+    messageAdded(chatId: $chatId) {
+      ...ChatRoom_message
+    }
+  }
+`;
+
+function ChatRoom(props: { chatId: string }) {
+  const [messages, setMessages] = createSignal<ChatRoom_message$data[]>([]);
+
+  createSubscription<MessageSubscription>(() => ({
+    subscription: MessageSubscription,
+    variables: { chatId: props.chatId },
+    onNext: (data) => {
+      if (data?.messageAdded) {
+        const newMessage = readInlineData(
+          graphql`
+            fragment ChatRoom_message on Message @inline {
+              id
+              content
+              createdAt
+              author {
+                id
+                name
+                avatar
+              }
+            }
+          `,
+          data.messageAdded satisfies ChatRoom_message$key,
+        );
+        setMessages(prev => [...prev, newMessage]);
+      }
+    },
+    onError: (error) => {
+      console.error('Subscription error:', error);
+    },
+    onCompleted: () => {
+      console.log('Subscription completed');
+    },
+  }));
+
+  return (
+    <div>
+      <div>
+        <For each={messages()}>
+          {(message) => (
+            <div>
+              <img src={message.author.avatar} alt={message.author.name} />
+              <div>
+                <strong>{message.author.name}</strong>
+                <p>{message.content}</p>
+                <small>{message.createdAt}</small>
+              </div>
+            </div>
+          )}
+        </For>
+      </div>
+    </div>
+  );
+}
+```
+
+## Subscriptions with Store Updates
+
+Automatically update the Relay store when subscription data arrives:
+
+```tsx
+const CommentSubscription = graphql`
+  subscription CommentSubscription($postId: ID!) {
+    commentAdded(postId: $postId) {
+      id
+      content
+      createdAt
+      author {
+        id
+        name
+      }
+      post {
+        id
+        commentCount
+      }
+    }
+  }
+`;
+
+function PostComments(props: { postId: string }) {
+  // Load initial comments
+  const data = createLazyLoadQuery<PostCommentsQuery>(
+    PostCommentsQuery,
+    () => ({ postId: props.postId }),
+  );
+
+  // Subscribe to new comments
+  createSubscription<CommentSubscription>(() => ({
+    subscription: CommentSubscription,
+    variables: { postId: props.postId },
+    updater: (store, data) => {
+      if (data?.commentAdded) {
+        const newComment = data.commentAdded;
+
+        // Get the post record from store
+        const post = store.get(props.postId);
+        if (post) {
+          // Update comment count
+          const currentCount = post.getValue('commentCount') || 0;
+          post.setValue(currentCount + 1, 'commentCount');
+
+          // Add comment to the connection
+          const connection = ConnectionHandler.getConnection(
+            post,
+            'PostComments_comments'
+          );
+
+          if (connection) {
+            const newCommentEdge = ConnectionHandler.createEdge(
+              store,
+              connection,
+              store.get(newComment.id)!,
+              'CommentEdge'
+            );
+            ConnectionHandler.insertEdgeAfter(connection, newCommentEdge);
+          }
+        }
+      }
+    },
+    onError: (error) => {
+      console.error('Failed to receive new comment:', error);
+    },
+  }));
+
+  return (
+    <div>
+      <For each={data()?.post.comments.edges}>
+        {(edge) => (
+          <Comment $comment={edge.node} />
+        )}
+      </For>
+    </div>
+  );
+}
+```

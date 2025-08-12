@@ -1,0 +1,238 @@
+---
+title: Querying Data
+---
+
+# Querying Data
+
+Solid Relay provides several primitives for fetching GraphQL data in your SolidJS applications. This guide covers the different ways to query data and when to use each approach.
+
+## Basic Queries with createLazyLoadQuery
+
+The most simple way to fetch data is using `createLazyLoadQuery`. This primitive loads data when the component renders and suspends until the data is available.
+
+```tsx
+import { Show } from "solid-js";
+import { createLazyLoadQuery } from "solid-relay";
+import { graphql } from "relay-runtime";
+import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
+
+const UserQuery = graphql`
+  query UserQuery($userId: ID!) {
+    user(id: $userId) {
+      id
+      name
+      email
+      avatar
+    }
+  }
+`;
+
+function UserProfile(props: { userId: string }) {
+  const data = createLazyLoadQuery<UserQuery>(UserQuery, { userId: props.userId });
+
+  return (
+    // data() is undefined when loading
+    <Show when={data()}>
+      {(data) => (
+        <div>
+          <h1>{data().user.name}</h1>
+          <p>{data().user.email}</p>
+          <img src={data().user.avatar} alt={data().user.name} />
+        </div>
+      )}
+    </Show>
+  );
+}
+```
+
+### Query Variables
+
+Variables can be reactive signals or static values:
+
+```tsx
+import { createSignal, For, Show, Suspense } from "solid-js";
+import { createLazyLoadQuery } from "solid-relay";
+import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
+
+function SearchResults() {
+  const [searchTerm, setSearchTerm] = createSignal<string>("");
+
+  const data = createLazyLoadQuery<UserQuery>(
+    SearchQuery,
+    () => ({ term: searchTerm() }) // Reactive variables
+  );
+
+  return (
+    <div>
+      <input
+        value={searchTerm()}
+        onInput={(e) => setSearchTerm(e.target.value)}
+        placeholder="Search..."
+      />
+      <Suspense fallback="Loading...">
+        <Show when={data()}>
+          {(data) => (
+            <div>
+              <For each={data().search.results}>
+                {(result) => <div>{result.title}</div>}
+              </For>
+            </div>
+          )}
+        </Show>
+      </Suspense>
+    </div>
+  );
+}
+```
+
+### Fetch Policies
+
+Control when and how data is fetched using fetch policies:
+
+```tsx
+const data = createLazyLoadQuery(
+  UserQuery,
+  { userId: props.userId },
+  {
+    fetchPolicy: 'store-and-network', // Fetch from store first, then network
+    // Other options: 'store-only', 'cache-first', 'network-only'
+  }
+);
+```
+
+## Preloading Queries
+
+For better performance, you can consider preloading queries before they're needed.
+
+### Using loadQuery
+
+Preloading page-level queries using the router hook is the recommended pattern of query loading in Relay,
+as it allows loading all data required for the page as soon as possible.
+While the example shows the pattern applied for SolidStart with Solid Router,
+this pattern could be also applied to different router libraries and frameworks, such as standalone Solid Router, TanStack Router, and TanStack Start.
+
+```tsx
+import { query, type RouteDefinition } from "@solidjs/router";
+import { Show } from "solid-js";
+import { createPreloadedQuery, loadQuery, useRelayEnvironment } from "solid-relay";
+import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
+
+// Example using SolidStart with Solid Router
+export const route = {
+  preload() {
+    // With this, you can start preloading the query in many cases, including link hovers
+    // You can also use route params to set the variables for the preload
+    void loadUserQuery('123');
+  }
+} satisfies RouteDefinition
+
+const loadUserQuery = query(
+  async (userId: string) => loadQuery<UserQuery>(
+    // The first call returns the accessor for the environment,
+    // and the second call reads the accessor to get the environment
+    useRelayEnvironment()(),
+    UserQuery,
+    { userId }
+  ),
+  "UserQuery"
+);
+
+export default function Page() {
+  // The preloaded queries passed into `createPreloadedQuery`
+  // get disposed automatically when the user navigates away
+  // or the fetch variable changes
+  const data = createPreloadedQuery(UserQuery, () => loadUserQuery('123'));
+
+  return (
+    <Show when={data()}>
+      {(data) => (
+        <div>
+          <h1>{data().user.name}</h1>
+          <p>{data().user.email}</p>
+        </div>
+      )}
+    </Show>
+  );
+}
+```
+
+### Using createQueryLoader
+
+`createQueryLoader` can be useful if you want to lazily preload additional queries.
+
+```tsx
+import { Show } from "solid-js";
+import { createPreloadedQuery, createQueryLoader, type PreloadedQuery } from "solid-relay";
+import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
+
+function App() {
+  // The preloaded queries auto-disposes when `App` unmounts
+  const [queryRef, loadQuery] = createQueryLoader<UserQuery>(UserQuery);
+
+  const handleLoadUser = (userId: string) => {
+    loadQuery({ userId }); // Start loading immediately
+  };
+
+  return (
+    <div>
+      <button onClick={() => handleLoadUser('123')}>Load User</button>
+      <Show when={queryRef()}>
+        {(queryRef) => <UserProfile queryRef={queryRef()} />}
+      </Show>
+    </div>
+  );
+}
+
+function UserProfile(props: { queryRef: PreloadedQuery<UserQuery> }) {
+  const data = createPreloadedQuery(UserQuery, () => props.queryRef);
+
+  return (
+    <Show when={data()}>
+      {(data) => (
+        <div>
+          <h1>{data().user.name}</h1>
+          <p>{data().user.email}</p>
+        </div>
+      )}
+    </Show>
+  );
+}
+```
+
+## Error Handling
+
+Handle query errors using Solid's ErrorBoundary:
+
+```tsx
+import { ErrorBoundary } from 'solid-js';
+
+function App() {
+  return (
+    <ErrorBoundary
+      fallback={() => (
+        <div>
+          <h2>Something went wrong</h2>
+        </div>
+      )}
+    >
+      <UserProfile userId="123" />
+    </ErrorBoundary>
+  );
+}
+```
+
+## Loading States
+
+Use Suspense to handle loading states:
+
+```tsx
+import { Suspense } from 'solid-js';
+
+function App() {
+  return (
+    <Suspense fallback={<div>Loading user...</div>}>
+      <UserProfile userId="123" />
+    </Suspense>
+  );
+}
+```

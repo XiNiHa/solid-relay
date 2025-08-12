@@ -1,0 +1,460 @@
+---
+title: Pagination
+---
+
+# Pagination
+
+Relay provides powerful pagination features that work seamlessly with GraphQL connections. This guide covers how to implement efficient pagination using Solid Relay.
+
+## Basic Pagination with createPaginationFragment
+
+Use `createPaginationFragment` to implement pagination with the connection pattern:
+
+```tsx
+import { createPaginationFragment } from 'solid-relay';
+import { graphql } from 'relay-runtime';
+
+function UserList(props: { $query: UserList_query$key }) {
+  const query = createPaginationFragment(
+    graphql`
+      fragment UserList_query on Query
+        @argumentDefinitions(
+          count: { type: "Int!", defaultValue: 10 },
+          cursor: { type: "String" },
+        )
+        @refetchable(queryName: "UserListPaginationQuery") {
+        users(
+          first: $count,
+          after: $cursor,
+        ) @connection(key: "UserList_users") {
+          edges {
+            node {
+              id
+              name
+              email
+              avatar
+            }
+          }
+          pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+          }
+        }
+      }
+    `,
+    () => props.$query,
+  );
+
+  const handleLoadMore = () => {
+    if (query.hasNext && !query.isLoadingNext) {
+      query.loadNext(10); // Load 10 more items
+    }
+  };
+
+  const handleLoadPrevious = () => {
+    if (query.hasPrevious && !query.isLoadingPrevious) {
+      query.loadPrevious(10); // Load 10 previous items
+    }
+  };
+
+  return (
+    <div>
+      <Show when={query.hasPrevious}>
+        <button
+          onClick={handleLoadPrevious}
+          disabled={query.isLoadingPrevious}
+        >
+          {query.isLoadingPrevious ? 'Loading...' : 'Load Previous'}
+        </button>
+      </Show>
+
+      <div>
+        <For each={query()?.users.edges}>
+          {(edge) => (
+            <div>
+              <img src={edge.node.avatar} alt={edge.node.name} />
+              <h3>{edge.node.name}</h3>
+              <p>{edge.node.email}</p>
+            </div>
+          )}
+        </For>
+      </div>
+
+      <Show when={query.hasNext}>
+        <button
+          onClick={handleLoadMore}
+          disabled={query.isLoadingNext}
+        >
+          {query.isLoadingNext ? 'Loading...' : 'Load More'}
+        </button>
+      </Show>
+    </div>
+  );
+}
+```
+
+## Setting Up the Parent Query
+
+The parent query needs to define the pagination variables:
+
+```tsx
+const UserListPageQuery = graphql`
+  query UserListPageQuery($count: Int!, $cursor: String) {
+    ...UserList_query
+  }
+`;
+
+function UserListPage() {
+  const data = createLazyLoadQuery(UserListPageQuery, {
+    count: 20, // Initial page size
+    cursor: null // Start from the beginning
+  });
+
+  return (
+    <Show when={data()}>
+      {(data) => (
+        <div>
+          <h1>All Users</h1>
+          <UserList $query={data()} />
+        </div>
+      )}
+    </Show>
+  );
+}
+```
+
+## Bidirectional Pagination
+
+Support both forward and backward pagination:
+
+```tsx
+function PostList(props: { $query: PostList_query$key }) {
+  const query = createPaginationFragment(
+    graphql`
+      fragment PostList_query on Query
+        @argumentDefinitions(
+          first: { type: "Int", defaultValue: 10 },
+          after: { type: "String" },
+          last: { type: "Int" },
+          before: { type: "String" },
+        )
+        @refetchable(queryName: "PostListPaginationQuery") {
+        posts(
+          first: $first,
+          after: $after,
+          last: $last,
+          before: $before,
+        ) @connection(key: "PostList_posts") {
+          edges {
+            node {
+              id
+              title
+              excerpt
+              createdAt
+              author {
+                name
+              }
+            }
+          }
+          pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+          }
+        }
+      }
+    `,
+    () => props.$query,
+  );
+
+  return (
+    <div>
+      <div>
+        <button
+          onClick={() => query.loadPrevious(5)}
+          disabled={!query.hasPrevious || query.isLoadingPrevious}
+        >
+          ← Previous
+        </button>
+
+        <span>
+          {query.isLoadingNext || query.isLoadingPrevious
+            ? 'Loading...'
+            : `${query()?.posts.edges.length || 0} posts`
+          }
+        </span>
+
+        <button
+          onClick={() => query.loadNext(5)}
+          disabled={!query.hasNext || query.isLoadingNext}
+        >
+          Next →
+        </button>
+      </div>
+
+      <div>
+        <For each={query()?.posts.edges}>
+          {(edge) => (
+            <article>
+              <h2>{edge.node.title}</h2>
+              <p>{edge.node.excerpt}</p>
+              <small>By {edge.node.author.name} on {edge.node.createdAt}</small>
+            </article>
+          )}
+        </For>
+      </div>
+    </div>
+  );
+}
+```
+
+## Infinite Scrolling
+
+Implement infinite scrolling with intersection observer:
+
+```tsx
+function InfiniteUserList(props: { $query: UserList_query$key }) {
+  const query = createPaginationFragment(
+    graphql`
+      fragment UserList_query on Query
+        @argumentDefinitions(
+          count: { type: "Int!", defaultValue: 10 },
+          cursor: { type: "String" },
+        )
+        @refetchable(queryName: "UserListPaginationQuery") {
+        users(
+          first: $count,
+          after: $cursor,
+        ) @connection(key: "UserList_users") {
+          edges {
+            node {
+              id
+              name
+              email
+              avatar
+            }
+          }
+          pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+          }
+        }
+      }
+    `,
+    () => props.$query,
+  );
+
+  let loadMoreRef: HTMLDivElement | undefined;
+
+  createEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && query.hasNext && !query.isLoadingNext) {
+          query.loadNext(10);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (loadMoreRef) {
+      observer.observe(loadMoreRef);
+    }
+
+    onCleanup(() => {
+      if (loadMoreRef) {
+        observer.unobserve(loadMoreRef);
+      }
+    });
+  });
+
+  return (
+    <div>
+      <div>
+        <For each={query()?.users.edges}>
+          {(edge) => (
+            <UserCard $user={edge.node} />
+          )}
+        </For>
+      </div>
+
+      <Show when={query.hasNext}>
+        <div ref={loadMoreRef}>
+          <Show
+            when={query.isLoadingNext}
+            fallback={<div>Scroll to load more...</div>}
+          >
+            <div>Loading more users...</div>
+          </Show>
+        </div>
+      </Show>
+    </div>
+  );
+}
+```
+
+## Search with Pagination
+
+Combine search functionality with pagination:
+
+```tsx
+function SearchResults(props: { $query: SearchResults_query$key }) {
+  const [searchTerm, setSearchTerm] = createSignal('');
+  const query = createPaginationFragment(
+    graphql`
+      fragment SearchResults_query on Query
+        @argumentDefinitions(
+          searchTerm: { type: "String!", defaultValue: "" },
+          count: { type: "Int!", defaultValue: 10 },
+          cursor: { type: "String" },
+        )
+        @refetchable(queryName: "SearchResultsPaginationQuery") {
+        searchUsers(
+          query: $searchTerm,
+          first: $count,
+          after: $cursor,
+        ) @connection(key: "SearchResults_searchUsers") {
+          edges {
+            node {
+              id
+              name
+              email
+              avatar
+            }
+          }
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+        }
+      }
+    `,
+    () => props.$query,
+  );
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    query.refetch({ searchTerm: term });
+  };
+
+  return (
+    <div>
+      <input
+        type="text"
+        placeholder="Search users..."
+        value={searchTerm()}
+        onInput={(e) => handleSearch(e.target.value)}
+      />
+
+      <div>
+        <For each={query()?.searchUsers.edges}>
+          {(edge) => (
+            <UserCard $user={edge.node} />
+          )}
+        </For>
+      </div>
+
+      <Show when={query.hasNext}>
+        <button
+          onClick={() => query.loadNext(10)}
+          disabled={query.isLoadingNext}
+        >
+          {query.isLoadingNext ? 'Loading...' : 'Load More Results'}
+        </button>
+      </Show>
+    </div>
+  );
+}
+```
+
+## Virtualization for Large Lists
+
+For very large lists, consider using virtualization. It is recommended to use libraries like `@tanstack/solid-virtual`:
+
+```tsx
+import { createVirtualizer } from '@tanstack/solid-virtual';
+
+function VirtualizedUserList(props: { $query: UserList_query$key }) {
+  const query = createPaginationFragment(
+    graphql`
+      fragment UserList_query on Query
+        @refetchable(queryName: "UserListPaginationQuery") {
+        users(
+          first: $count,
+          after: $cursor,
+        ) @connection(key: "UserList_users") {
+          edges {
+            node {
+              id
+              name
+              email
+              avatar
+            }
+          }
+          pageInfo {
+            hasNextPage
+            hasPreviousPage
+            startCursor
+            endCursor
+          }
+        }
+      }
+    `,
+    () => props.$query,
+  );
+
+  let parentRef: HTMLDivElement | undefined;
+
+  const virtualizer = createVirtualizer(() => ({
+    count: query()?.users.edges.length || 0,
+    getScrollElement: () => parentRef,
+    estimateSize: () => 80, // Estimated item height
+    overscan: 5,
+  }));
+
+  // Load more when approaching the end
+  createEffect(() => {
+    const items = virtualizer.getVirtualItems();
+    const lastItem = items[items.length - 1];
+    const edgesLength = query()?.users.edges.length || 0;
+
+    if (lastItem && lastItem.index >= edgesLength - 10) {
+      if (query.hasNext && !query.isLoadingNext) {
+        query.loadNext(20);
+      }
+    }
+  });
+
+  return (
+    <div
+      ref={parentRef}
+      style={{ height: '400px', overflow: 'auto' }}
+    >
+      <div style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+        <For each={virtualizer.getVirtualItems()}>
+          {(virtualItem) => (
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: `${virtualItem.size}px`,
+                transform: `translateY(${virtualItem.start}px)`,
+              }}
+            >
+              <Show when={query()?.users.edges[virtualItem.index]?.node}>
+                {(user) => <UserCard $user={user()} />}
+              </Show>
+            </div>
+          )}
+        </For>
+      </div>
+    </div>
+  );
+}
+```
