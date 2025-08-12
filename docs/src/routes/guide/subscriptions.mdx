@@ -13,31 +13,44 @@ Use `createSubscription` to listen for real-time updates:
 ```tsx
 import { createSubscription } from 'solid-relay';
 import { graphql } from 'relay-runtime';
+import type { MessageSubscription } from "./__generated__/MessageSubscription.graphql";
+import type {
+  ChatRoom_message$data,
+  ChatRoom_message$key,
+} from "./__generated__/ChatRoom_message.graphql";
 
 const MessageSubscription = graphql`
   subscription MessageSubscription($chatId: ID!) {
     messageAdded(chatId: $chatId) {
-      id
-      content
-      createdAt
-      author {
-        id
-        name
-        avatar
-      }
+      ...ChatRoom_message
     }
   }
 `;
 
 function ChatRoom(props: { chatId: string }) {
-  const [messages, setMessages] = createSignal<any[]>([]);
+  const [messages, setMessages] = createSignal<ChatRoom_message$data[]>([]);
 
-  createSubscription({
+  createSubscription<MessageSubscription>(() => ({
     subscription: MessageSubscription,
     variables: { chatId: props.chatId },
     onNext: (data) => {
       if (data?.messageAdded) {
-        setMessages(prev => [...prev, data.messageAdded]);
+        const newMessage = readInlineData(
+          graphql`
+            fragment ChatRoom_message on Message @inline {
+              id
+              content
+              createdAt
+              author {
+                id
+                name
+                avatar
+              }
+            }
+          `,
+          data.messageAdded satisfies ChatRoom_message$key,
+        );
+        setMessages(prev => [...prev, newMessage]);
       }
     },
     onError: (error) => {
@@ -45,15 +58,15 @@ function ChatRoom(props: { chatId: string }) {
     },
     onCompleted: () => {
       console.log('Subscription completed');
-    }
-  });
+    },
+  }));
 
   return (
-    <div class="chat-room">
-      <div class="messages">
+    <div>
+      <div>
         <For each={messages()}>
           {(message) => (
-            <div class="message">
+            <div>
               <img src={message.author.avatar} alt={message.author.name} />
               <div>
                 <strong>{message.author.name}</strong>
@@ -94,10 +107,13 @@ const CommentSubscription = graphql`
 
 function PostComments(props: { postId: string }) {
   // Load initial comments
-  const data = createLazyLoadQuery(PostCommentsQuery, { postId: props.postId });
+  const data = createLazyLoadQuery<PostCommentsQuery>(
+    PostCommentsQuery,
+    () => ({ postId: props.postId }),
+  );
 
   // Subscribe to new comments
-  createSubscription({
+  createSubscription<CommentSubscription>(() => ({
     subscription: CommentSubscription,
     variables: { postId: props.postId },
     updater: (store, data) => {
@@ -131,459 +147,17 @@ function PostComments(props: { postId: string }) {
     },
     onError: (error) => {
       console.error('Failed to receive new comment:', error);
-    }
-  });
+    },
+  }));
 
   return (
-    <div class="comments">
-      <For each={data().post.comments.edges}>
+    <div>
+      <For each={data()?.post.comments.edges}>
         {(edge) => (
-          <Comment comment={edge.node} />
+          <Comment $comment={edge.node} />
         )}
       </For>
     </div>
   );
 }
 ```
-
-## Conditional Subscriptions
-
-Start and stop subscriptions based on conditions:
-
-```tsx
-function UserStatus(props: { userId: string; isVisible: boolean }) {
-  const [subscription, setSubscription] = createSignal<(() => void) | null>(null);
-
-  const UserStatusSubscription = graphql`
-    subscription UserStatusSubscription($userId: ID!) {
-      userStatusChanged(userId: $userId) {
-        id
-        isOnline
-        lastSeen
-      }
-    }
-  `;
-
-  createEffect(() => {
-    // Clean up existing subscription
-    const currentSub = subscription();
-    if (currentSub) {
-      currentSub();
-      setSubscription(null);
-    }
-
-    // Start new subscription if component is visible
-    if (props.isVisible) {
-      const dispose = createSubscription({
-        subscription: UserStatusSubscription,
-        variables: { userId: props.userId },
-        onNext: (data) => {
-          if (data?.userStatusChanged) {
-            console.log('User status updated:', data.userStatusChanged);
-          }
-        }
-      });
-
-      setSubscription(() => dispose);
-    }
-  });
-
-  onCleanup(() => {
-    const currentSub = subscription();
-    if (currentSub) {
-      currentSub();
-    }
-  });
-
-  return (
-    <div>
-      User status subscription: {props.isVisible ? 'Active' : 'Inactive'}
-    </div>
-  );
-}
-```
-
-## Multiple Subscriptions
-
-Handle multiple subscriptions in a single component:
-
-```tsx
-function LiveDashboard(props: { userId: string }) {
-  const [notifications, setNotifications] = createSignal<any[]>([]);
-  const [activities, setActivities] = createSignal<any[]>([]);
-
-  // Subscription for notifications
-  createSubscription({
-    subscription: graphql`
-      subscription DashboardNotificationSubscription($userId: ID!) {
-        notificationAdded(userId: $userId) {
-          id
-          title
-          message
-          type
-          createdAt
-        }
-      }
-    `,
-    variables: { userId: props.userId },
-    onNext: (data) => {
-      if (data?.notificationAdded) {
-        setNotifications(prev => [data.notificationAdded, ...prev].slice(0, 10));
-      }
-    }
-  });
-
-  // Subscription for activity feed
-  createSubscription({
-    subscription: graphql`
-      subscription DashboardActivitySubscription($userId: ID!) {
-        activityAdded(userId: $userId) {
-          id
-          type
-          description
-          createdAt
-          user {
-            name
-            avatar
-          }
-        }
-      }
-    `,
-    variables: { userId: props.userId },
-    onNext: (data) => {
-      if (data?.activityAdded) {
-        setActivities(prev => [data.activityAdded, ...prev].slice(0, 20));
-      }
-    }
-  });
-
-  return (
-    <div class="dashboard">
-      <div class="notifications">
-        <h3>Recent Notifications</h3>
-        <For each={notifications()}>
-          {(notification) => (
-            <div class={`notification ${notification.type}`}>
-              <h4>{notification.title}</h4>
-              <p>{notification.message}</p>
-              <small>{notification.createdAt}</small>
-            </div>
-          )}
-        </For>
-      </div>
-
-      <div class="activities">
-        <h3>Activity Feed</h3>
-        <For each={activities()}>
-          {(activity) => (
-            <div class="activity">
-              <img src={activity.user.avatar} alt={activity.user.name} />
-              <div>
-                <p>{activity.description}</p>
-                <small>{activity.createdAt}</small>
-              </div>
-            </div>
-          )}
-        </For>
-      </div>
-    </div>
-  );
-}
-```
-
-## WebSocket Setup for Subscriptions
-
-Configure your Relay environment to support subscriptions:
-
-```tsx
-// RelayEnvironment.ts
-import {
-  Environment,
-  Network,
-  RecordSource,
-  Store,
-  Observable
-} from 'relay-runtime';
-import { createClient } from 'graphql-ws';
-
-// Create WebSocket client
-const wsClient = createClient({
-  url: 'ws://localhost:4000/graphql',
-  connectionParams: () => ({
-    // Add authentication headers if needed
-    authorization: `Bearer ${getAuthToken()}`,
-  }),
-});
-
-// Fetch function for queries and mutations
-const fetchFn = async (request: any, variables: any) => {
-  const response = await fetch('/graphql', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      // Add auth headers
-    },
-    body: JSON.stringify({
-      query: request.text,
-      variables,
-    }),
-  });
-
-  return response.json();
-};
-
-// Subscribe function for subscriptions
-const subscribeFn = (request: any, variables: any) => {
-  return Observable.create((sink) => {
-    const unsubscribe = wsClient.subscribe(
-      {
-        query: request.text!,
-        variables,
-      },
-      {
-        next: sink.next,
-        error: sink.error,
-        complete: sink.complete,
-      }
-    );
-
-    return () => unsubscribe();
-  });
-};
-
-// Create network with both fetch and subscribe
-const network = Network.create(fetchFn, subscribeFn);
-
-const environment = new Environment({
-  network,
-  store: new Store(new RecordSource()),
-});
-
-export default environment;
-```
-
-## Subscription with Authentication
-
-Handle authentication in subscriptions:
-
-```tsx
-function AuthenticatedSubscription(props: { chatId: string }) {
-  const [isAuthenticated, setIsAuthenticated] = createSignal(true);
-
-  createSubscription({
-    subscription: MessageSubscription,
-    variables: { chatId: props.chatId },
-    onNext: (data) => {
-      // Handle incoming data
-    },
-    onError: (error) => {
-      // Check if error is due to authentication
-      if (error.message.includes('Unauthorized')) {
-        setIsAuthenticated(false);
-        // Redirect to login or refresh token
-      }
-    },
-    // Only subscribe if authenticated
-    skip: !isAuthenticated()
-  });
-
-  return (
-    <Show
-      when={isAuthenticated()}
-      fallback={<div>Please log in to see live updates</div>}
-    >
-      <ChatRoom chatId={props.chatId} />
-    </Show>
-  );
-}
-```
-
-## Debounced Subscriptions
-
-Handle high-frequency updates with debouncing:
-
-```tsx
-function TypingIndicator(props: { chatId: string }) {
-  const [typingUsers, setTypingUsers] = createSignal<string[]>([]);
-
-  createSubscription({
-    subscription: graphql`
-      subscription TypingSubscription($chatId: ID!) {
-        userTyping(chatId: $chatId) {
-          userId
-          isTyping
-          user {
-            name
-          }
-        }
-      }
-    `,
-    variables: { chatId: props.chatId },
-    onNext: (data) => {
-      if (data?.userTyping) {
-        const { userId, isTyping, user } = data.userTyping;
-
-        setTypingUsers(prev => {
-          if (isTyping) {
-            return prev.includes(user.name) ? prev : [...prev, user.name];
-          } else {
-            return prev.filter(name => name !== user.name);
-          }
-        });
-
-        // Clear typing indicator after 3 seconds of inactivity
-        setTimeout(() => {
-          setTypingUsers(prev => prev.filter(name => name !== user.name));
-        }, 3000);
-      }
-    }
-  });
-
-  return (
-    <Show when={typingUsers().length > 0}>
-      <div class="typing-indicator">
-        {typingUsers().join(', ')} {typingUsers().length === 1 ? 'is' : 'are'} typing...
-      </div>
-    </Show>
-  );
-}
-```
-
-## Best Practices
-
-### 1. Handle Connection States
-
-Provide feedback about subscription connection status:
-
-```tsx
-function ChatWithStatus(props: { chatId: string }) {
-  const [connectionStatus, setConnectionStatus] = createSignal('connecting');
-
-  createSubscription({
-    subscription: MessageSubscription,
-    variables: { chatId: props.chatId },
-    onNext: (data) => {
-      setConnectionStatus('connected');
-      // Handle data
-    },
-    onError: (error) => {
-      setConnectionStatus('error');
-      console.error('Subscription error:', error);
-    },
-    onCompleted: () => {
-      setConnectionStatus('disconnected');
-    }
-  });
-
-  return (
-    <div>
-      <div class={`status-indicator ${connectionStatus()}`}>
-        {connectionStatus()}
-      </div>
-      <ChatRoom chatId={props.chatId} />
-    </div>
-  );
-}
-```
-
-### 2. Cleanup Subscriptions
-
-Always clean up subscriptions to prevent memory leaks:
-
-```tsx
-function ChatComponent() {
-  let subscriptionDispose: (() => void) | null = null;
-
-  onMount(() => {
-    subscriptionDispose = createSubscription({
-      // subscription config
-    });
-  });
-
-  onCleanup(() => {
-    if (subscriptionDispose) {
-      subscriptionDispose();
-    }
-  });
-
-  return <div>Chat content</div>;
-}
-```
-
-### 3. Handle Offline/Online States
-
-Reconnect subscriptions when coming back online:
-
-```tsx
-function ReconnectingSubscription() {
-  const [isOnline, setIsOnline] = createSignal(navigator.onLine);
-
-  // Listen for online/offline events
-  createEffect(() => {
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    onCleanup(() => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    });
-  });
-
-  // Only subscribe when online
-  createEffect(() => {
-    if (isOnline()) {
-      const dispose = createSubscription({
-        // subscription config
-      });
-
-      onCleanup(dispose);
-    }
-  });
-
-  return (
-    <div>
-      <div class={`connection-status ${isOnline() ? 'online' : 'offline'}`}>
-        {isOnline() ? 'Connected' : 'Offline'}
-      </div>
-      {/* Component content */}
-    </div>
-  );
-}
-```
-
-### 4. Rate Limiting
-
-Handle rate-limited subscriptions gracefully:
-
-```tsx
-function RateLimitedSubscription() {
-  const [lastUpdate, setLastUpdate] = createSignal(Date.now());
-  const RATE_LIMIT_MS = 1000; // 1 second
-
-  createSubscription({
-    subscription: SomeSubscription,
-    variables: {},
-    onNext: (data) => {
-      const now = Date.now();
-      if (now - lastUpdate() < RATE_LIMIT_MS) {
-        // Skip this update to avoid overwhelming the UI
-        return;
-      }
-
-      setLastUpdate(now);
-      // Process the update
-    }
-  });
-
-  return <div>Rate limited content</div>;
-}
-```
-
-## Next Steps
-
-- [Querying Data](/guide/querying) - Learn more about data fetching
-- [Mutations](/guide/mutations) - Handle data modifications
-- [Fragments](/guide/fragments) - Understand fragment composition
