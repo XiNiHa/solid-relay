@@ -166,7 +166,7 @@ import { createPreloadedQuery, createQueryLoader, type PreloadedQuery } from "so
 import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
 
 function App() {
-	// The preloaded queries auto-disposes when `App` unmounts
+  // The preloaded queries auto-disposes when `App` unmounts
   const [queryRef, loadQuery] = createQueryLoader<UserQuery>(UserQuery);
 
   const handleLoadUser = (userId: string) => {

@@ -196,7 +196,7 @@ import { createPaginationFragment } from 'solid-relay';
 
 function UserPosts(props: { $user: UserPosts_user$key }) {
   const data = createPaginationFragment(
-  	graphql`
+    graphql`
       fragment UserPosts_user on User
         @argumentDefinitions(
           count: { type: "Int!", defaultValue: 10 }
@@ -232,7 +232,7 @@ function UserPosts(props: { $user: UserPosts_user$key }) {
   };
 
   return (
-  	<Show when={data()}>
+    <Show when={data()}>
       {(user) => (
         <div>
           <For each={user().posts.edges}>

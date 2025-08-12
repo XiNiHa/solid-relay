@@ -12,7 +12,7 @@ Use `createSubscription` to listen for real-time updates:
 
 ```tsx
 import { createSubscription } from 'solid-relay';
-import { graphql } from 'relay-runtime';
+import { graphql, readInlineData } from 'relay-runtime';
 import type { MessageSubscription } from "./__generated__/MessageSubscription.graphql";
 import type {
   ChatRoom_message$data,

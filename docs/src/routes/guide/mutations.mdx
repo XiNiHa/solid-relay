@@ -250,7 +250,10 @@ const AddPostMutation = graphql`
 function CreatePostForm(props: { userId: string }) {
   const [createPost] = createMutation<AddPostMutation>(AddPostMutation);
 
-  const handleSubmit = (formData: FormData) => {
+  const handleSubmit = (e: SubmitEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
+
     // Get the connection ID
     const connectionID = ConnectionHandler.getConnectionID(
       props.userId,
@@ -285,8 +288,10 @@ function CreatePostForm() {
   const [createPost, isPending] = createMutation<CreatePostMutation>(CreatePostMutation);
   const [errors, setErrors] = createSignal<string[]>([]);
 
-  const handleSubmit = (formData: FormData) => {
+  const handleSubmit = (e: SubmitEvent) => {
+    e.preventDefault();
     setErrors([]);
+    const formData = new FormData(e.currentTarget as HTMLFormElement);
 
     createPost({
       variables: { input: makeCreatePostParams(formData) },

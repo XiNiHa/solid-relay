@@ -42,9 +42,9 @@ import { cjsInterop } from "vite-plugin-cjs-interop";
 export default defineConfig({
   vite: () => ({
     plugins: [
-    	relay(),
+      relay(),
       // required since Relay only gets published in CJS
-     	cjsInterop({ dependencies: ["relay-runtime"] }),
+      cjsInterop({ dependencies: ["relay-runtime"] }),
     ],
   }),
 });
@@ -65,7 +65,7 @@ export default defineConfig({
     solid(),
     relay(),
     // required since Relay only gets published in CJS
-   	cjsInterop({ dependencies: ["relay-runtime"] }),
+    cjsInterop({ dependencies: ["relay-runtime"] }),
   ],
 });
 ```
@@ -127,7 +127,7 @@ import { RelayEnvironmentProvider } from 'solid-relay';
 import { createRelayEnvironment } from './RelayEnvironment';
 
 function App() {
-	const environment = createRelayEnvironment();
+  const environment = createRelayEnvironment();
 
   return (
     <RelayEnvironmentProvider environment={environment}>
