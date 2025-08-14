@@ -1,0 +1,9 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"composite": true,
+		"types": ["vitest/globals"]
+	},
+	"include": ["tests", "vitest.config.ts", "vitest.setup.ts"],
+	"exclude": ["**/*.test.browser.tsx"]
+}
