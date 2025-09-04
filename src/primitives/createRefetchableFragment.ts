@@ -87,6 +87,9 @@ export function createRefetchableFragment<
 >(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey>,
+	options?: {
+		deferStream?: boolean;
+	},
 ): [DataStore<KeyTypeData<TKey>>, RefetchFnDynamic<TQuery, TKey>];
 export function createRefetchableFragment<
 	TQuery extends OperationType,
@@ -94,6 +97,9 @@ export function createRefetchableFragment<
 >(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
+	options?: {
+		deferStream?: boolean;
+	},
 ): [
 	DataStore<KeyTypeData<TKey> | null | undefined>,
 	RefetchFnDynamic<TQuery, TKey>,
@@ -104,6 +110,9 @@ export function createRefetchableFragment<
 >(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
+	options?: {
+		deferStream?: boolean;
+	},
 ): [
 	DataStore<KeyTypeData<TKey> | null | undefined>,
 	RefetchFnDynamic<TQuery, TKey>,
@@ -111,6 +120,8 @@ export function createRefetchableFragment<
 	const { fragmentData, refetch } = createRefetchableFragmentInternal(
 		fragment,
 		key,
+		"createRefetchableFragment()",
+		options,
 	);
 	return [fragmentData, refetch];
 }
@@ -122,6 +133,9 @@ export function createRefetchableFragmentInternal<
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
 	componentDisplayName = "createRefetchableFragment()",
+	options?: {
+		deferStream?: boolean;
+	},
 ): {
 	fragmentData: DataStore<KeyTypeData<TKey> | null | undefined>;
 	fragmentRef: Accessor<TKey | null | undefined>;
@@ -274,6 +288,7 @@ export function createRefetchableFragmentInternal<
 		() => ({
 			parentOperation: refetchObservable(),
 		}),
+		options,
 	);
 
 	return {
