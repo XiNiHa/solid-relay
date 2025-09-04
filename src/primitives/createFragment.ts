@@ -33,16 +33,25 @@ type FragmentResult<T> =
 export function createFragment<TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey>,
+	options?: {
+		deferStream?: boolean;
+	},
 ): DataStore<KeyTypeData<TKey>>;
 export function createFragment<TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
+	options?: {
+		deferStream?: boolean;
+	},
 ): DataStore<KeyTypeData<TKey> | null | undefined>;
 export function createFragment<TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
+	options?: {
+		deferStream?: boolean;
+	},
 ): DataStore<KeyTypeData<TKey> | null | undefined> {
-	return createFragmentInternal(fragment, key);
+	return createFragmentInternal(fragment, key, undefined, options);
 }
 
 export function createFragmentInternal<TKey extends KeyType>(
@@ -51,6 +60,9 @@ export function createFragmentInternal<TKey extends KeyType>(
 	options?: Accessor<{
 		parentOperation: Subscribable<GraphQLResponse> | null | undefined;
 	}>,
+	createResourceOptions?: {
+		deferStream?: boolean;
+	},
 ): DataStore<KeyTypeData<TKey> | null | undefined> {
 	const environment = useRelayEnvironment();
 
@@ -141,6 +153,7 @@ export function createFragmentInternal<TKey extends KeyType>(
 			});
 		},
 		{
+			deferStream: createResourceOptions?.deferStream,
 			onHydrated(source) {
 				if (!source) return;
 				setSubscription(

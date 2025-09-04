@@ -53,6 +53,7 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 	options?: {
 		fetchPolicy?: MaybeAccessor<FetchPolicy | undefined>;
 		networkCacheConfig?: MaybeAccessor<CacheConfig | undefined>;
+		deferStream?: boolean;
 	},
 ): DataStore<TQuery["response"]> {
 	const environment = useRelayEnvironment();
@@ -73,6 +74,7 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 		fragment: () => getRequest(access(gqlQuery)).fragment,
 		fetchObservable,
 		fetchPolicy: () => access(options?.fetchPolicy),
+		deferStream: options?.deferStream,
 	});
 }
 
@@ -84,6 +86,7 @@ export function createLazyLoadQueryInternal<
 	fetchObservable: Accessor<Observable<GraphQLResponse> | null | undefined>;
 	fetchKey?: Accessor<string | number | null | undefined>;
 	fetchPolicy?: Accessor<FetchPolicy | undefined>;
+	deferStream?: boolean;
 }): DataStore<TQuery["response"]> {
 	const environment = useRelayEnvironment();
 	const queryCache = createMemo(() => getQueryCache(environment()));
@@ -163,6 +166,7 @@ export function createLazyLoadQueryInternal<
 				return stream;
 			},
 			{
+				deferStream: params.deferStream,
 				onHydrated(operation, { value }) {
 					if (!operation || !value) return;
 
