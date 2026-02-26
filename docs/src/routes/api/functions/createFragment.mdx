@@ -2,9 +2,9 @@
 
 ## Call Signature
 
-> **createFragment**\<`TKey`\>(`fragment`, `key`): `DataProxy`\<`KeyTypeData`\<`TKey`, `unknown`\>\>
+> **createFragment**\<`TKey`\>(`fragment`, `key`, `options?`): `DataStore`\<`KeyTypeData`\<`TKey`, `unknown`\>\>
 
-Defined in: dist/index.d.ts:45
+Defined in: dist/index.d.ts:44
 
 ### Type Parameters
 
@@ -22,15 +22,21 @@ Defined in: dist/index.d.ts:45
 
 `Accessor`\<`TKey`\>
 
+#### options?
+
+##### deferStream?
+
+`boolean`
+
 ### Returns
 
-`DataProxy`\<`KeyTypeData`\<`TKey`, `unknown`\>\>
+`DataStore`\<`KeyTypeData`\<`TKey`, `unknown`\>\>
 
 ## Call Signature
 
-> **createFragment**\<`TKey`\>(`fragment`, `key`): `DataProxy`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>
+> **createFragment**\<`TKey`\>(`fragment`, `key`, `options?`): `DataStore`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>
 
-Defined in: dist/index.d.ts:46
+Defined in: dist/index.d.ts:47
 
 ### Type Parameters
 
@@ -48,6 +54,12 @@ Defined in: dist/index.d.ts:46
 
 `Accessor`\<`undefined` \| `null` \| `TKey`\>
 
+#### options?
+
+##### deferStream?
+
+`boolean`
+
 ### Returns
 
-`DataProxy`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>
+`DataStore`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>

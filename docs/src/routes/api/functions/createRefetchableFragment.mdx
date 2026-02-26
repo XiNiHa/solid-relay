@@ -2,9 +2,9 @@
 
 ## Call Signature
 
-> **createRefetchableFragment**\<`TQuery`, `TKey`\>(`fragment`, `key`): \[`DataProxy`\<`KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
+> **createRefetchableFragment**\<`TQuery`, `TKey`\>(`fragment`, `key`, `options?`): \[`DataStore`\<`KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
 
-Defined in: dist/index.d.ts:62
+Defined in: dist/index.d.ts:64
 
 ### Type Parameters
 
@@ -26,15 +26,21 @@ Defined in: dist/index.d.ts:62
 
 `Accessor`\<`TKey`\>
 
+#### options?
+
+##### deferStream?
+
+`boolean`
+
 ### Returns
 
-\[`DataProxy`\<`KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
+\[`DataStore`\<`KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
 
 ## Call Signature
 
-> **createRefetchableFragment**\<`TQuery`, `TKey`\>(`fragment`, `key`): \[`DataProxy`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
+> **createRefetchableFragment**\<`TQuery`, `TKey`\>(`fragment`, `key`, `options?`): \[`DataStore`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
 
-Defined in: dist/index.d.ts:63
+Defined in: dist/index.d.ts:67
 
 ### Type Parameters
 
@@ -56,6 +62,12 @@ Defined in: dist/index.d.ts:63
 
 `Accessor`\<`undefined` \| `null` \| `TKey`\>
 
+#### options?
+
+##### deferStream?
+
+`boolean`
+
 ### Returns
 
-\[`DataProxy`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
+\[`DataStore`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]

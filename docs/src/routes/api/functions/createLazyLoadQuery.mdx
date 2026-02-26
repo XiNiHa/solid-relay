@@ -1,6 +1,6 @@
 # Function: createLazyLoadQuery()
 
-> **createLazyLoadQuery**\<`TQuery`\>(`gqlQuery`, `variables`, `options?`): `DataProxy`\<`TQuery`\[`"response"`\]\>
+> **createLazyLoadQuery**\<`TQuery`\>(`gqlQuery`, `variables`, `options?`): `DataStore`\<`TQuery`\[`"response"`\]\>
 
 Defined in: dist/index.d.ts:30
 
@@ -22,6 +22,10 @@ Defined in: dist/index.d.ts:30
 
 ### options?
 
+#### deferStream?
+
+`boolean`
+
 #### fetchPolicy?
 
 `MaybeAccessor`\<`undefined` \| `FetchPolicy`\>
@@ -32,4 +36,4 @@ Defined in: dist/index.d.ts:30
 
 ## Returns
 
-`DataProxy`\<`TQuery`\[`"response"`\]\>
+`DataStore`\<`TQuery`\[`"response"`\]\>
