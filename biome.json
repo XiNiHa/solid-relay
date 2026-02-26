@@ -1,7 +1,11 @@
 {
-	"$schema": "https://biomejs.dev/schemas/1.8.1/schema.json",
-	"organizeImports": {
-		"enabled": true
+	"$schema": "https://biomejs.dev/schemas/2.4.4/schema.json",
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
 	},
 	"linter": {
 		"enabled": true,
@@ -17,16 +21,17 @@
 		}
 	},
 	"files": {
-		"ignore": [
-			"dist",
-			".changeset",
-			"__generated__",
-			"*.graphql",
-			".vinxi",
-			".output",
-			"doc_build",
-			"docs/api",
-			"coverage"
+		"includes": [
+			"**",
+			"!**/dist",
+			"!**/.changeset",
+			"!**/__generated__",
+			"!**/*.graphql",
+			"!**/.vinxi",
+			"!**/.output",
+			"!**/doc_build",
+			"!**/docs/api",
+			"!**/coverage"
 		]
 	}
 }

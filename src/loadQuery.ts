@@ -1,11 +1,15 @@
 import {
+	__internal,
 	type CacheConfig,
 	type ConcreteRequest,
+	createOperationDescriptor,
 	type Disposable,
 	type DisposeFn,
 	type FetchPolicy,
 	type GraphQLResponse,
 	type GraphQLTaggedNode,
+	getRequest,
+	getRequestIdentifier,
 	type IEnvironment,
 	Observable,
 	type OperationDescriptor,
@@ -15,10 +19,6 @@ import {
 	ReplaySubject,
 	type RequestParameters,
 	type VariablesOf,
-	__internal,
-	createOperationDescriptor,
-	getRequest,
-	getRequestIdentifier,
 } from "relay-runtime";
 import type { RequestIdentifier } from "relay-runtime/lib/util/getRequestIdentifier";
 import { OpaqueReference } from "seroval";

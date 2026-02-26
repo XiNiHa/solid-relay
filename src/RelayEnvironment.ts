@@ -1,11 +1,11 @@
 import type { IEnvironment } from "relay-runtime";
 import {
 	type Accessor,
-	type JSXElement,
-	type Resource,
 	createComponent,
 	createContext,
 	createMemo,
+	type JSXElement,
+	type Resource,
 	useContext,
 } from "solid-js";
 import invariant from "tiny-invariant";

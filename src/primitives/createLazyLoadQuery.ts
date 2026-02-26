@@ -1,17 +1,17 @@
 import {
+	__internal,
 	type CacheConfig,
 	type Disposable,
 	type FetchPolicy,
 	type GraphQLResponse,
 	type GraphQLTaggedNode,
+	getRequest,
 	Observable,
 	type OperationDescriptor,
 	type OperationType,
 	type ReaderFragment,
 	ReplaySubject,
 	type VariablesOf,
-	__internal,
-	getRequest,
 } from "relay-runtime";
 import { observeFragment } from "relay-runtime/experimental.js";
 import {
@@ -23,11 +23,11 @@ import {
 	onCleanup,
 } from "solid-js";
 import { reconcile } from "solid-js/store";
+import { getQueryCache, type QueryCacheEntry } from "../queryCache";
 import { useRelayEnvironment } from "../RelayEnvironment";
-import { type QueryCacheEntry, getQueryCache } from "../queryCache";
-import { type MaybeAccessor, access } from "../utils/access";
+import { access, type MaybeAccessor } from "../utils/access";
 import { createMemoOperationDescriptor } from "../utils/createMemoOperationDescriptor";
-import { type DataStore, createDataStore } from "../utils/dataStore";
+import { createDataStore, type DataStore } from "../utils/dataStore";
 import { getQueryRef } from "../utils/getQueryRef";
 
 type QueryResult<T> =

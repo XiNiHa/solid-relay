@@ -1,16 +1,16 @@
 import { render } from "@solidjs/testing-library";
 import {
 	type ConcreteRequest,
+	createOperationDescriptor,
 	type FetchPolicy,
 	type GraphQLTaggedNode,
+	graphql,
 	RecordSource,
 	Store,
-	createOperationDescriptor,
-	graphql,
 } from "relay-runtime";
-import { type MockEnvironment, createMockEnvironment } from "relay-test-utils";
+import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
 import { ErrorBoundary, type JSXElement, Suspense } from "solid-js";
-import { RelayEnvironmentProvider, createLazyLoadQuery } from "solid-relay";
+import { createLazyLoadQuery, RelayEnvironmentProvider } from "solid-relay";
 import type { createLazyLoadQueryTestQuery } from "./__generated__/createLazyLoadQueryTestQuery.graphql";
 
 let environment: MockEnvironment;

@@ -1,15 +1,15 @@
 import { dequal } from "dequal/lite";
 import {
 	type CacheConfig,
+	createOperationDescriptor,
 	type GraphQLTaggedNode,
+	getRequest,
 	type OperationDescriptor,
 	type Variables,
-	createOperationDescriptor,
-	getRequest,
 } from "relay-runtime";
-import { createMemo } from "solid-js";
 import type { Accessor } from "solid-js";
-import { type MaybeAccessor, access } from "./access";
+import { createMemo } from "solid-js";
+import { access, type MaybeAccessor } from "./access";
 
 export function createMemoOperationDescriptor(
 	gqlQuery: MaybeAccessor<GraphQLTaggedNode>,

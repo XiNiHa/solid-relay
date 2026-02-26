@@ -1,5 +1,5 @@
 import { type Resource, untrack } from "solid-js";
-import { type SetStoreFunction, createStore } from "solid-js/store";
+import { createStore, type SetStoreFunction } from "solid-js/store";
 import { useDataStores } from "../RelayEnvironment";
 import type { MaybeAccessor } from "./access";
 

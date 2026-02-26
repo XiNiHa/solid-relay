@@ -1,11 +1,11 @@
 import {
 	type DisposeFn,
 	type GraphQLTaggedNode,
+	getRequest,
 	type IEnvironment,
 	type OperationType,
 	type PreloadableConcreteRequest,
 	type VariablesOf,
-	getRequest,
 } from "relay-runtime";
 import {
 	type Accessor,
@@ -14,12 +14,12 @@ import {
 	onCleanup,
 	untrack,
 } from "solid-js";
-import { useRelayEnvironment } from "../RelayEnvironment";
 import {
 	type LoadQueryOptions,
-	type PreloadedQuery,
 	loadQuery,
+	type PreloadedQuery,
 } from "../loadQuery";
+import { useRelayEnvironment } from "../RelayEnvironment";
 import { useIsMounted } from "../utils/useIsMounted";
 
 type NullQueryReference = { kind: "NullQueryReference" };
@@ -70,8 +70,7 @@ export function createQueryLoader<TQuery extends OperationType>(
 		},
 		(variables, options) => {
 			const mergedOptions =
-				options != null &&
-				Object.prototype.hasOwnProperty.call(options, "__environment")
+				options != null && Object.hasOwn(options, "__environment")
 					? {
 							fetchPolicy: options.fetchPolicy,
 							networkCacheConfig: options.networkCacheConfig,

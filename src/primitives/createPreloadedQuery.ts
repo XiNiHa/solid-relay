@@ -1,14 +1,14 @@
 import {
-	type GraphQLTaggedNode,
-	type OperationType,
 	__internal,
+	type GraphQLTaggedNode,
 	getRequest,
+	type OperationType,
 } from "relay-runtime";
 import { createEffect, createResource, onCleanup } from "solid-js";
 import invariant from "tiny-invariant";
-import { useRelayEnvironment } from "../RelayEnvironment";
 import type { PreloadedQuery } from "../loadQuery";
-import { type MaybeAccessor, access } from "../utils/access";
+import { useRelayEnvironment } from "../RelayEnvironment";
+import { access, type MaybeAccessor } from "../utils/access";
 import { createMemoOperationDescriptor } from "../utils/createMemoOperationDescriptor";
 import type { DataStore } from "../utils/dataStore";
 import { createLazyLoadQueryInternal } from "./createLazyLoadQuery";

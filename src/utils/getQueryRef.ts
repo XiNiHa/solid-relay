@@ -1,6 +1,6 @@
 import {
-	FRAGMENTS_KEY,
 	FRAGMENT_OWNER_KEY,
+	FRAGMENTS_KEY,
 	ID_KEY,
 	type OperationDescriptor,
 } from "relay-runtime";

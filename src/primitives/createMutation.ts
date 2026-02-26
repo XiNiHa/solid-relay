@@ -1,9 +1,9 @@
 import {
+	commitMutation,
 	type Disposable,
 	type GraphQLTaggedNode,
 	type MutationConfig,
 	type MutationParameters,
-	commitMutation,
 } from "relay-runtime";
 import { type Accessor, createSignal } from "solid-js";
 import { useRelayEnvironment } from "../RelayEnvironment";

@@ -1,9 +1,9 @@
 import {
+	__internal,
+	getSelector,
 	type ReaderFragment,
 	type SingularReaderSelector,
 	type Subscription,
-	__internal,
-	getSelector,
 } from "relay-runtime";
 import {
 	type Accessor,

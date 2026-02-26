@@ -5,13 +5,13 @@ import type {
 	Subscription,
 } from "relay-runtime";
 import { observeFragment } from "relay-runtime/experimental.js";
-import { batch, createResource, createSignal, untrack } from "solid-js";
 import type { Accessor } from "solid-js";
-import { type SetStoreFunction, reconcile, unwrap } from "solid-js/store";
+import { batch, createResource, createSignal, untrack } from "solid-js";
+import { reconcile, type SetStoreFunction, unwrap } from "solid-js/store";
 import { isServer } from "solid-js/web";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import type { KeyType, KeyTypeData } from "../types/keyType";
-import { type DataStore, createDataStore } from "../utils/dataStore";
+import { createDataStore, type DataStore } from "../utils/dataStore";
 
 type FragmentResult<T> =
 	| {

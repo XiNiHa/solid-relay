@@ -1,8 +1,8 @@
 import {
 	ConnectionInterface,
 	type Direction,
-	type ReaderFragment,
 	getValueAtPath,
+	type ReaderFragment,
 } from "relay-runtime";
 import invariant from "tiny-invariant";
 

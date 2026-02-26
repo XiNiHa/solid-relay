@@ -1,8 +1,15 @@
 import {
+	__internal,
+	createOperationDescriptor,
 	type Disposable,
 	type FetchPolicy,
 	type GraphQLResponse,
 	type GraphQLTaggedNode,
+	getFragment,
+	getFragmentIdentifier,
+	getRefetchMetadata,
+	getSelector,
+	getValueAtPath,
 	type IEnvironment,
 	type OperationDescriptor,
 	type OperationType,
@@ -11,13 +18,6 @@ import {
 	type SingularReaderSelector,
 	type Variables,
 	type VariablesOf,
-	__internal,
-	createOperationDescriptor,
-	getFragment,
-	getFragmentIdentifier,
-	getRefetchMetadata,
-	getSelector,
-	getValueAtPath,
 } from "relay-runtime";
 import { waitForFragmentData } from "relay-runtime/experimental.js";
 import {
@@ -351,7 +351,7 @@ export function createRefetchableFragmentInternal<
 
 			if (
 				identifierInfo != null &&
-				!Object.prototype.hasOwnProperty.call(
+				!Object.hasOwn(
 					providedRefetchVariables,
 					identifierInfo.identifierQueryVariableName,
 				)

@@ -5,7 +5,7 @@ import {
 } from "relay-runtime";
 import { onCleanup, onMount } from "solid-js";
 import { useRelayEnvironment } from "../RelayEnvironment";
-import { type MaybeAccessor, access } from "../utils/access";
+import { access, type MaybeAccessor } from "../utils/access";
 
 export function createSubscription<TSubscriptionPayload extends OperationType>(
 	config: MaybeAccessor<GraphQLSubscriptionConfig<TSubscriptionPayload>>,

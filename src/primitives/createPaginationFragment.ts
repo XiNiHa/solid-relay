@@ -1,21 +1,21 @@
 import {
+	__internal,
 	type ConcreteRequest,
+	createOperationDescriptor,
 	type Direction,
 	type Disposable,
 	type GraphQLTaggedNode,
-	type OperationType,
-	type ReaderFragment,
-	type ReaderPaginationMetadata,
-	type SingularReaderSelector,
-	type VariablesOf,
-	__internal,
-	createOperationDescriptor,
 	getFragment,
 	getFragmentIdentifier,
 	getPaginationMetadata,
 	getPaginationVariables,
 	getRefetchMetadata,
 	getSelector,
+	type OperationType,
+	type ReaderFragment,
+	type ReaderPaginationMetadata,
+	type SingularReaderSelector,
+	type VariablesOf,
 } from "relay-runtime";
 import {
 	type Accessor,
@@ -34,9 +34,9 @@ import { getConnectionState } from "../utils/getConnectionState";
 import { useIsMounted } from "../utils/useIsMounted";
 import { useIsOperationNodeActive } from "../utils/useIsOperationNodeActive";
 import {
+	createRefetchableFragmentInternal,
 	type RefetchFnDynamic,
 	type RefetchOptions,
-	createRefetchableFragmentInternal,
 } from "./createRefetchableFragment";
 
 type CreatePaginationFragmentReturn<

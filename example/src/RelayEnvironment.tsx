@@ -1,17 +1,17 @@
 import { meros } from "meros/browser";
-import {
-	Environment,
-	Network,
-	Observable,
-	RecordSource,
-	Store,
-} from "relay-runtime";
 import type {
 	FetchFunction,
 	GraphQLResponse,
 	IEnvironment,
 	RequestParameters,
 	Variables,
+} from "relay-runtime";
+import {
+	Environment,
+	Network,
+	Observable,
+	RecordSource,
+	Store,
 } from "relay-runtime";
 
 const fetchFnImpl = async (params: RequestParameters, variables: Variables) => {

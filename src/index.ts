@@ -1,11 +1,11 @@
-export { createLazyLoadQuery } from "./primitives/createLazyLoadQuery";
+export { loadQuery, type PreloadedQuery } from "./loadQuery";
 export { createFragment } from "./primitives/createFragment";
-export { createRefetchableFragment } from "./primitives/createRefetchableFragment";
-export { createPaginationFragment } from "./primitives/createPaginationFragment.js";
+export { createLazyLoadQuery } from "./primitives/createLazyLoadQuery";
 export { createMutation } from "./primitives/createMutation";
+export { createPaginationFragment } from "./primitives/createPaginationFragment.js";
 export { createPreloadedQuery } from "./primitives/createPreloadedQuery";
 export { createQueryLoader } from "./primitives/createQueryLoader";
-export { loadQuery, type PreloadedQuery } from "./loadQuery";
+export { createRefetchableFragment } from "./primitives/createRefetchableFragment";
 export { createSubscription } from "./primitives/createSubscription";
 export {
 	RelayEnvironmentProvider,

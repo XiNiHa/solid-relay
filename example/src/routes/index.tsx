@@ -1,6 +1,6 @@
-import { type RouteDefinition, query } from "@solidjs/router";
+import { query, type RouteDefinition } from "@solidjs/router";
 import { graphql } from "relay-runtime";
-import { For, Show, Suspense, createSignal, useTransition } from "solid-js";
+import { createSignal, For, Show, Suspense, useTransition } from "solid-js";
 import {
 	createFragment,
 	createMutation,
