@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.16
+
+### Minor Changes
+
+- 0bc3e62: Support `deferStream` when loading queries
+
 ## 1.0.0-beta.15
 
 ### Minor Changes
