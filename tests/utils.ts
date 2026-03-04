@@ -2,9 +2,9 @@ import type { JSXElement } from "solid-js";
 import { render } from "solid-js/web";
 
 export async function wait(times: number) {
-	if (times <= 0) return;
-	await Promise.resolve();
-	return await wait(times - 1);
+	for (let i = 0; i < times; i++) {
+		await Promise.resolve();
+	}
 }
 
 export function renderToBody(fn: () => JSXElement) {
