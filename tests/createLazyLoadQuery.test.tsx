@@ -8,8 +8,8 @@ import {
 	Store,
 } from "relay-runtime";
 import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
-import { ErrorBoundary, type JSXElement, Suspense } from "solid-js";
-import { createLazyLoadQuery, RelayEnvironmentProvider } from "solid-relay";
+import { createSignal, ErrorBoundary, type JSXElement, Suspense } from "solid-js";
+import { createLazyLoadQuery, type DataStore, RelayEnvironmentProvider } from "solid-relay";
 import { page } from "vitest/browser";
 import type { createLazyLoadQueryTestQuery } from "./__generated__/createLazyLoadQueryTestQuery.graphql";
 import { renderToBody, wait } from "./utils";
@@ -50,6 +50,42 @@ describe("createLazyLoadQuery", () => {
 		environment = createMockEnvironment({
 			store: new Store(new RecordSource(), { gcReleaseBufferSize: 0 }),
 		});
+	});
+
+	it("exposes data store getters", async () => {
+		let store: DataStore<createLazyLoadQueryTestQuery["response"]> | undefined;
+		const Comp = () => {
+			store = createLazyLoadQuery<createLazyLoadQueryTestQuery>(gqlQuery, {});
+			return (
+				<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
+					<Suspense fallback="Fallback">
+						<h1 data-testid="getter-name">{store()?.node?.name}</h1>
+					</Suspense>
+				</ErrorBoundary>
+			);
+		};
+
+		renderToBody(() => (
+			<View>
+				<Comp />
+			</View>
+		));
+
+		expect(store).toBeDefined();
+		expect(store?.pending).toBe(true);
+		expect(store?.error).toBeUndefined();
+		expect(store?.()).toBeUndefined();
+		expect(store?.latest).toBeUndefined();
+
+		environment.mock.resolve(gqlQuery, {
+			data: { node: { __typename: "User", id: "1", name: "Alice" } },
+		});
+		await wait(2);
+
+		expect(store?.pending).toBe(false);
+		expect(store?.error).toBeUndefined();
+		expect(store?.()?.node?.name).toBe("Alice");
+		expect(store?.latest?.node?.name).toBe("Alice");
 	});
 
 	describe("fetchPolicy: store-or-network", () => {
@@ -157,6 +193,30 @@ describe("createLazyLoadQuery", () => {
 		});
 	});
 
+	it.each(["store-and-network", "network-only"] as const)(
+		"fetches even when data exists if fetchPolicy: %s",
+		async (fetchPolicy) => {
+			const executeWithSource = vi.spyOn(environment, "executeWithSource");
+			environment.commitPayload(query, {
+				node: { __typename: "User", id: "1", name: "Alice" },
+			});
+
+			renderToBody(() => (
+				<View>
+					<Comp gqlQuery={gqlQuery} fetchPolicy={fetchPolicy} />
+				</View>
+			));
+
+			await wait(1);
+			expect(executeWithSource).toHaveBeenCalledTimes(1);
+			environment.mock.resolve(gqlQuery, {
+				data: { node: { __typename: "User", id: "1", name: "Bob" } },
+			});
+			await wait(2);
+			await expect.element(page.getByText("Bob")).toBeInTheDocument();
+		},
+	);
+
 	describe("@throwOnFieldError", () => {
 		const gqlQuery = graphql`
 			query createLazyLoadQueryTestToeQuery @throwOnFieldError {
@@ -196,6 +256,105 @@ describe("createLazyLoadQuery", () => {
 			await expect.element(page.getByTestId("error")).toHaveTextContent("Missing expected data");
 			await expect.element(page.getByText("name")).not.toBeInTheDocument();
 			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
+		});
+	});
+
+	describe("coverage edge cases", () => {
+		it("does not fetch when variables accessor returns undefined", async () => {
+			const Comp = () => {
+				const data = createLazyLoadQuery<createLazyLoadQueryTestQuery>(
+					gqlQuery,
+					() => undefined as unknown as Record<string, never>,
+				);
+				return <h1 data-testid="undefined-variables">{data()?.node?.name}</h1>;
+			};
+
+			renderToBody(() => (
+				<View>
+					<Comp />
+				</View>
+			));
+
+			expect(environment.mock.isLoading(query, {})).toBe(false);
+			await expect.element(page.getByTestId("undefined-variables")).toBeEmptyDOMElement();
+		});
+
+		it("reuses cache for concurrent consumers and refetches after final disposal", async () => {
+			const executeWithSource = vi.spyOn(environment, "executeWithSource");
+			const [showA, setShowA] = createSignal(true);
+			const [showB, setShowB] = createSignal(true);
+			const MultiComp = () => (
+				<>
+					{showA() && <Comp gqlQuery={gqlQuery} fetchPolicy="network-only" />}
+					{showB() && <Comp gqlQuery={gqlQuery} fetchPolicy="network-only" />}
+				</>
+			);
+
+			renderToBody(() => (
+				<View>
+					<MultiComp />
+				</View>
+			));
+
+			expect(executeWithSource).toHaveBeenCalledTimes(1);
+			environment.mock.resolve(gqlQuery, {
+				data: { node: { __typename: "User", id: "1", name: "Alice" } },
+			});
+			await wait(2);
+			expect(executeWithSource).toHaveBeenCalledTimes(1);
+			await expect.element(page.getByTestId("name").first()).toHaveTextContent("Alice");
+
+			setShowA(false);
+			await wait(2);
+			expect(executeWithSource).toHaveBeenCalledTimes(1);
+
+			setShowB(false);
+			await wait(2);
+
+			setShowA(true);
+			await wait(2);
+			expect(executeWithSource).toHaveBeenCalledTimes(2);
+
+			environment.mock.resolve(gqlQuery, {
+				data: { node: { __typename: "User", id: "1", name: "Bob" } },
+			});
+			await wait(2);
+			expect(executeWithSource).toHaveBeenCalledTimes(2);
+			await expect.element(page.getByTestId("name")).toHaveTextContent("Bob");
+		});
+
+		it("defaults live queries to store-and-network and cleans up on unmount", async () => {
+			const liveQuery = {
+				...(gqlQuery as ConcreteRequest),
+				params: {
+					...gqlQuery.params,
+					metadata: { ...gqlQuery.params.metadata, live: true },
+				},
+			} as GraphQLTaggedNode & ConcreteRequest;
+			const liveOperation = createOperationDescriptor(liveQuery, {});
+			const executeWithSource = vi.spyOn(environment, "executeWithSource");
+			environment.commitPayload(liveOperation, {
+				node: { __typename: "User", id: "1", name: "Alice" },
+			});
+
+			const LiveComp = () => {
+				const data = createLazyLoadQuery<createLazyLoadQueryTestQuery>(liveQuery, {});
+				return (
+					<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
+						<Suspense fallback="Fallback">
+							<h1 data-testid="live-name">{data()?.node?.name}</h1>
+						</Suspense>
+					</ErrorBoundary>
+				);
+			};
+
+			renderToBody(() => (
+				<View>
+					<LiveComp />
+				</View>
+			));
+			await wait(1);
+			expect(executeWithSource).toHaveBeenCalledTimes(1);
 		});
 	});
 });

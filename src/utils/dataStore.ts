@@ -1,7 +1,6 @@
-import { type Resource, untrack } from "solid-js";
+import { type Accessor, type Resource, untrack } from "solid-js";
 import { createStore, type SetStoreFunction } from "solid-js/store";
 import { useDataStores } from "../RelayEnvironment";
-import type { MaybeAccessor } from "./access";
 
 /**
  * A reactive data store containing the result of a query or fragment.
@@ -38,15 +37,15 @@ export const createDataStore = <
 	},
 >(
 	init: T,
-	maybeResource: MaybeAccessor<Resource<unknown> | undefined>,
+	resourceAccessor: Accessor<Resource<unknown> | undefined>,
 ): [DataStore<T>, SetStoreFunction<T>] => {
 	const [store, setStore] = createStableStore(
 		init,
-		untrack(() => extractResource(maybeResource)),
+		untrack(() => resourceAccessor()),
 	);
 
 	const readData = () => {
-		const resource = extractResource(maybeResource);
+		const resource = resourceAccessor();
 		void resource?.();
 		const error = Reflect.get(store, "error");
 		if (error) throw error;
@@ -83,8 +82,4 @@ function createStableStore<
 	const store = createStore(init);
 	if (resource) stores?.set(resource, store);
 	return store;
-}
-
-function extractResource<T>(maybeResource: MaybeAccessor<Resource<T> | undefined>) {
-	return maybeResource ? ("loading" in maybeResource ? maybeResource : maybeResource()) : undefined;
 }
