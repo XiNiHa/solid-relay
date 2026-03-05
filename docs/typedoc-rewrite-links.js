@@ -8,7 +8,7 @@ import { MarkdownPageEvent } from "typedoc-plugin-markdown";
 export function load(app) {
 	app.renderer.on(MarkdownPageEvent.END, (page) => {
 		page.contents = page.contents?.replace(
-			/\[([^\]]+)\]\((?!https?:|\/|\.)([^)]*#?[^)]*)\)/g,
+			/\[([^\]]+)\]\((?!https?:)([^)]+(?:#[^)])?)\)/g,
 			(_, text, url) => {
 				const urlWithAnchor = url.split("#");
 				if (urlWithAnchor.length > 1) {
@@ -25,7 +25,7 @@ export function load(app) {
  * @param {string} path
  */
 function rewritePath(path) {
-	return path.replace(/\.mdx?$/, "");
+	return path.replace(/^\.\.\//, "../../").replace(/\.mdx?$/, "");
 }
 
 // oxlint-disable-next-line no-control-regex
