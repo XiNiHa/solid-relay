@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.17
+
+### Patch Changes
+
+- 417f35e: Added JSDoc comments to the public APIs
+
 ## 1.0.0-beta.16
 
 ### Minor Changes

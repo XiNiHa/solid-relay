@@ -1,6 +1,6 @@
 {
 	"name": "solid-relay",
-	"version": "1.0.0-beta.16",
+	"version": "1.0.0-beta.17",
 	"description": "SolidJS bindings for Relay",
 	"homepage": "https://solid-relay.xiniha.dev",
 	"license": "MIT",
