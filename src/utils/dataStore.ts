@@ -3,6 +3,13 @@ import { createStore, type SetStoreFunction } from "solid-js/store";
 import { useDataStores } from "../RelayEnvironment";
 import type { MaybeAccessor } from "./access";
 
+/**
+ * A reactive data store containing the result of a query or fragment.
+ *
+ * Call `()` to read the value.
+ *
+ * @param T - The type of the value stored in the data store.
+ */
 export type DataStore<T> =
 	| {
 			(): T;

@@ -47,6 +47,19 @@ type QueryResult<T> =
 			pending: true;
 	  };
 
+/**
+ * Reads query data and subscribes to store updates for the current component.
+ *
+ * It fetches according to the provided fetch policy and returns a reactive
+ * data store containing the query response.
+ *
+ * @param gqlQuery - GraphQL query document.
+ * @param variables - Query variables or an accessor for reactive variables.
+ * @param options.fetchPolicy - Query fetch policy.
+ * @param options.networkCacheConfig - Network cache configuration.
+ * @param options.deferStream - Whether to defer the SSR stream until the data is resolved.
+ * @returns A `DataStore` containing the query data state.
+ */
 export function createLazyLoadQuery<TQuery extends OperationType>(
 	gqlQuery: MaybeAccessor<GraphQLTaggedNode>,
 	variables: MaybeAccessor<VariablesOf<TQuery>>,

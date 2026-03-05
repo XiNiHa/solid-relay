@@ -8,6 +8,15 @@ import {
 import { type Accessor, createSignal } from "solid-js";
 import { useRelayEnvironment } from "../RelayEnvironment";
 
+/**
+ * Creates a mutation commit function and an in-flight state accessor.
+ *
+ * The returned commit function forwards to Relay's `commitMutation` and
+ * keeps `isMutationInFlight` updated while one or more commits are active.
+ *
+ * @param mutation - GraphQL mutation document.
+ * @returns A tuple of `[commitMutation, isMutationInFlight]`.
+ */
 export function createMutation<TMutation extends MutationParameters>(
 	mutation: GraphQLTaggedNode,
 ): [(config: Omit<MutationConfig<TMutation>, "mutation">) => Disposable, Accessor<boolean>] {

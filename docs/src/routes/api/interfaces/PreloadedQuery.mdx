@@ -1,10 +1,12 @@
 # Interface: PreloadedQuery\<TQuery\>
 
-Defined in: dist/index.d.ts:96
+Defined in: index.d.mts:24
 
-## Extends
+A retained query reference produced by `loadQuery`.
 
-- `Readonly`\<\{ `controls?`: `OpaqueReference`\<\{ `dispose`: `DisposeFn`; `environment`: `IEnvironment`; `getNetworkError`: () => `Error` \| `null`; `isDisposed`: () => `boolean`; `releaseQuery`: () => `void`; `source`: `Observable`\<`GraphQLResponse`\> \| `undefined`; \}\>; `fetchKey`: `string` \| `number`; `fetchPolicy`: `FetchPolicy`; `id?`: `string` \| `null`; `kind`: `"PreloadedQuery"`; `name`: `string`; `networkCacheConfig?`: `CacheConfig` \| `null`; `variables`: `VariablesOf`\<`TQuery`\>; \}\>
+Pass this value to `createPreloadedQuery` to read the query result.
+Dispose it when no longer needed to release retained data and cancel
+any pending network work.
 
 ## Type Parameters
 
@@ -16,13 +18,11 @@ Defined in: dist/index.d.ts:96
 
 ### controls?
 
-> `readonly` `optional` **controls**: `OpaqueReference`\<\{ `dispose`: `DisposeFn`; `environment`: `Environment`; `getNetworkError`: () => `null` \| `Error`; `isDisposed`: () => `boolean`; `releaseQuery`: () => `void`; `source`: `undefined` \| `RelayObservable`\<`GraphQLResponse`\>; \}, `undefined`\>
+> `readonly` `optional` **controls**: `OpaqueReference`\<\{ `dispose`: `DisposeFn`; `environment`: `Environment`; `getNetworkError`: () => `Error` \| `null`; `isDisposed`: () => `boolean`; `releaseQuery`: () => `void`; `source`: `RelayObservable`\<`GraphQLResponse`\> \| `undefined`; \}, `undefined`\>
 
-Defined in: dist/index.d.ts:104
+Defined in: index.d.mts:40
 
-#### Inherited from
-
-`Readonly.controls`
+Internal controls for retaining, disposing, and observing preload state.
 
 ***
 
@@ -30,11 +30,9 @@ Defined in: dist/index.d.ts:104
 
 > `readonly` **fetchKey**: `string` \| `number`
 
-Defined in: dist/index.d.ts:101
+Defined in: index.d.mts:34
 
-#### Inherited from
-
-`Readonly.fetchKey`
+Monotonic key used to distinguish subsequent loads.
 
 ***
 
@@ -42,23 +40,19 @@ Defined in: dist/index.d.ts:101
 
 > `readonly` **fetchPolicy**: `FetchPolicy`
 
-Defined in: dist/index.d.ts:102
+Defined in: index.d.mts:36
 
-#### Inherited from
-
-`Readonly.fetchPolicy`
+Fetch policy used for the preload request.
 
 ***
 
 ### id?
 
-> `readonly` `optional` **id**: `null` \| `string`
+> `readonly` `optional` **id**: `string` \| `null`
 
-Defined in: dist/index.d.ts:98
+Defined in: index.d.mts:28
 
-#### Inherited from
-
-`Readonly.id`
+Persisted query id or cache id when available.
 
 ***
 
@@ -66,11 +60,9 @@ Defined in: dist/index.d.ts:98
 
 > `readonly` **kind**: `"PreloadedQuery"`
 
-Defined in: dist/index.d.ts:97
+Defined in: index.d.mts:26
 
-#### Inherited from
-
-`Readonly.kind`
+Discriminator used to identify preloaded query references.
 
 ***
 
@@ -78,23 +70,19 @@ Defined in: dist/index.d.ts:97
 
 > `readonly` **name**: `string`
 
-Defined in: dist/index.d.ts:99
+Defined in: index.d.mts:30
 
-#### Inherited from
-
-`Readonly.name`
+Operation name for diagnostics and debugging.
 
 ***
 
 ### networkCacheConfig?
 
-> `readonly` `optional` **networkCacheConfig**: `null` \| `CacheConfig`
+> `readonly` `optional` **networkCacheConfig**: `CacheConfig` \| `null`
 
-Defined in: dist/index.d.ts:103
+Defined in: index.d.mts:38
 
-#### Inherited from
-
-`Readonly.networkCacheConfig`
+Cache config forwarded to the network layer.
 
 ***
 
@@ -102,8 +90,6 @@ Defined in: dist/index.d.ts:103
 
 > `readonly` **variables**: `VariablesOf`\<`TQuery`\>
 
-Defined in: dist/index.d.ts:100
+Defined in: index.d.mts:32
 
-#### Inherited from
-
-`Readonly.variables`
+Variables used when preloading the query.

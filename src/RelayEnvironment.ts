@@ -20,6 +20,12 @@ const RelayContext = createContext<{
 	dataStores: WeakMap<Resource<unknown>, unknown>;
 }>();
 
+/**
+ * Provides a Relay environment to Solid Relay primitives in the subtree.
+ *
+ * Wrap your application (or route subtree) with this provider before calling
+ * primitives such as `createLazyLoadQuery`, `createFragment`, or `createMutation`.
+ */
 export function RelayEnvironmentProvider(props: Props): JSXElement {
 	const environment = createMemo(() => props.environment);
 
@@ -36,6 +42,11 @@ export function RelayEnvironmentProvider(props: Props): JSXElement {
 	});
 }
 
+/**
+ * Returns the current Relay environment accessor from context.
+ *
+ * Throws if called outside `RelayEnvironmentProvider`.
+ */
 export function useRelayEnvironment(): () => IEnvironment {
 	const context = useContext(RelayContext);
 

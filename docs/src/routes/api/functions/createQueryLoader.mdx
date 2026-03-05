@@ -1,8 +1,15 @@
 # Function: createQueryLoader()
 
-> **createQueryLoader**\<`TQuery`\>(`preloadableRequest`, `initialQueryReference?`): \[`Accessor`\<`undefined` \| `null` \| [`PreloadedQuery`](../interfaces/PreloadedQuery.mdx)\<`TQuery`\>\>, (`variables`, `options?`) => `void`, `DisposeFn`\]
+> **createQueryLoader**\<`TQuery`\>(`preloadableRequest`, `initialQueryReference?`): \[`Accessor`\<[`PreloadedQuery`](../../interfaces/PreloadedQuery)\<`TQuery`\> \| `null` \| `undefined`\>, (`variables`, `options?`) => `void`, `DisposeFn`\]
 
-Defined in: dist/index.d.ts:120
+Defined in: index.d.mts:230
+
+Creates imperative helpers for preloading queries.
+
+Returns a tuple:
+- an accessor for the current `PreloadedQuery` reference
+- a `loadQuery` function to start loading with variables
+- a `disposeQuery` function to clear and dispose the current reference
 
 ## Type Parameters
 
@@ -14,12 +21,18 @@ Defined in: dist/index.d.ts:120
 
 ### preloadableRequest
 
+Query document or preloadable concrete request.
+
 `GraphQLTaggedNode` | `PreloadableConcreteRequest`\<`TQuery`\>
 
 ### initialQueryReference?
 
-`null` | [`PreloadedQuery`](../interfaces/PreloadedQuery.mdx)\<`TQuery`\>
+Optional initial query reference.
+
+[`PreloadedQuery`](../../interfaces/PreloadedQuery)\<`TQuery`\> | `null`
 
 ## Returns
 
-\[`Accessor`\<`undefined` \| `null` \| [`PreloadedQuery`](../interfaces/PreloadedQuery.mdx)\<`TQuery`\>\>, (`variables`, `options?`) => `void`, `DisposeFn`\]
+\[`Accessor`\<[`PreloadedQuery`](../../interfaces/PreloadedQuery)\<`TQuery`\> \| `null` \| `undefined`\>, (`variables`, `options?`) => `void`, `DisposeFn`\]
+
+`[queryRef, loadQuery, disposeQuery]`.

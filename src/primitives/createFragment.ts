@@ -25,6 +25,17 @@ type FragmentResult<T> =
 			pending: true;
 	  };
 
+/**
+ * Reads fragment data from a fragment key and subscribes to updates.
+ *
+ * Use this primitive when a parent query or fragment passes a generated
+ * `...Fragment$key` reference into your component.
+ *
+ * @param fragment - GraphQL fragment document.
+ * @param key - Fragment key accessor passed from a parent operation.
+ * @param options.deferStream - Whether to defer the SSR stream until the data is resolved.
+ * @returns A `DataStore` containing the fragment data state.
+ */
 export function createFragment<TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey>,

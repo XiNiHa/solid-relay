@@ -27,21 +27,42 @@ import invariant from "tiny-invariant";
 
 export type PreloadFetchPolicy = "store-or-network" | "store-and-network" | "network-only";
 
-export type LoadQueryOptions = Readonly<{
-	fetchPolicy?: FetchPolicy | null | undefined;
-	networkCacheConfig?: CacheConfig | null | undefined;
-	onQueryAstLoadTimeout?: (() => void) | null | undefined;
-}>;
+/**
+ * Options for `loadQuery`.
+ */
+export interface LoadQueryOptions {
+	/** Fetch policy for the preload request. */
+	readonly fetchPolicy?: FetchPolicy | null | undefined;
+	/** Cache configuration for the preload request. */
+	readonly networkCacheConfig?: CacheConfig | null | undefined;
+	/** Callback to invoke if the query AST takes too long to load. */
+	readonly onQueryAstLoadTimeout?: (() => void) | null | undefined;
+}
 
-export interface PreloadedQuery<TQuery extends OperationType> extends Readonly<{
-	kind: "PreloadedQuery";
-	id?: string | null | undefined;
-	name: string;
-	variables: VariablesOf<TQuery>;
-	fetchKey: string | number;
-	fetchPolicy: FetchPolicy;
-	networkCacheConfig?: CacheConfig | null | undefined;
-	controls?:
+/**
+ * A retained query reference produced by `loadQuery`.
+ *
+ * Pass this value to `createPreloadedQuery` to read the query result.
+ * Dispose it when no longer needed to release retained data and cancel
+ * any pending network work.
+ */
+export interface PreloadedQuery<TQuery extends OperationType> {
+	/** Discriminator used to identify preloaded query references. */
+	readonly kind: "PreloadedQuery";
+	/** Persisted query id or cache id when available. */
+	readonly id?: string | null | undefined;
+	/** Operation name for diagnostics and debugging. */
+	readonly name: string;
+	/** Variables used when preloading the query. */
+	readonly variables: VariablesOf<TQuery>;
+	/** Monotonic key used to distinguish subsequent loads. */
+	readonly fetchKey: string | number;
+	/** Fetch policy used for the preload request. */
+	readonly fetchPolicy: FetchPolicy;
+	/** Cache config forwarded to the network layer. */
+	readonly networkCacheConfig?: CacheConfig | null | undefined;
+	/** Internal controls for retaining, disposing, and observing preload state. */
+	readonly controls?:
 		| OpaqueReference<{
 				environment: IEnvironment;
 				source: Observable<GraphQLResponse> | undefined;
@@ -51,10 +72,22 @@ export interface PreloadedQuery<TQuery extends OperationType> extends Readonly<{
 				releaseQuery: () => void;
 		  }>
 		| undefined;
-}> {}
+}
 
 let fetchKey = 100001;
 
+/**
+ * Preloads a query and returns a `PreloadedQuery` reference.
+ *
+ * Use this to start fetching before render (for example during route preload),
+ * then consume the returned reference with `createPreloadedQuery`.
+ *
+ * @param environment - Relay environment used to execute and retain the query.
+ * @param preloadableRequest - Query document or preloadable concrete request.
+ * @param variables - Variables for the query operation.
+ * @param options - Options for the preload request.
+ * @returns A query reference that can be consumed by `createPreloadedQuery`.
+ */
 export function loadQuery<TQuery extends OperationType>(
 	environment: IEnvironment,
 	preloadableRequest: GraphQLTaggedNode | PreloadableConcreteRequest<TQuery>,

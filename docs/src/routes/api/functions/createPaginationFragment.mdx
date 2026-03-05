@@ -4,7 +4,11 @@
 
 > **createPaginationFragment**\<`TQuery`, `TKey`\>(`fragment`, `key`): `CreatePaginationFragmentReturn`\<`TQuery`, `TKey`, `KeyTypeData`\<`TKey`, `unknown`\>\>
 
-Defined in: dist/index.d.ts:84
+Defined in: index.d.mts:201
+
+Reads a pagination fragment and exposes pagination controls.
+
+The fragment must include Relay pagination metadata (`@connection` and `@refetchable`).
 
 ### Type Parameters
 
@@ -21,20 +25,30 @@ Defined in: dist/index.d.ts:84
 #### fragment
 
 `GraphQLTaggedNode`
+
+GraphQL fragment document with pagination directives.
 
 #### key
 
 `Accessor`\<`TKey`\>
 
+Fragment key accessor passed from a parent operation.
+
 ### Returns
 
 `CreatePaginationFragmentReturn`\<`TQuery`, `TKey`, `KeyTypeData`\<`TKey`, `unknown`\>\>
 
+A `DataStore` containing the fragment data state, augmented with pagination and refetch helpers.
+
 ## Call Signature
 
-> **createPaginationFragment**\<`TQuery`, `TKey`\>(`fragment`, `key`): `CreatePaginationFragmentReturn`\<`TQuery`, `null` \| `TKey`, `undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>
+> **createPaginationFragment**\<`TQuery`, `TKey`\>(`fragment`, `key`): `CreatePaginationFragmentReturn`\<`TQuery`, `TKey` \| `null`, `KeyTypeData`\<`TKey`, `unknown`\> \| `null` \| `undefined`\>
 
-Defined in: dist/index.d.ts:85
+Defined in: index.d.mts:202
+
+Reads a pagination fragment and exposes pagination controls.
+
+The fragment must include Relay pagination metadata (`@connection` and `@refetchable`).
 
 ### Type Parameters
 
@@ -52,10 +66,16 @@ Defined in: dist/index.d.ts:85
 
 `GraphQLTaggedNode`
 
+GraphQL fragment document with pagination directives.
+
 #### key
 
-`Accessor`\<`undefined` \| `null` \| `TKey`\>
+`Accessor`\<`TKey` \| `null` \| `undefined`\>
+
+Fragment key accessor passed from a parent operation.
 
 ### Returns
 
-`CreatePaginationFragmentReturn`\<`TQuery`, `null` \| `TKey`, `undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>
+`CreatePaginationFragmentReturn`\<`TQuery`, `TKey` \| `null`, `KeyTypeData`\<`TKey`, `unknown`\> \| `null` \| `undefined`\>
+
+A `DataStore` containing the fragment data state, augmented with pagination and refetch helpers.

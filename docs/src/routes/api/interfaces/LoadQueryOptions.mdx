@@ -1,0 +1,35 @@
+# Interface: LoadQueryOptions
+
+Defined in: index.d.mts:9
+
+Options for `loadQuery`.
+
+## Properties
+
+### fetchPolicy?
+
+> `readonly` `optional` **fetchPolicy**: `FetchPolicy` \| `null`
+
+Defined in: index.d.mts:11
+
+Fetch policy for the preload request.
+
+***
+
+### networkCacheConfig?
+
+> `readonly` `optional` **networkCacheConfig**: `CacheConfig` \| `null`
+
+Defined in: index.d.mts:13
+
+Cache configuration for the preload request.
+
+***
+
+### onQueryAstLoadTimeout?
+
+> `readonly` `optional` **onQueryAstLoadTimeout**: () => `void` \| `null`
+
+Defined in: index.d.mts:15
+
+Callback to invoke if the query AST takes too long to load.

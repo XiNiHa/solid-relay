@@ -17,6 +17,18 @@ const initialNullQueryReferenceState: NullQueryReference = {
 	kind: "NullQueryReference",
 };
 
+/**
+ * Creates imperative helpers for preloading queries.
+ *
+ * Returns a tuple:
+ * - an accessor for the current `PreloadedQuery` reference
+ * - a `loadQuery` function to start loading with variables
+ * - a `disposeQuery` function to clear and dispose the current reference
+ *
+ * @param preloadableRequest - Query document or preloadable concrete request.
+ * @param initialQueryReference - Optional initial query reference.
+ * @returns `[queryRef, loadQuery, disposeQuery]`.
+ */
 export function createQueryLoader<TQuery extends OperationType>(
 	preloadableRequest: GraphQLTaggedNode | PreloadableConcreteRequest<TQuery>,
 	initialQueryReference?: PreloadedQuery<TQuery> | null,

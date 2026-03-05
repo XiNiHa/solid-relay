@@ -1,8 +1,13 @@
 # Function: createLazyLoadQuery()
 
-> **createLazyLoadQuery**\<`TQuery`\>(`gqlQuery`, `variables`, `options?`): `DataStore`\<`TQuery`\[`"response"`\]\>
+> **createLazyLoadQuery**\<`TQuery`\>(`gqlQuery`, `variables`, `options?`): [`DataStore`](../../type-aliases/DataStore)\<`TQuery`\[`"response"`\]\>
 
-Defined in: dist/index.d.ts:30
+Defined in: index.d.mts:131
+
+Reads query data and subscribes to store updates for the current component.
+
+It fetches according to the provided fetch policy and returns a reactive
+data store containing the query response.
 
 ## Type Parameters
 
@@ -16,9 +21,13 @@ Defined in: dist/index.d.ts:30
 
 `MaybeAccessor`\<`GraphQLTaggedNode`\>
 
+GraphQL query document.
+
 ### variables
 
 `MaybeAccessor`\<`VariablesOf`\<`TQuery`\>\>
+
+Query variables or an accessor for reactive variables.
 
 ### options?
 
@@ -26,14 +35,22 @@ Defined in: dist/index.d.ts:30
 
 `boolean`
 
+Whether to defer the SSR stream until the data is resolved.
+
 #### fetchPolicy?
 
-`MaybeAccessor`\<`undefined` \| `FetchPolicy`\>
+`MaybeAccessor`\<`FetchPolicy` \| `undefined`\>
+
+Query fetch policy.
 
 #### networkCacheConfig?
 
-`MaybeAccessor`\<`undefined` \| `CacheConfig`\>
+`MaybeAccessor`\<`CacheConfig` \| `undefined`\>
+
+Network cache configuration.
 
 ## Returns
 
-`DataStore`\<`TQuery`\[`"response"`\]\>
+[`DataStore`](../../type-aliases/DataStore)\<`TQuery`\[`"response"`\]\>
+
+A `DataStore` containing the query data state.

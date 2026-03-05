@@ -2,9 +2,14 @@
 
 ## Call Signature
 
-> **createFragment**\<`TKey`\>(`fragment`, `key`, `options?`): `DataStore`\<`KeyTypeData`\<`TKey`, `unknown`\>\>
+> **createFragment**\<`TKey`\>(`fragment`, `key`, `options?`): [`DataStore`](../../type-aliases/DataStore)\<`KeyTypeData`\<`TKey`, `unknown`\>\>
 
-Defined in: dist/index.d.ts:44
+Defined in: index.d.mts:110
+
+Reads fragment data from a fragment key and subscribes to updates.
+
+Use this primitive when a parent query or fragment passes a generated
+`...Fragment$key` reference into your component.
 
 ### Type Parameters
 
@@ -17,26 +22,39 @@ Defined in: dist/index.d.ts:44
 #### fragment
 
 `GraphQLTaggedNode`
+
+GraphQL fragment document.
 
 #### key
 
 `Accessor`\<`TKey`\>
 
+Fragment key accessor passed from a parent operation.
+
 #### options?
 
 ##### deferStream?
 
 `boolean`
 
+Whether to defer the SSR stream until the data is resolved.
+
 ### Returns
 
-`DataStore`\<`KeyTypeData`\<`TKey`, `unknown`\>\>
+[`DataStore`](../../type-aliases/DataStore)\<`KeyTypeData`\<`TKey`, `unknown`\>\>
+
+A `DataStore` containing the fragment data state.
 
 ## Call Signature
 
-> **createFragment**\<`TKey`\>(`fragment`, `key`, `options?`): `DataStore`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>
+> **createFragment**\<`TKey`\>(`fragment`, `key`, `options?`): [`DataStore`](../../type-aliases/DataStore)\<`KeyTypeData`\<`TKey`, `unknown`\> \| `null` \| `undefined`\>
 
-Defined in: dist/index.d.ts:47
+Defined in: index.d.mts:113
+
+Reads fragment data from a fragment key and subscribes to updates.
+
+Use this primitive when a parent query or fragment passes a generated
+`...Fragment$key` reference into your component.
 
 ### Type Parameters
 
@@ -50,9 +68,13 @@ Defined in: dist/index.d.ts:47
 
 `GraphQLTaggedNode`
 
+GraphQL fragment document.
+
 #### key
 
-`Accessor`\<`undefined` \| `null` \| `TKey`\>
+`Accessor`\<`TKey` \| `null` \| `undefined`\>
+
+Fragment key accessor passed from a parent operation.
 
 #### options?
 
@@ -60,6 +82,10 @@ Defined in: dist/index.d.ts:47
 
 `boolean`
 
+Whether to defer the SSR stream until the data is resolved.
+
 ### Returns
 
-`DataStore`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>
+[`DataStore`](../../type-aliases/DataStore)\<`KeyTypeData`\<`TKey`, `unknown`\> \| `null` \| `undefined`\>
+
+A `DataStore` containing the fragment data state.
