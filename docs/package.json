@@ -22,7 +22,7 @@
 	},
 	"devDependencies": {
 		"@iconify-json/ri": "^1.2.10",
-		"@types/node": "^24.10.14",
+		"@types/node": "^24.11.0",
 		"solid-relay": "workspace:^",
 		"typedoc": "^0.28.17",
 		"typedoc-plugin-markdown": "^4.10.0"
