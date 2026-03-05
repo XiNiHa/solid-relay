@@ -10,6 +10,15 @@ import { createLazyLoadQueryInternal } from "./createLazyLoadQuery";
 
 type MaybePromise<T> = T | Promise<T>;
 
+/**
+ * Consumes a `PreloadedQuery` reference and returns reactive query data.
+ *
+ * When the provided reference changes, the previous one is disposed automatically.
+ *
+ * @param query - GraphQL query document matching the preloaded reference.
+ * @param preloadedQuery - Query reference (or promise/accessor resolving to one).
+ * @returns A `DataStore` containing the query data state.
+ */
 export function createPreloadedQuery<TQuery extends OperationType>(
 	query: GraphQLTaggedNode,
 	preloadedQuery: MaybeAccessor<MaybePromise<PreloadedQuery<TQuery>>>,

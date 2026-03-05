@@ -1,8 +1,13 @@
 # Function: loadQuery()
 
-> **loadQuery**\<`TQuery`\>(`environment`, `preloadableRequest`, `variables`, `options?`): [`PreloadedQuery`](../interfaces/PreloadedQuery.mdx)\<`TQuery`\>
+> **loadQuery**\<`TQuery`\>(`environment`, `preloadableRequest`, `variables`, `options?`): [`PreloadedQuery`](../../interfaces/PreloadedQuery)\<`TQuery`\>
 
-Defined in: dist/index.d.ts:113
+Defined in: index.d.mts:61
+
+Preloads a query and returns a `PreloadedQuery` reference.
+
+Use this to start fetching before render (for example during route preload),
+then consume the returned reference with `createPreloadedQuery`.
 
 ## Type Parameters
 
@@ -16,7 +21,11 @@ Defined in: dist/index.d.ts:113
 
 `Environment`
 
+Relay environment used to execute and retain the query.
+
 ### preloadableRequest
+
+Query document or preloadable concrete request.
 
 `GraphQLTaggedNode` | `PreloadableConcreteRequest`\<`TQuery`\>
 
@@ -24,10 +33,16 @@ Defined in: dist/index.d.ts:113
 
 `VariablesOf`\<`TQuery`\>
 
+Variables for the query operation.
+
 ### options?
 
-`Readonly`\<\{ `fetchPolicy?`: `null` \| `FetchPolicy`; `networkCacheConfig?`: `null` \| `CacheConfig`; `onQueryAstLoadTimeout?`: `null` \| () => `void`; \}\>
+[`LoadQueryOptions`](../../interfaces/LoadQueryOptions)
+
+Options for the preload request.
 
 ## Returns
 
-[`PreloadedQuery`](../interfaces/PreloadedQuery.mdx)\<`TQuery`\>
+[`PreloadedQuery`](../../interfaces/PreloadedQuery)\<`TQuery`\>
+
+A query reference that can be consumed by `createPreloadedQuery`.

@@ -53,6 +53,15 @@ export type LoadMoreFn<_TQuery extends OperationType> = (
 	},
 ) => Disposable;
 
+/**
+ * Reads a pagination fragment and exposes pagination controls.
+ *
+ * The fragment must include Relay pagination metadata (`@connection` and `@refetchable`).
+ *
+ * @param fragment - GraphQL fragment document with pagination directives.
+ * @param key - Fragment key accessor passed from a parent operation.
+ * @returns A `DataStore` containing the fragment data state, augmented with pagination and refetch helpers.
+ */
 export function createPaginationFragment<TQuery extends OperationType, TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey>,

@@ -75,6 +75,16 @@ export interface RefetchOptions {
 	onComplete?: ((arg: Error | null) => void) | undefined;
 }
 
+/**
+ * Reads a `@refetchable` fragment and returns fragment data plus a refetch function.
+ *
+ * The returned `refetch` function merges provided variables with the fragment's owner variables.
+ *
+ * @param fragment - GraphQL fragment document annotated with `@refetchable`.
+ * @param key - Fragment key accessor passed from a parent operation.
+ * @param options.deferStream - Whether to defer the SSR stream until the data is resolved.
+ * @returns A tuple of fragment `DataStore` and a `refetch` function.
+ */
 export function createRefetchableFragment<TQuery extends OperationType, TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey>,

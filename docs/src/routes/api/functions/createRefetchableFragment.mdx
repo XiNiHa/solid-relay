@@ -2,9 +2,13 @@
 
 ## Call Signature
 
-> **createRefetchableFragment**\<`TQuery`, `TKey`\>(`fragment`, `key`, `options?`): \[`DataStore`\<`KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
+> **createRefetchableFragment**\<`TQuery`, `TKey`\>(`fragment`, `key`, `options?`): \[[`DataStore`](../../type-aliases/DataStore)\<`KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
 
-Defined in: dist/index.d.ts:64
+Defined in: index.d.mts:172
+
+Reads a `@refetchable` fragment and returns fragment data plus a refetch function.
+
+The returned `refetch` function merges provided variables with the fragment's owner variables.
 
 ### Type Parameters
 
@@ -21,26 +25,38 @@ Defined in: dist/index.d.ts:64
 #### fragment
 
 `GraphQLTaggedNode`
+
+GraphQL fragment document annotated with `@refetchable`.
 
 #### key
 
 `Accessor`\<`TKey`\>
 
+Fragment key accessor passed from a parent operation.
+
 #### options?
 
 ##### deferStream?
 
 `boolean`
 
+Whether to defer the SSR stream until the data is resolved.
+
 ### Returns
 
-\[`DataStore`\<`KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
+\[[`DataStore`](../../type-aliases/DataStore)\<`KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
+
+A tuple of fragment `DataStore` and a `refetch` function.
 
 ## Call Signature
 
-> **createRefetchableFragment**\<`TQuery`, `TKey`\>(`fragment`, `key`, `options?`): \[`DataStore`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
+> **createRefetchableFragment**\<`TQuery`, `TKey`\>(`fragment`, `key`, `options?`): \[[`DataStore`](../../type-aliases/DataStore)\<`KeyTypeData`\<`TKey`, `unknown`\> \| `null` \| `undefined`\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
 
-Defined in: dist/index.d.ts:67
+Defined in: index.d.mts:175
+
+Reads a `@refetchable` fragment and returns fragment data plus a refetch function.
+
+The returned `refetch` function merges provided variables with the fragment's owner variables.
 
 ### Type Parameters
 
@@ -58,9 +74,13 @@ Defined in: dist/index.d.ts:67
 
 `GraphQLTaggedNode`
 
+GraphQL fragment document annotated with `@refetchable`.
+
 #### key
 
-`Accessor`\<`undefined` \| `null` \| `TKey`\>
+`Accessor`\<`TKey` \| `null` \| `undefined`\>
+
+Fragment key accessor passed from a parent operation.
 
 #### options?
 
@@ -68,6 +88,10 @@ Defined in: dist/index.d.ts:67
 
 `boolean`
 
+Whether to defer the SSR stream until the data is resolved.
+
 ### Returns
 
-\[`DataStore`\<`undefined` \| `null` \| `KeyTypeData`\<`TKey`, `unknown`\>\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
+\[[`DataStore`](../../type-aliases/DataStore)\<`KeyTypeData`\<`TKey`, `unknown`\> \| `null` \| `undefined`\>, `RefetchFnDynamic`\<`TQuery`, `TKey`, `RefetchOptions`\>\]
+
+A tuple of fragment `DataStore` and a `refetch` function.

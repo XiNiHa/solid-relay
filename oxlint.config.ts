@@ -17,4 +17,10 @@ export default defineConfig({
 		typeAware: true,
 		typeCheck: true,
 	},
+	rules: {
+		"jsdoc/check-property-names": "error",
+		"jsdoc/check-tag-names": ["error", { jsxTags: true }],
+		"jsdoc/require-param-description": "error",
+		"jsdoc/require-param-name": "error",
+	},
 });

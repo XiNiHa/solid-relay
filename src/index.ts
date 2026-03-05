@@ -1,4 +1,4 @@
-export { loadQuery, type PreloadedQuery } from "./loadQuery";
+export { loadQuery, type LoadQueryOptions, type PreloadedQuery } from "./loadQuery";
 export { createFragment } from "./primitives/createFragment";
 export { createLazyLoadQuery } from "./primitives/createLazyLoadQuery";
 export { createMutation } from "./primitives/createMutation";
@@ -8,3 +8,4 @@ export { createQueryLoader } from "./primitives/createQueryLoader";
 export { createRefetchableFragment } from "./primitives/createRefetchableFragment";
 export { createSubscription } from "./primitives/createSubscription";
 export { RelayEnvironmentProvider, useRelayEnvironment } from "./RelayEnvironment";
+export type { DataStore } from "./utils/dataStore";

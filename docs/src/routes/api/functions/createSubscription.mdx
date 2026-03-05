@@ -2,7 +2,11 @@
 
 > **createSubscription**\<`TSubscriptionPayload`\>(`config`, `requestSubscriptionFn?`): `void`
 
-Defined in: dist/index.d.ts:125
+Defined in: index.d.mts:243
+
+Starts a Relay subscription when the owner mounts and disposes it on cleanup.
+
+Accepts either a static config object or an accessor returning the config.
 
 ## Type Parameters
 
@@ -16,9 +20,13 @@ Defined in: dist/index.d.ts:125
 
 `MaybeAccessor`\<`GraphQLSubscriptionConfig`\<`TSubscriptionPayload`\>\>
 
+Subscription configuration or accessor returning it.
+
 ### requestSubscriptionFn?
 
 \<`TSubscription`\>(`environment`, `config`) => `Disposable`
+
+Optional request function override (useful for tests).
 
 ## Returns
 

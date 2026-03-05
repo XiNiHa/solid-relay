@@ -2,7 +2,12 @@
 
 > **createMutation**\<`TMutation`\>(`mutation`): \[(`config`) => `Disposable`, `Accessor`\<`boolean`\>\]
 
-Defined in: dist/index.d.ts:88
+Defined in: index.d.mts:147
+
+Creates a mutation commit function and an in-flight state accessor.
+
+The returned commit function forwards to Relay's `commitMutation` and
+keeps `isMutationInFlight` updated while one or more commits are active.
 
 ## Type Parameters
 
@@ -16,6 +21,10 @@ Defined in: dist/index.d.ts:88
 
 `GraphQLTaggedNode`
 
+GraphQL mutation document.
+
 ## Returns
 
 \[(`config`) => `Disposable`, `Accessor`\<`boolean`\>\]
+
+A tuple of `[commitMutation, isMutationInFlight]`.

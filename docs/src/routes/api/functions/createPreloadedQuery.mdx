@@ -1,8 +1,12 @@
 # Function: createPreloadedQuery()
 
-> **createPreloadedQuery**\<`TQuery`\>(`query`, `preloadedQuery`): `DataStore`\<`TQuery`\[`"response"`\]\>
+> **createPreloadedQuery**\<`TQuery`\>(`query`, `preloadedQuery`): [`DataStore`](../../type-aliases/DataStore)\<`TQuery`\[`"response"`\]\>
 
-Defined in: dist/index.d.ts:117
+Defined in: index.d.mts:215
+
+Consumes a `PreloadedQuery` reference and returns reactive query data.
+
+When the provided reference changes, the previous one is disposed automatically.
 
 ## Type Parameters
 
@@ -16,10 +20,16 @@ Defined in: dist/index.d.ts:117
 
 `GraphQLTaggedNode`
 
+GraphQL query document matching the preloaded reference.
+
 ### preloadedQuery
 
-`MaybeAccessor`\<`MaybePromise`\<[`PreloadedQuery`](../interfaces/PreloadedQuery.mdx)\<`TQuery`\>\>\>
+`MaybeAccessor`\<`MaybePromise`\<[`PreloadedQuery`](../../interfaces/PreloadedQuery)\<`TQuery`\>\>\>
+
+Query reference (or promise/accessor resolving to one).
 
 ## Returns
 
-`DataStore`\<`TQuery`\[`"response"`\]\>
+[`DataStore`](../../type-aliases/DataStore)\<`TQuery`\[`"response"`\]\>
+
+A `DataStore` containing the query data state.

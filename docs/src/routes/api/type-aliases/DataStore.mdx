@@ -1,0 +1,17 @@
+# Type Alias: DataStore\<T\>
+
+> **DataStore**\<`T`\> = \{(): `T`; `error`: `undefined`; `latest`: `T`; `pending`: `false`; \} \| \{(): `undefined`; `error`: `unknown`; `latest`: `undefined`; `pending`: `false`; \} \| \{(): `undefined`; `error`: `undefined`; `latest`: `undefined`; `pending`: `true`; \}
+
+Defined in: index.d.mts:81
+
+A reactive data store containing the result of a query or fragment.
+
+Call `()` to read the value.
+
+## Type Parameters
+
+### T
+
+`T`
+
+The type of the value stored in the data store.
