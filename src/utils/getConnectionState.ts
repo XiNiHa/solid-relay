@@ -15,14 +15,8 @@ export function getConnectionState(
 	cursor: string | null | undefined;
 	hasMore: boolean;
 } {
-	const {
-		EDGES,
-		PAGE_INFO,
-		HAS_NEXT_PAGE,
-		HAS_PREV_PAGE,
-		END_CURSOR,
-		START_CURSOR,
-	} = ConnectionInterface.get();
+	const { EDGES, PAGE_INFO, HAS_NEXT_PAGE, HAS_PREV_PAGE, END_CURSOR, START_CURSOR } =
+		ConnectionInterface.get();
 	const connection = getValueAtPath(fragmentData, connectionPathInFragmentData);
 	if (connection == null) {
 		return { cursor: null, hasMore: false };
@@ -52,9 +46,7 @@ export function getConnectionState(
 	);
 
 	const cursor =
-		direction === "forward"
-			? (pageInfo[END_CURSOR] ?? null)
-			: (pageInfo[START_CURSOR] ?? null);
+		direction === "forward" ? (pageInfo[END_CURSOR] ?? null) : (pageInfo[START_CURSOR] ?? null);
 	invariant(
 		cursor === null || typeof cursor === "string",
 		`Relay: Expected page info for connection in fragment \`${fragmentNode.name}\` to have a ` +

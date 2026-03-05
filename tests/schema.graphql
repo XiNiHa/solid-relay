@@ -1,12 +1,12 @@
 type Query {
-  node(id: ID!): Node
+	node(id: ID!): Node
 }
 
 interface Node {
-  id: ID!
+	id: ID!
 }
 
 type User implements Node {
-  id: ID!
-  name: String!
+	id: ID!
+	name: String!
 }

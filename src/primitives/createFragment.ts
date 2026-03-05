@@ -1,9 +1,4 @@
-import type {
-	GraphQLResponse,
-	GraphQLTaggedNode,
-	Subscribable,
-	Subscription,
-} from "relay-runtime";
+import type { GraphQLResponse, GraphQLTaggedNode, Subscribable, Subscription } from "relay-runtime";
 import { observeFragment } from "relay-runtime/experimental.js";
 import type { Accessor } from "solid-js";
 import { batch, createResource, createSignal, untrack } from "solid-js";
@@ -72,9 +67,7 @@ export function createFragmentInternal<TKey extends KeyType>(
 		pending: false,
 	};
 
-	type FragmentObserver = Parameters<
-		ReturnType<typeof observeFragment>["subscribe"]
-	>[0];
+	type FragmentObserver = Parameters<ReturnType<typeof observeFragment>["subscribe"]>[0];
 	const resultUpdateObserver = {
 		next(res) {
 			batch(() => {
@@ -102,9 +95,7 @@ export function createFragmentInternal<TKey extends KeyType>(
 	const [subscription, setSubscription] = createSignal<Subscription>();
 
 	const setResultQueue: unknown[][] = [];
-	let setResult: SetStoreFunction<FragmentResult<TKey[" $data"]>> = (
-		...args: unknown[]
-	) => {
+	let setResult: SetStoreFunction<FragmentResult<TKey[" $data"]>> = (...args: unknown[]) => {
 		setResultQueue.push(args);
 	};
 
@@ -157,18 +148,13 @@ export function createFragmentInternal<TKey extends KeyType>(
 			onHydrated(source) {
 				if (!source) return;
 				setSubscription(
-					observeFragment(environment(), fragment, source.key).subscribe(
-						resultUpdateObserver,
-					),
+					observeFragment(environment(), fragment, source.key).subscribe(resultUpdateObserver),
 				);
 			},
 		},
 	);
 
-	const store = createDataStore<FragmentResult<TKey[" $data"]>>(
-		initialResult,
-		resource,
-	);
+	const store = createDataStore<FragmentResult<TKey[" $data"]>>(initialResult, resource);
 	for (const args of setResultQueue) {
 		store[1].apply(undefined, args as never);
 	}

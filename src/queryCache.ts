@@ -8,9 +8,7 @@ export type QueryCacheEntry = {
 
 const caches = new WeakMap<IEnvironment, Map<string, QueryCacheEntry>>();
 
-export function getQueryCache(
-	environment: IEnvironment,
-): Map<string, QueryCacheEntry> {
+export function getQueryCache(environment: IEnvironment): Map<string, QueryCacheEntry> {
 	let cache = caches.get(environment);
 	if (!cache) {
 		cache = new Map();

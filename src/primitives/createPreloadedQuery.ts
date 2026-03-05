@@ -1,9 +1,4 @@
-import {
-	__internal,
-	type GraphQLTaggedNode,
-	getRequest,
-	type OperationType,
-} from "relay-runtime";
+import { __internal, type GraphQLTaggedNode, getRequest, type OperationType } from "relay-runtime";
 import { createEffect, createResource, onCleanup } from "solid-js";
 import invariant from "tiny-invariant";
 import type { PreloadedQuery } from "../loadQuery";
@@ -60,8 +55,7 @@ export function createPreloadedQuery<TQuery extends OperationType>(
 			if (preloaded.controls?.value.source == null) return fallback;
 
 			invariant(
-				preloaded.controls == null ||
-					environment() === preloaded.controls.value.environment,
+				preloaded.controls == null || environment() === preloaded.controls.value.environment,
 				"usePreloadedQuery(): usePreloadedQuery was passed a preloaded query " +
 					"that was created with a different environment than the one that is currently in context.",
 			);

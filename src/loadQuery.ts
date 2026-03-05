@@ -18,16 +18,14 @@ import {
 	PreloadableQueryRegistry,
 	ReplaySubject,
 	type RequestParameters,
+	type Subscription,
 	type VariablesOf,
 } from "relay-runtime";
 import type { RequestIdentifier } from "relay-runtime/lib/util/getRequestIdentifier";
 import { OpaqueReference } from "seroval";
 import invariant from "tiny-invariant";
 
-export type PreloadFetchPolicy =
-	| "store-or-network"
-	| "store-and-network"
-	| "network-only";
+export type PreloadFetchPolicy = "store-or-network" | "store-and-network" | "network-only";
 
 export type LoadQueryOptions = Readonly<{
 	fetchPolicy?: FetchPolicy | null | undefined;
@@ -35,26 +33,25 @@ export type LoadQueryOptions = Readonly<{
 	onQueryAstLoadTimeout?: (() => void) | null | undefined;
 }>;
 
-export interface PreloadedQuery<TQuery extends OperationType>
-	extends Readonly<{
-		kind: "PreloadedQuery";
-		id?: string | null | undefined;
-		name: string;
-		variables: VariablesOf<TQuery>;
-		fetchKey: string | number;
-		fetchPolicy: FetchPolicy;
-		networkCacheConfig?: CacheConfig | null | undefined;
-		controls?:
-			| OpaqueReference<{
-					environment: IEnvironment;
-					source: Observable<GraphQLResponse> | undefined;
-					getNetworkError: () => Error | null;
-					dispose: DisposeFn;
-					isDisposed: () => boolean;
-					releaseQuery: () => void;
-			  }>
-			| undefined;
-	}> {}
+export interface PreloadedQuery<TQuery extends OperationType> extends Readonly<{
+	kind: "PreloadedQuery";
+	id?: string | null | undefined;
+	name: string;
+	variables: VariablesOf<TQuery>;
+	fetchKey: string | number;
+	fetchPolicy: FetchPolicy;
+	networkCacheConfig?: CacheConfig | null | undefined;
+	controls?:
+		| OpaqueReference<{
+				environment: IEnvironment;
+				source: Observable<GraphQLResponse> | undefined;
+				getNetworkError: () => Error | null;
+				dispose: DisposeFn;
+				isDisposed: () => boolean;
+				releaseQuery: () => void;
+		  }>
+		| undefined;
+}> {}
 
 let fetchKey = 100001;
 
@@ -90,28 +87,22 @@ export function loadQuery<TQuery extends OperationType>(
 		executionSubject.subscribe(sink),
 	);
 
-	let unsubscribeFromNetworkRequest: (() => void) | undefined;
+	let networkRequestSubscription: Subscription | undefined;
 	let networkError: Error | null = null;
 	let didMakeNetworkRequest = false;
-	const makeNetworkRequest = (
-		params: RequestParameters,
-	): Observable<GraphQLResponse> => {
+	const makeNetworkRequest = (params: RequestParameters): Observable<GraphQLResponse> => {
 		didMakeNetworkRequest = true;
 
 		const subject = new ReplaySubject<GraphQLResponse>();
 
 		const identifier: RequestIdentifier =
 			"raw-network-request-" + getRequestIdentifier(params, variables);
-		const observable = __internal.fetchQueryDeduped(
-			environment,
-			identifier,
-			() => {
-				const network = environment.getNetwork();
-				return network.execute(params, variables, networkCacheConfig);
-			},
-		);
+		const observable = __internal.fetchQueryDeduped(environment, identifier, () => {
+			const network = environment.getNetwork();
+			return network.execute(params, variables, networkCacheConfig);
+		});
 
-		unsubscribeFromNetworkRequest = observable.subscribe({
+		networkRequestSubscription = observable.subscribe({
 			error(err: Error) {
 				networkError = err;
 				subject.error(err);
@@ -122,23 +113,23 @@ export function loadQuery<TQuery extends OperationType>(
 			complete() {
 				subject.complete();
 			},
-		}).unsubscribe;
+		});
 		return Observable.create((sink) => {
 			const subjectSubscription = subject.subscribe(sink);
 			return () => {
 				subjectSubscription.unsubscribe();
-				unsubscribeFromNetworkRequest?.();
+				networkRequestSubscription?.unsubscribe();
 			};
 		});
 	};
 
-	let unsubscribeFromExecution: (() => void) | undefined;
+	let executionSubcription: Subscription | undefined;
 	const executeDeduped = (
 		operation: OperationDescriptor,
 		fetchFn: () => Observable<GraphQLResponse>,
 	) => {
 		didMakeNetworkRequest = true;
-		unsubscribeFromExecution = __internal
+		executionSubcription = __internal
 			.fetchQueryDeduped(environment, operation.request.identifier, fetchFn)
 			.subscribe({
 				error(err: Error) {
@@ -150,31 +141,23 @@ export function loadQuery<TQuery extends OperationType>(
 				complete() {
 					executionSubject.complete();
 				},
-			}).unsubscribe;
+			});
 	};
 
 	const checkAvailabilityAndExecute = (concreteRequest: ConcreteRequest) => {
-		const operation = createOperationDescriptor(
-			concreteRequest,
-			variables,
-			networkCacheConfig,
-		);
+		const operation = createOperationDescriptor(concreteRequest, variables, networkCacheConfig);
 		retainReference = environment.retain(operation);
 		if (fetchPolicy === "store-only") {
 			return;
 		}
 
 		const shouldFetch =
-			fetchPolicy !== "store-or-network" ||
-			environment.check(operation).status !== "available";
+			fetchPolicy !== "store-or-network" || environment.check(operation).status !== "available";
 
 		if (shouldFetch) {
 			executeDeduped(operation, () => {
 				const networkObservable = makeNetworkRequest(concreteRequest.params);
-				const executeObservable = executeWithNetworkSource(
-					operation,
-					networkObservable,
-				);
+				const executeObservable = executeWithNetworkSource(operation, networkObservable);
 				return executeObservable;
 			});
 		}
@@ -183,12 +166,8 @@ export function loadQuery<TQuery extends OperationType>(
 	let params: RequestParameters | undefined;
 	let cancelOnLoadCallback: () => void;
 	let queryId: string | null | undefined;
-	if (
-		"kind" in preloadableRequest &&
-		preloadableRequest.kind === "PreloadableConcreteRequest"
-	) {
-		const preloadableConcreteRequest =
-			preloadableRequest as PreloadableConcreteRequest<TQuery>;
+	if ("kind" in preloadableRequest && preloadableRequest.kind === "PreloadableConcreteRequest") {
+		const preloadableConcreteRequest = preloadableRequest as PreloadableConcreteRequest<TQuery>;
 		params = preloadableConcreteRequest.params;
 
 		queryId = params.id;
@@ -202,34 +181,21 @@ export function loadQuery<TQuery extends OperationType>(
 		if (module != null) {
 			checkAvailabilityAndExecute(module);
 		} else {
-			const networkObservable =
-				fetchPolicy === "store-only" ? null : makeNetworkRequest(params);
-			cancelOnLoadCallback = PreloadableQueryRegistry.onLoad(
-				queryId,
-				(preloadedModule) => {
-					cancelOnLoadCallback();
-					const operation = createOperationDescriptor(
-						preloadedModule,
-						variables,
-						networkCacheConfig,
-					);
-					retainReference = environment.retain(operation);
-					if (networkObservable != null) {
-						executeDeduped(operation, () =>
-							executeWithNetworkSource(operation, networkObservable),
-						);
-					}
-				},
-			).dispose;
+			const networkObservable = fetchPolicy === "store-only" ? null : makeNetworkRequest(params);
+			cancelOnLoadCallback = PreloadableQueryRegistry.onLoad(queryId, (preloadedModule) => {
+				cancelOnLoadCallback();
+				const operation = createOperationDescriptor(preloadedModule, variables, networkCacheConfig);
+				retainReference = environment.retain(operation);
+				if (networkObservable != null) {
+					executeDeduped(operation, () => executeWithNetworkSource(operation, networkObservable));
+				}
+			}).dispose;
 		}
 	} else {
 		const graphQlTaggedNode = preloadableRequest as GraphQLTaggedNode;
 		const request = getRequest(graphQlTaggedNode);
 		params = request.params;
-		queryId =
-			"cacheID" in params && params.cacheID != null
-				? params.cacheID
-				: params.id;
+		queryId = "cacheID" in params && params.cacheID != null ? params.cacheID : params.id;
 		checkAvailabilityAndExecute(request);
 	}
 
@@ -244,9 +210,9 @@ export function loadQuery<TQuery extends OperationType>(
 	const cancelNetworkRequest = () => {
 		if (isNetworkRequestCanceled) return;
 		if (didExecuteNetworkSource) {
-			unsubscribeFromExecution?.();
+			executionSubcription?.unsubscribe();
 		} else {
-			unsubscribeFromNetworkRequest?.();
+			networkRequestSubscription?.unsubscribe();
 		}
 		cancelOnLoadCallback?.();
 		isNetworkRequestCanceled = true;

@@ -57,11 +57,7 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 	},
 ): DataStore<TQuery["response"]> {
 	const environment = useRelayEnvironment();
-	const operation = createMemoOperationDescriptor(
-		gqlQuery,
-		variables,
-		options?.networkCacheConfig,
-	);
+	const operation = createMemoOperationDescriptor(gqlQuery, variables, options?.networkCacheConfig);
 	const fetchObservable = createMemo(() => {
 		const op = operation();
 		const env = environment();
@@ -78,9 +74,7 @@ export function createLazyLoadQuery<TQuery extends OperationType>(
 	});
 }
 
-export function createLazyLoadQueryInternal<
-	TQuery extends OperationType,
->(params: {
+export function createLazyLoadQueryInternal<TQuery extends OperationType>(params: {
 	query: Accessor<OperationDescriptor | undefined>;
 	fragment: Accessor<ReaderFragment>;
 	fetchObservable: Accessor<Observable<GraphQLResponse> | null | undefined>;
@@ -95,9 +89,7 @@ export function createLazyLoadQueryInternal<
 		() => params.query()?.request.node.params.metadata.live !== undefined,
 	);
 	const fetchPolicy = createMemo(
-		() =>
-			params.fetchPolicy?.() ??
-			(isLiveQuery() ? "store-and-network" : "store-or-network"),
+		() => params.fetchPolicy?.() ?? (isLiveQuery() ? "store-and-network" : "store-or-network"),
 	);
 	const cacheKey = createMemo(() => {
 		const query = params.query();
@@ -136,10 +128,8 @@ export function createLazyLoadQueryInternal<
 		let subscriptionTarget = shouldFetch
 			? environment().executeWithSource({
 					operation,
-					source: __internal.fetchQueryDeduped(
-						environment(),
-						operation.request.identifier,
-						() => Observable.create((sink) => replaySubject.subscribe(sink)),
+					source: __internal.fetchQueryDeduped(environment(), operation.request.identifier, () =>
+						Observable.create((sink) => replaySubject.subscribe(sink)),
 					),
 				})
 			: undefined;
@@ -170,16 +160,14 @@ export function createLazyLoadQueryInternal<
 				onHydrated(operation, { value }) {
 					if (!operation || !value) return;
 
-					(async () => {
+					void (async () => {
 						try {
 							for await (const response of value.values()) {
 								replaySubject.next(response);
 							}
 							replaySubject.complete();
 						} catch (error) {
-							replaySubject.error(
-								error instanceof Error ? error : new Error(String(error)),
-							);
+							replaySubject.error(error instanceof Error ? error : new Error(String(error)));
 						}
 					})();
 				},
@@ -250,10 +238,7 @@ export function createLazyLoadQueryInternal<
 					if (state.state === "ok") {
 						setResult("error", undefined);
 						setResult("pending", false);
-						setResult(
-							"data",
-							reconcile(state.value, { key: "__id", merge: true }),
-						);
+						setResult("data", reconcile(state.value, { key: "__id", merge: true }));
 					} else if (state.state === "error") {
 						setResult("data", undefined);
 						setResult("error", state.error);

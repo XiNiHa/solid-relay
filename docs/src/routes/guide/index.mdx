@@ -40,13 +40,13 @@ import relay from "vite-plugin-relay-lite";
 import { cjsInterop } from "vite-plugin-cjs-interop";
 
 export default defineConfig({
-  vite: () => ({
-    plugins: [
-      relay(),
-      // required since Relay only gets published in CJS
-      cjsInterop({ dependencies: ["relay-runtime"] }),
-    ],
-  }),
+	vite: () => ({
+		plugins: [
+			relay(),
+			// required since Relay only gets published in CJS
+			cjsInterop({ dependencies: ["relay-runtime"] }),
+		],
+	}),
 });
 ```
 
@@ -55,18 +55,18 @@ export default defineConfig({
 For Vite-based applications, configure your `vite.config.ts`:
 
 ```typescript
-import { defineConfig } from 'vite';
-import solid from 'vite-plugin-solid';
-import relay from 'vite-plugin-relay-lite';
-import { cjsInterop } from 'vite-plugin-cjs-interop';
+import { defineConfig } from "vite";
+import solid from "vite-plugin-solid";
+import relay from "vite-plugin-relay-lite";
+import { cjsInterop } from "vite-plugin-cjs-interop";
 
 export default defineConfig({
-  plugins: [
-    solid(),
-    relay(),
-    // required since Relay only gets published in CJS
-    cjsInterop({ dependencies: ["relay-runtime"] }),
-  ],
+	plugins: [
+		solid(),
+		relay(),
+		// required since Relay only gets published in CJS
+		cjsInterop({ dependencies: ["relay-runtime"] }),
+	],
 });
 ```
 
@@ -76,11 +76,11 @@ Create a `relay.config.json` file in your project root:
 
 ```json
 {
-  "src": "./src",
-  "schema": "./schema.graphql",
-  "exclude": ["**/node_modules/**", "**/__generated__/**"],
-  "language": "typescript",
-  "eagerEsModules": true
+	"src": "./src",
+	"schema": "./schema.graphql",
+	"exclude": ["**/node_modules/**", "**/__generated__/**"],
+	"language": "typescript",
+	"eagerEsModules": true
 }
 ```
 
@@ -90,30 +90,30 @@ Create a Relay environment to configure your GraphQL client:
 
 ```typescript
 // src/RelayEnvironment.ts
-import { Environment, type FetchFunction, Network, RecordSource, Store } from 'relay-runtime';
+import { Environment, type FetchFunction, Network, RecordSource, Store } from "relay-runtime";
 
 // Define your fetch function
 const fetchFn: FetchFunction = async (params, variables) => {
-  const response = await fetch('/graphql', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      query: params.text,
-      variables,
-    }),
-  });
+	const response = await fetch("/graphql", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({
+			query: params.text,
+			variables,
+		}),
+	});
 
-  return await response.json();
-}
+	return await response.json();
+};
 
 export function createRelayEnvironment() {
-  // Create Relay environment
-  return new Environment({
-    network: Network.create(fetchFn),
-    store: new Store(new RecordSource()),
-  });
+	// Create Relay environment
+	return new Environment({
+		network: Network.create(fetchFn),
+		store: new Store(new RecordSource()),
+	});
 }
 ```
 
@@ -123,17 +123,17 @@ Wrap your app with the Relay Environment Provider:
 
 ```tsx
 // src/app.tsx
-import { RelayEnvironmentProvider } from 'solid-relay';
-import { createRelayEnvironment } from './RelayEnvironment';
+import { RelayEnvironmentProvider } from "solid-relay";
+import { createRelayEnvironment } from "./RelayEnvironment";
 
 function App() {
-  const environment = createRelayEnvironment();
+	const environment = createRelayEnvironment();
 
-  return (
-    <RelayEnvironmentProvider environment={environment}>
-      {/* Your app components */}
-    </RelayEnvironmentProvider>
-  );
+	return (
+		<RelayEnvironmentProvider environment={environment}>
+			{/* Your app components */}
+		</RelayEnvironmentProvider>
+	);
 }
 
 export default App;

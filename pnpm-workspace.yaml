@@ -1,4 +1,4 @@
 packages:
-  - '.'
-  - 'example'
-  - 'docs'
+  - "."
+  - "example"
+  - "docs"

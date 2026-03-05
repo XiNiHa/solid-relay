@@ -6,13 +6,7 @@ import type {
 	RequestParameters,
 	Variables,
 } from "relay-runtime";
-import {
-	Environment,
-	Network,
-	Observable,
-	RecordSource,
-	Store,
-} from "relay-runtime";
+import { Environment, Network, Observable, RecordSource, Store } from "relay-runtime";
 
 const fetchFnImpl = async (params: RequestParameters, variables: Variables) => {
 	"use server";

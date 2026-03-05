@@ -1,9 +1,4 @@
-import {
-	FRAGMENT_OWNER_KEY,
-	FRAGMENTS_KEY,
-	ID_KEY,
-	type OperationDescriptor,
-} from "relay-runtime";
+import { FRAGMENT_OWNER_KEY, FRAGMENTS_KEY, ID_KEY, type OperationDescriptor } from "relay-runtime";
 import type { KeyType } from "relay-runtime/lib/store/FragmentTypes";
 
 export const getQueryRef = (operation: OperationDescriptor) =>

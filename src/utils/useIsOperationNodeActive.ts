@@ -5,13 +5,7 @@ import {
 	type SingularReaderSelector,
 	type Subscription,
 } from "relay-runtime";
-import {
-	type Accessor,
-	createEffect,
-	createMemo,
-	createSignal,
-	onCleanup,
-} from "solid-js";
+import { type Accessor, createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import invariant from "tiny-invariant";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import type { KeyType } from "../types/keyType";

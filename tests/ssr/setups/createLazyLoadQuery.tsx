@@ -19,9 +19,7 @@ export function Main() {
 	);
 
 	return (
-		<ErrorBoundary
-			fallback={(err) => <h1 data-testid="error">{err.message}</h1>}
-		>
+		<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
 			<Suspense fallback="Fallback">
 				<h1 data-testid="name">{data()?.node?.name}</h1>
 			</Suspense>

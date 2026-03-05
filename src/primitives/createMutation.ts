@@ -10,10 +10,7 @@ import { useRelayEnvironment } from "../RelayEnvironment";
 
 export function createMutation<TMutation extends MutationParameters>(
 	mutation: GraphQLTaggedNode,
-): [
-	(config: Omit<MutationConfig<TMutation>, "mutation">) => Disposable,
-	Accessor<boolean>,
-] {
+): [(config: Omit<MutationConfig<TMutation>, "mutation">) => Disposable, Accessor<boolean>] {
 	const environment = useRelayEnvironment();
 	const inFlightMutations = new Set<Disposable>();
 	const [isMutationInFlight, setIsMutationInFlight] = createSignal(false);

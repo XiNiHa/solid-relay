@@ -7,7 +7,9 @@ import { defineConfig } from "tsdown";
 export default defineConfig({
 	entry: ["./src/index.ts"],
 	format: ["esm", "cjs"],
-	dts: true,
+	dts: {
+		build: true,
+	},
 	publint: true,
 	plugins: [
 		// taken and modified from https://github.com/cyco130/vite-plugin-cjs-interop
@@ -17,19 +19,14 @@ export default defineConfig({
 				if (/\.d\.[mc]?tsx?(?:$|\?)/.test(id)) return;
 
 				const matchesDependencies = (value: string) =>
-					["relay-runtime", "relay-runtime/*"].some((dependency) =>
-						minimatch(value, dependency),
-					);
+					["relay-runtime", "relay-runtime/*"].some((dependency) => minimatch(value, dependency));
 
 				const toBeFixed: ImportDeclaration[] = [];
 				const preambles: string[] = [];
 
 				parseAndWalk(code, id, {
 					enter(node) {
-						if (
-							node.type === "ImportDeclaration" &&
-							node.importKind !== "type"
-						) {
+						if (node.type === "ImportDeclaration" && node.importKind !== "type") {
 							if (matchesDependencies(node.source.value as string)) {
 								toBeFixed.push(node);
 							}
@@ -55,10 +52,7 @@ export default defineConfig({
 						if (specifier.type === "ImportDefaultSpecifier") {
 							changed = true;
 							destructurings.push(`default: ${specifier.local.name} = ${name}`);
-						} else if (
-							specifier.type === "ImportSpecifier" &&
-							specifier.importKind !== "type"
-						) {
+						} else if (specifier.type === "ImportSpecifier" && specifier.importKind !== "type") {
 							changed = true;
 							const importedName =
 								specifier.imported.type === "Identifier"
@@ -90,9 +84,7 @@ export default defineConfig({
 							`const ${destructurings[0]} = ${name}?.default?.__esModule ? ${name}.default : ${name};`,
 						);
 
-					const replacement = `import ${name} from ${JSON.stringify(
-						node.source.value,
-					)};`;
+					const replacement = `import ${name} from ${JSON.stringify(node.source.value)};`;
 
 					ms.overwrite(node.start, node.end, replacement);
 				}

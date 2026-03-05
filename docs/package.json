@@ -1,7 +1,7 @@
 {
 	"name": "solid-relay-docs",
-	"type": "module",
 	"private": true,
+	"type": "module",
 	"scripts": {
 		"dev": "vinxi dev",
 		"build": "typedoc && vinxi build",

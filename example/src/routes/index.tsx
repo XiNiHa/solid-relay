@@ -23,12 +23,12 @@ export const route = {
 } satisfies RouteDefinition;
 
 const HomeQuery = graphql`
-  query routesHomeQuery {
-    siteStatistics {
-      ...routesSiteStatistics
-    }
-    ...routesTodos @arguments(first: 2) @defer
-  }
+	query routesHomeQuery {
+		siteStatistics {
+			...routesSiteStatistics
+		}
+		...routesTodos @arguments(first: 2) @defer
+	}
 `;
 
 const loadHomeQuery = query(
@@ -57,12 +57,11 @@ export default function Home() {
 	);
 }
 
-const SiteStatistics = (props: {
-	$stats: routesSiteStatistics$key | null | undefined;
-}) => {
+const SiteStatistics = (props: { $stats: routesSiteStatistics$key | null | undefined }) => {
 	const [stats, refetch] = createRefetchableFragment(
 		graphql`
-			fragment routesSiteStatistics on SiteStatistics @refetchable(queryName: "SiteStatisticsRefetchQuery") {
+			fragment routesSiteStatistics on SiteStatistics
+			@refetchable(queryName: "SiteStatisticsRefetchQuery") {
 				weeklySales
 				weeklyOrders
 				currentVisitorsOnline
@@ -78,9 +77,7 @@ const SiteStatistics = (props: {
 			<button
 				type="button"
 				onClick={() => {
-					const run = wrapTransition()
-						? startTransition
-						: (fn: () => void) => fn();
+					const run = wrapTransition() ? startTransition : (fn: () => void) => fn();
 					run(() => refetch({}));
 				}}
 				disabled={isTransitioning()}
@@ -107,42 +104,38 @@ const SiteStatistics = (props: {
 const Todos = (props: { $query: routesTodos$key | null | undefined }) => {
 	const query = createPaginationFragment(
 		graphql`
-      fragment routesTodos on Query
-      @argumentDefinitions(first: { type: "Int!" }, after: { type: "String" })
-      @refetchable(queryName: "TodosRefetchQuery") {
-        todosConnection(first: $first, after: $after)
-        @connection(key: "routesTodos__todosConnection") {
-          __id
-          edges {
-            node {
-            	...routesTodoItem
-            }
-          }
-          pageInfo {
-            hasNextPage
-            endCursor
-          }
-        }
-      }
-    `,
-		() => props.$query,
-	);
-	const [addTodoItem, addTodoItemInFlight] =
-		createMutation<routesAddTodoItemMutation>(graphql`
-			mutation routesAddTodoItemMutation(
-				$input: AddTodoItemInput!
-				$connections: [ID!]!
-			) {
-				addTodoItem(input: $input) {
-					addedTodoItemEdge @appendEdge(connections: $connections) {
-						cursor
+			fragment routesTodos on Query
+			@argumentDefinitions(first: { type: "Int!" }, after: { type: "String" })
+			@refetchable(queryName: "TodosRefetchQuery") {
+				todosConnection(first: $first, after: $after)
+					@connection(key: "routesTodos__todosConnection") {
+					__id
+					edges {
 						node {
 							...routesTodoItem
 						}
 					}
+					pageInfo {
+						hasNextPage
+						endCursor
+					}
 				}
 			}
-		`);
+		`,
+		() => props.$query,
+	);
+	const [addTodoItem, addTodoItemInFlight] = createMutation<routesAddTodoItemMutation>(graphql`
+		mutation routesAddTodoItemMutation($input: AddTodoItemInput!, $connections: [ID!]!) {
+			addTodoItem(input: $input) {
+				addedTodoItemEdge @appendEdge(connections: $connections) {
+					cursor
+					node {
+						...routesTodoItem
+					}
+				}
+			}
+		}
+	`);
 	const [isTransitioning, startTransition] = useTransition();
 	const [wrapTransition, setWrapTransition] = createSignal(false);
 
@@ -157,9 +150,7 @@ const Todos = (props: { $query: routesTodos$key | null | undefined }) => {
 					addTodoItem({
 						variables: {
 							input: { text: formData.get("text") as string },
-							connections: [query()?.todosConnection.__id].filter(
-								(id) => id != null,
-							),
+							connections: [query()?.todosConnection.__id].filter((id) => id != null),
 						},
 					});
 				}}
@@ -172,9 +163,7 @@ const Todos = (props: { $query: routesTodos$key | null | undefined }) => {
 			<button
 				type="button"
 				onClick={() => {
-					const run = wrapTransition()
-						? startTransition
-						: (fn: () => void) => fn();
+					const run = wrapTransition() ? startTransition : (fn: () => void) => fn();
 					run(() => query.refetch({}));
 				}}
 				disabled={isTransitioning()}
@@ -195,11 +184,7 @@ const Todos = (props: { $query: routesTodos$key | null | undefined }) => {
 				</For>
 			</ul>
 			<Show when={query.hasNext}>
-				<button
-					type="button"
-					disabled={query.isLoadingNext}
-					onClick={() => query.loadNext(2)}
-				>
+				<button type="button" disabled={query.isLoadingNext} onClick={() => query.loadNext(2)}>
 					Load More
 				</button>
 			</Show>

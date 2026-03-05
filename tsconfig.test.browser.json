@@ -2,9 +2,8 @@
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
 		"composite": true,
-		"isolatedDeclarations": false,
 		"types": ["vitest/globals", "@vitest/browser-playwright"]
 	},
 	"include": ["tests"],
-	"exclude": ["tests/ssr"]
+	"exclude": ["tests/ssr", "**/*.config.ts"]
 }

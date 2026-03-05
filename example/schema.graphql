@@ -1,7 +1,4 @@
-directive @defer(
-	if: Boolean
-	label: String
-) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+directive @defer(if: Boolean, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
 input AddTodoItemInput {
 	text: String!
@@ -101,12 +98,7 @@ type Query {
 		last: Int
 	): TicketConnection!
 	tickets(status: TicketStatus, limit: Int!, offset: Int!): TicketsPaginated!
-	todosConnection(
-		after: String
-		first: Int
-		before: String
-		last: Int
-	): TodoItemConnection!
+	todosConnection(after: String, first: Int, before: String, last: Int): TodoItemConnection!
 	todos(limit: Int!, offset: Int!): TodosPaginated!
 	allTodos: [TodoItem!]!
 }

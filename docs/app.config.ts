@@ -1,9 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { createWithSolidBase } from "@kobalte/solidbase/config";
-import defaultTheme, {
-	type DefaultThemeSidebarItem,
-} from "@kobalte/solidbase/default-theme";
+import defaultTheme, { type DefaultThemeSidebarItem } from "@kobalte/solidbase/default-theme";
 import { defineConfig } from "@solidjs/start/config";
 
 export default defineConfig(
@@ -96,28 +94,24 @@ export default defineConfig(
 							],
 						},
 						...(await Promise.all(
-							["Functions", "Interfaces"].map(
-								async (section): Promise<DefaultThemeSidebarItem> => {
-									const dir = section.toLowerCase();
-									const items = await fs.promises.readdir(
-										path.join(import.meta.dirname, "src/routes/api", dir),
-									);
+							["Functions", "Interfaces"].map(async (section): Promise<DefaultThemeSidebarItem> => {
+								const dir = section.toLowerCase();
+								const items = await fs.promises.readdir(
+									path.join(import.meta.dirname, "src/routes/api", dir),
+								);
 
-									return {
-										title: section,
-										collapsed: false,
-										items: items.map((item) => {
-											const name = path
-												.basename(item)
-												.replace(path.extname(item), "");
-											return {
-												title: name,
-												link: `/${dir}/${name}`,
-											};
-										}),
-									};
-								},
-							),
+								return {
+									title: section,
+									collapsed: false,
+									items: items.map((item) => {
+										const name = path.basename(item).replace(path.extname(item), "");
+										return {
+											title: name,
+											link: `/${dir}/${name}`,
+										};
+									}),
+								};
+							}),
 						)),
 					],
 				},
