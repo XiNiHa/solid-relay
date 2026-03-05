@@ -165,7 +165,7 @@ export function createFragmentInternal<TKey extends KeyType>(
 		},
 	);
 
-	const store = createDataStore<FragmentResult<TKey[" $data"]>>(initialResult, resource);
+	const store = createDataStore<FragmentResult<TKey[" $data"]>>(initialResult, () => resource);
 	for (const args of setResultQueue) {
 		store[1].apply(undefined, args as never);
 	}

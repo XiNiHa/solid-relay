@@ -27,6 +27,7 @@ export default defineConfig({
 			include: ["src/**/*"],
 		},
 		setupFiles: ["./vitest.setup.ts"],
+		fileParallelism: false,
 		projects: [
 			{
 				extends: true,
@@ -69,7 +70,6 @@ export default defineConfig({
 						enabled: true,
 						provider: playwright(),
 						instances: [{ browser: "chromium" }],
-						fileParallelism: false,
 						commands: ssrBrowserCommands,
 					},
 					include: ["tests/**/*.test.ssr.tsx"],
