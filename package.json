@@ -36,8 +36,9 @@
 		"format": "oxfmt",
 		"check": "oxlint && oxfmt --check",
 		"fix": "oxlint --fix && oxfmt",
-		"test": "concurrently \"vitest --watch --coverage\" \"(cd tests && relay-compiler -w)\"",
-		"ci:test": "(cd tests && relay-compiler) && vitest run --coverage",
+		"codegen": "cd tests && relay-compiler",
+		"test": "concurrently \"vitest --watch --coverage\" \"pnpm codegen -w\"",
+		"ci:test": "pnpm codegen && vitest run --coverage",
 		"ci:version": "changeset version",
 		"ci:publish": "pnpm publish -r"
 	},

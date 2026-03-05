@@ -16,9 +16,9 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install
+      - run: pnpm run -r --include-workspace-root codegen
+      - run: pnpm build
       - run: pnpm check
-      - name: Build
-        run: pnpm build
       - run: pnpm ci:test
       - uses: codecov/codecov-action@v5
         with:
