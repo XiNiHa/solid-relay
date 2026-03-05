@@ -78,12 +78,6 @@ function createStableStore<
 	return store;
 }
 
-function extractResource<T>(
-	maybeResource: MaybeAccessor<Resource<T> | undefined>,
-) {
-	return maybeResource
-		? "loading" in maybeResource
-			? maybeResource
-			: maybeResource()
-		: undefined;
+function extractResource<T>(maybeResource: MaybeAccessor<Resource<T> | undefined>) {
+	return maybeResource ? ("loading" in maybeResource ? maybeResource : maybeResource()) : undefined;
 }

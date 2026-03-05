@@ -2,8 +2,7 @@
 	"extends": "./tsconfig.json",
 	"compilerOptions": {
 		"composite": true,
-		"isolatedDeclarations": false,
 		"types": ["vitest/globals"]
 	},
-	"include": ["tests/ssr", "vitest.config.ts", "vitest.setup.ts"]
+	"include": ["tests/ssr", "vitest.*.ts"]
 }

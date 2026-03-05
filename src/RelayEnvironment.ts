@@ -25,7 +25,10 @@ export function RelayEnvironmentProvider(props: Props): JSXElement {
 
 	return createComponent(RelayContext.Provider, {
 		get value() {
-			return { environment, dataStores: new WeakMap() };
+			return {
+				environment,
+				dataStores: new WeakMap<Resource<unknown>, unknown>(),
+			};
 		},
 		get children() {
 			return props.children;
@@ -49,9 +52,7 @@ export function useRelayEnvironment(): () => IEnvironment {
 	return context.environment;
 }
 
-export function useDataStores():
-	| WeakMap<Resource<unknown>, unknown>
-	| undefined {
+export function useDataStores(): WeakMap<Resource<unknown>, unknown> | undefined {
 	const context = useContext(RelayContext);
 	return context?.dataStores;
 }

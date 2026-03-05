@@ -7,18 +7,8 @@ import {
 	type PreloadableConcreteRequest,
 	type VariablesOf,
 } from "relay-runtime";
-import {
-	type Accessor,
-	createEffect,
-	createSignal,
-	onCleanup,
-	untrack,
-} from "solid-js";
-import {
-	type LoadQueryOptions,
-	loadQuery,
-	type PreloadedQuery,
-} from "../loadQuery";
+import { type Accessor, createEffect, createSignal, onCleanup, untrack } from "solid-js";
+import { type LoadQueryOptions, loadQuery, type PreloadedQuery } from "../loadQuery";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import { useIsMounted } from "../utils/useIsMounted";
 
@@ -43,8 +33,7 @@ export function createQueryLoader<TQuery extends OperationType>(
 	const environment = useRelayEnvironment();
 	const isMounted = useIsMounted();
 
-	const initialQueryReferenceInternal =
-		initialQueryReference ?? initialNullQueryReferenceState;
+	const initialQueryReferenceInternal = initialQueryReference ?? initialNullQueryReferenceState;
 
 	const [queryReference, setQueryReference] = createSignal<
 		PreloadedQuery<TQuery> | NullQueryReference
@@ -96,13 +85,9 @@ export function createQueryLoader<TQuery extends OperationType>(
 function requestIsLiveQuery<TQuery extends OperationType>(
 	preloadableRequest: GraphQLTaggedNode | PreloadableConcreteRequest<TQuery>,
 ): boolean {
-	if (
-		"kind" in preloadableRequest &&
-		preloadableRequest.kind === "PreloadableConcreteRequest"
-	) {
+	if ("kind" in preloadableRequest && preloadableRequest.kind === "PreloadableConcreteRequest") {
 		return (
-			(preloadableRequest as PreloadableConcreteRequest<TQuery>).params.metadata
-				.live !== undefined
+			(preloadableRequest as PreloadableConcreteRequest<TQuery>).params.metadata.live !== undefined
 		);
 	}
 	const request = getRequest(preloadableRequest as GraphQLTaggedNode);

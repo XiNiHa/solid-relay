@@ -11,35 +11,35 @@ Fragments are one of Relay's most powerful features, enabling component composit
 Use `createFragment` to read fragment data within a component:
 
 ```tsx
-import { createFragment } from 'solid-relay';
-import { graphql } from 'relay-runtime';
+import { createFragment } from "solid-relay";
+import { graphql } from "relay-runtime";
 import type { UserProfile_user$key } from "./__generated__/UserProfile_user.graphql";
 
 function UserProfile(props: { $user: UserProfile_user$key }) {
-  const user = createFragment(
-    graphql`
-      fragment UserProfile_user on User {
-        id
-        name
-        email
-        avatar
-      }
-    `,
-    () => props.$user,
-  );
+	const user = createFragment(
+		graphql`
+			fragment UserProfile_user on User {
+				id
+				name
+				email
+				avatar
+			}
+		`,
+		() => props.$user,
+	);
 
-  return (
-    // user() is undefined when loading
-    <Show when={user()}>
-      {(user) => (
-        <div>
-          <img src={user().avatar} alt={user().name} />
-          <h2>{user().name}</h2>
-          <p>{user().email}</p>
-        </div>
-      )}
-    </Show>
-  );
+	return (
+		// user() is undefined when loading
+		<Show when={user()}>
+			{(user) => (
+				<div>
+					<img src={user().avatar} alt={user().name} />
+					<h2>{user().name}</h2>
+					<p>{user().email}</p>
+				</div>
+			)}
+		</Show>
+	);
 }
 ```
 
@@ -50,55 +50,53 @@ Compose fragments from child components in parent queries:
 ```tsx frame="none"
 // UserCard.tsx
 export function UserCard(props: { $user: UserCard_user$key }) {
-  const user = createFragment(
-    graphql`
-      fragment UserCard_user on User {
-        id
-        name
-        avatar
-      }
-    `,
-    () => props.$user,
-  );
+	const user = createFragment(
+		graphql`
+			fragment UserCard_user on User {
+				id
+				name
+				avatar
+			}
+		`,
+		() => props.$user,
+	);
 
-  return (
-    <Show when={user()}>
-      {(user) => (
-        <div>
-          <img src={user().avatar} alt={user().name} />
-          <span>{user().name}</span>
-        </div>
-      )}
-    </Show>
-  );
+	return (
+		<Show when={user()}>
+			{(user) => (
+				<div>
+					<img src={user().avatar} alt={user().name} />
+					<span>{user().name}</span>
+				</div>
+			)}
+		</Show>
+	);
 }
 
 // UserList.tsx
-import { UserCard } from './UserCard';
+import { UserCard } from "./UserCard";
 
 const UserListQuery = graphql`
-  query UserListQuery {
-    users {
-      id
-      ...UserCard_user  # Compose fragment from UserCard
-    }
-  }
+	query UserListQuery {
+		users {
+			id
+			...UserCard_user # Compose fragment from UserCard
+		}
+	}
 `;
 
 function UserList() {
-  const data = createLazyLoadQuery(UserListQuery, {});
+	const data = createLazyLoadQuery(UserListQuery, {});
 
-  return (
-    <Show when={data()}>
-      {(data) => (
-        <div>
-          <For each={data().users}>
-            {(user) => <UserCard $user={user} />}
-          </For>
-        </div>
-      )}
-    </Show>
-  );
+	return (
+		<Show when={data()}>
+			{(data) => (
+				<div>
+					<For each={data().users}>{(user) => <UserCard $user={user} />}</For>
+				</div>
+			)}
+		</Show>
+	);
 }
 ```
 
@@ -108,30 +106,26 @@ Fragments provide data masking, ensuring components only access the data they de
 
 ```tsx
 function UserProfile(props: { $user: UserProfile_user$key }) {
-  const user = createFragment(
-    graphql`
-      fragment UserProfile_user on User {
-        name
-        email
-        # This component can't access 'avatar' or other unspecified fields
-      }
-    `,
-    () => props.$user,
-  );
+	const user = createFragment(
+		graphql`
+			fragment UserProfile_user on User {
+				name
+				email
+				# This component can't access 'avatar' or other unspecified fields
+			}
+		`,
+		() => props.$user,
+	);
 
-  onMount(() => {
-    // ✅ This works - name is in the fragment
-    console.log(user()?.name);
+	onMount(() => {
+		// ✅ This works - name is in the fragment
+		console.log(user()?.name);
 
-    // ❌ This would cause a TypeScript error - avatar not declared
-    // console.log(user()?.avatar);
-  });
+		// ❌ This would cause a TypeScript error - avatar not declared
+		// console.log(user()?.avatar);
+	});
 
-  return (
-    <Show when={user}>
-      {(user) => <div>{user().name}</div>}
-    </Show>
-  );
+	return <Show when={user}>{(user) => <div>{user().name}</div>}</Show>;
 }
 ```
 
@@ -140,50 +134,45 @@ function UserProfile(props: { $user: UserProfile_user$key }) {
 Make fragments refetchable to update their data independently:
 
 ```tsx
-import { createRefetchableFragment } from 'solid-relay';
+import { createRefetchableFragment } from "solid-relay";
 
 function UserProfile(props: { $user: UserProfile_user$key }) {
-  const [user, refetch] = createRefetchableFragment(
-    graphql`
-      fragment UserProfile_user on User
-        @refetchable(queryName: "UserProfileRefetchQuery") {
-        id
-        name
-        email
-        posts(first: 5) {
-          edges {
-            node {
-              id
-              title
-            }
-          }
-        }
-      }
-    `,
-    () => props.$user,
-  );
+	const [user, refetch] = createRefetchableFragment(
+		graphql`
+			fragment UserProfile_user on User @refetchable(queryName: "UserProfileRefetchQuery") {
+				id
+				name
+				email
+				posts(first: 5) {
+					edges {
+						node {
+							id
+							title
+						}
+					}
+				}
+			}
+		`,
+		() => props.$user,
+	);
 
-  const handleRefresh = () => {
-    refetch({});
-  };
+	const handleRefresh = () => {
+		refetch({});
+	};
 
-  return (
-    <Show when={user()}>
-      {(user) => (
-        <div>
-          <h2>{user().name}</h2>
-          <button onClick={handleRefresh}>Refresh Profile</button>
-          <div>
-            <For each={user().posts.edges}>
-              {(edge) => (
-                <div>{edge.node.title}</div>
-              )}
-            </For>
-          </div>
-        </div>
-      )}
-    </Show>
-  );
+	return (
+		<Show when={user()}>
+			{(user) => (
+				<div>
+					<h2>{user().name}</h2>
+					<button onClick={handleRefresh}>Refresh Profile</button>
+					<div>
+						<For each={user().posts.edges}>{(edge) => <div>{edge.node.title}</div>}</For>
+					</div>
+				</div>
+			)}
+		</Show>
+	);
 }
 ```
 
@@ -192,71 +181,62 @@ function UserProfile(props: { $user: UserProfile_user$key }) {
 Use pagination fragments for efficient list loading:
 
 ```tsx
-import { createPaginationFragment } from 'solid-relay';
+import { createPaginationFragment } from "solid-relay";
 
 function UserPosts(props: { $user: UserPosts_user$key }) {
-  const data = createPaginationFragment(
-    graphql`
-      fragment UserPosts_user on User
-        @argumentDefinitions(
-          count: { type: "Int!", defaultValue: 10 }
-          cursor: { type: "String" }
-        )
-        @refetchable(queryName: "UserPostsPaginationQuery") {
-        posts(
-          first: $count
-          after: $cursor
-        ) @connection(key: "UserPosts_posts") {
-          edges {
-            node {
-              id
-              title
-              content
-              createdAt
-            }
-          }
-        }
-        pageInfo {
-          hasNextPage
-          endCursor
-        }
-      }
-    `,
-    () => props.$user
-  );
+	const data = createPaginationFragment(
+		graphql`
+			fragment UserPosts_user on User
+			@argumentDefinitions(count: { type: "Int!", defaultValue: 10 }, cursor: { type: "String" })
+			@refetchable(queryName: "UserPostsPaginationQuery") {
+				posts(first: $count, after: $cursor) @connection(key: "UserPosts_posts") {
+					edges {
+						node {
+							id
+							title
+							content
+							createdAt
+						}
+					}
+				}
+				pageInfo {
+					hasNextPage
+					endCursor
+				}
+			}
+		`,
+		() => props.$user,
+	);
 
-  const handleLoadMore = () => {
-    if (data.hasNext && !data.isLoadingNext) {
-      data.loadNext(10); // Load 10 more items
-    }
-  };
+	const handleLoadMore = () => {
+		if (data.hasNext && !data.isLoadingNext) {
+			data.loadNext(10); // Load 10 more items
+		}
+	};
 
-  return (
-    <Show when={data()}>
-      {(user) => (
-        <div>
-          <For each={user().posts.edges}>
-            {(edge) => (
-              <article>
-                <h3>{edge.node.title}</h3>
-                <p>{edge.node.content}</p>
-                <small>{edge.node.createdAt}</small>
-              </article>
-            )}
-          </For>
+	return (
+		<Show when={data()}>
+			{(user) => (
+				<div>
+					<For each={user().posts.edges}>
+						{(edge) => (
+							<article>
+								<h3>{edge.node.title}</h3>
+								<p>{edge.node.content}</p>
+								<small>{edge.node.createdAt}</small>
+							</article>
+						)}
+					</For>
 
-          <Show when={data.hasNext}>
-            <button
-              onClick={handleLoadMore}
-              disabled={data.isLoadingNext}
-            >
-              {data.isLoadingNext ? 'Loading...' : 'Load More'}
-            </button>
-          </Show>
-        </div>
-      )}
-    </Show>
-  );
+					<Show when={data.hasNext}>
+						<button onClick={handleLoadMore} disabled={data.isLoadingNext}>
+							{data.isLoadingNext ? "Loading..." : "Load More"}
+						</button>
+					</Show>
+				</div>
+			)}
+		</Show>
+	);
 }
 ```
 
@@ -266,46 +246,46 @@ Use conditional fragments based on GraphQL types:
 
 ```tsx
 function FeedItem(props: { $item: FeedItem_item$key }) {
-  const item = createFragment(
-    graphql`
-      fragment FeedItem_item on FeedItem {
-        __typename
-        ... on Post {
-          id
-          title
-          content
-          author {
-            name
-          }
-        }
-        ... on Comment {
-          id
-          text
-          author {
-            name
-          }
-          post {
-            title
-          }
-        }
-      }
-    `,
-    () => props.$item
-  );
+	const item = createFragment(
+		graphql`
+			fragment FeedItem_item on FeedItem {
+				__typename
+				... on Post {
+					id
+					title
+					content
+					author {
+						name
+					}
+				}
+				... on Comment {
+					id
+					text
+					author {
+						name
+					}
+					post {
+						title
+					}
+				}
+			}
+		`,
+		() => props.$item,
+	);
 
-  return (
-    <Show when={item()}>
-      {(item) => {
-        const data = item();
-        switch (data.__typename) {
-          case 'Post':
-            return <PostItem post={data} />;
-          case 'Comment':
-            return <CommentItem comment={data} />;
-        }
-      }}
-    </Show>
-  );
+	return (
+		<Show when={item()}>
+			{(item) => {
+				const data = item();
+				switch (data.__typename) {
+					case "Post":
+						return <PostItem post={data} />;
+					case "Comment":
+						return <CommentItem comment={data} />;
+				}
+			}}
+		</Show>
+	);
 }
 ```
 
@@ -315,33 +295,30 @@ Pass variables to fragments for dynamic behavior:
 
 ```graphql
 fragment UserPosts_user on User
-  @argumentDefinitions(
-    count: { type: "Int", defaultValue: 5 }
-    includeContent: { type: "Boolean", defaultValue: false }
-  ) {
-  posts(first: $count) {
-    edges {
-      node {
-        id
-        title
-        content @include(if: $includeContent)
-      }
-    }
-  }
+@argumentDefinitions(
+	count: { type: "Int", defaultValue: 5 }
+	includeContent: { type: "Boolean", defaultValue: false }
+) {
+	posts(first: $count) {
+		edges {
+			node {
+				id
+				title
+				content @include(if: $includeContent)
+			}
+		}
+	}
 }
 ```
 
 ```tsx
 // Usage in parent query
 const UserQuery = graphql`
-  query UserQuery($userId: ID!, $showContent: Boolean!) {
-    user(id: $userId) {
-      ...UserPosts_user @arguments(
-        count: 10,
-        includeContent: $showContent,
-      )
-    }
-  }
+	query UserQuery($userId: ID!, $showContent: Boolean!) {
+		user(id: $userId) {
+			...UserPosts_user @arguments(count: 10, includeContent: $showContent)
+		}
+	}
 `;
 ```
 
@@ -353,15 +330,15 @@ Keep fragments close to the components that use them:
 
 ```tsx
 export function UserProfile(props: { $user: UserProfile_user$key }) {
-  // component implementation
-  const user = createFragment(
-    graphql`
+	// component implementation
+	const user = createFragment(
+		graphql`
       fragment UserProfile_user on User {
         # fragment definition
       }
     `,
-    () => props.$user,
-  );
+		() => props.$user,
+	);
 }
 ```
 
@@ -383,9 +360,9 @@ Build complex UIs by composing fragments from child components:
 
 ```graphql
 fragment UserPage_user on User {
-  ...UserProfile_user
-  ...UserPosts_user
-  ...UserFriends_user
+	...UserProfile_user
+	...UserPosts_user
+	...UserFriends_user
 }
 ```
 
@@ -394,18 +371,18 @@ fragment UserPage_user on User {
 Import generated types for better development experience:
 
 ```tsx
-import type { UserProfile_user$key } from './__generated__/UserProfile_user.graphql';
+import type { UserProfile_user$key } from "./__generated__/UserProfile_user.graphql";
 
 function UserProfile(props: { $user: UserProfile_user$key }) {
-  const user = createFragment(
-    graphql`
+	const user = createFragment(
+		graphql`
       fragment UserProfile_user on User {
         # fragment definition
       }
     `,
-    () => props.$user,
-  );
-  // TypeScript knows the exact shape of user()
+		() => props.$user,
+	);
+	// TypeScript knows the exact shape of user()
 }
 ```
 
@@ -416,13 +393,13 @@ Use fragments even for simple cases to improve maintainability:
 ```graphql
 # ✅ Good - using fragment
 fragment UserName_user on User {
-  name
+	name
 }
 
 # ❌ Avoid - inline fields in queries
 query SomeQuery {
-  user {
-    name  # Better to use fragment
-  }
+	user {
+		name # Better to use fragment
+	}
 }
 ```

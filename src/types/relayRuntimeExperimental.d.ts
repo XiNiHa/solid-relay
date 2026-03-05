@@ -1,9 +1,5 @@
 declare module "relay-runtime/experimental.js" {
-	import type {
-		GraphQLTaggedNode,
-		IEnvironment,
-		Observable,
-	} from "relay-runtime";
+	import type { GraphQLTaggedNode, IEnvironment, Observable } from "relay-runtime";
 	import type { KeyType } from "relay-runtime/lib/store/ResolverFragments";
 
 	export type FragmentState<T> =

@@ -16,9 +16,7 @@ import { renderToBody, wait } from "./utils";
 
 let environment: MockEnvironment;
 const View = (props: { children: JSXElement }) => (
-	<RelayEnvironmentProvider environment={environment}>
-		{props.children}
-	</RelayEnvironmentProvider>
+	<RelayEnvironmentProvider environment={environment}>{props.children}</RelayEnvironmentProvider>
 );
 
 describe("createLazyLoadQuery", () => {
@@ -33,19 +31,14 @@ describe("createLazyLoadQuery", () => {
 		}
 	` as GraphQLTaggedNode & ConcreteRequest;
 	const query = createOperationDescriptor(gqlQuery, {});
-	const Comp = (props: {
-		gqlQuery: GraphQLTaggedNode;
-		fetchPolicy: FetchPolicy;
-	}) => {
+	const Comp = (props: { gqlQuery: GraphQLTaggedNode; fetchPolicy: FetchPolicy }) => {
 		const data = createLazyLoadQuery<createLazyLoadQueryTestQuery>(
 			props.gqlQuery,
 			{},
 			{ fetchPolicy: () => props.fetchPolicy },
 		);
 		return (
-			<ErrorBoundary
-				fallback={(err) => <h1 data-testid="error">{err.message}</h1>}
-			>
+			<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
 				<Suspense fallback="Fallback">
 					<h1 data-testid="name">{data()?.node?.name}</h1>
 				</Suspense>
@@ -105,9 +98,7 @@ describe("createLazyLoadQuery", () => {
 
 			environment.mock.reject(gqlQuery, new Error("Network error"));
 			await wait(2);
-			await expect
-				.element(page.getByTestId("error"))
-				.toHaveTextContent("Network error");
+			await expect.element(page.getByTestId("error")).toHaveTextContent("Network error");
 			await expect.element(page.getByText("name")).not.toBeInTheDocument();
 			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
 		});
@@ -127,7 +118,7 @@ describe("createLazyLoadQuery", () => {
 		});
 	});
 
-	describe("fetchPolicy: store-only", async () => {
+	describe("fetchPolicy: store-only", () => {
 		const render = () =>
 			renderToBody(() => (
 				<View>
@@ -166,7 +157,7 @@ describe("createLazyLoadQuery", () => {
 		});
 	});
 
-	describe("@throwOnFieldError", async () => {
+	describe("@throwOnFieldError", () => {
 		const gqlQuery = graphql`
 			query createLazyLoadQueryTestToeQuery @throwOnFieldError {
 				node(id: "1") {
@@ -202,9 +193,7 @@ describe("createLazyLoadQuery", () => {
 
 		it("throws on missing data and gets caught by ErrorBoundary", async () => {
 			renderScreen("store-only");
-			await expect
-				.element(page.getByTestId("error"))
-				.toHaveTextContent("Missing expected data");
+			await expect.element(page.getByTestId("error")).toHaveTextContent("Missing expected data");
 			await expect.element(page.getByText("name")).not.toBeInTheDocument();
 			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
 		});

@@ -30,10 +30,7 @@ export default defineConfig({
 		projects: [
 			{
 				extends: true,
-				plugins: [
-					{ ...solid(), configEnvironment: undefined },
-					...commonPlugins(),
-				],
+				plugins: [{ ...solid(), configEnvironment: undefined }, ...commonPlugins()],
 				resolve: {
 					conditions: ["solid", "development", "browser"],
 				},

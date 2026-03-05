@@ -20,10 +20,7 @@ export type SetupId<
 export function SsrApp<
 	TSetupFile extends SetupFile,
 	TSetupSuite extends SetupSuite<TSetupFile>,
-	TSetupId extends SetupId<TSetupFile, TSetupSuite> = SetupId<
-		TSetupFile,
-		TSetupSuite
-	>,
+	TSetupId extends SetupId<TSetupFile, TSetupSuite> = SetupId<TSetupFile, TSetupSuite>,
 >(props: { origin: string; testRunId: string; setupId: TSetupId }) {
 	const environment = new Environment({
 		store: new Store(new RecordSource(), { gcReleaseBufferSize: 0 }),
@@ -32,10 +29,7 @@ export function SsrApp<
 				Observable.create((sink) => {
 					(async () => {
 						const response = await fetch(
-							new URL(
-								`/__ssr/graphql?testRunId=${props.testRunId}`,
-								props.origin,
-							),
+							new URL(`/__ssr/graphql?testRunId=${props.testRunId}`, props.origin),
 						);
 						if (!response.ok) throw new Error("HTTP Error");
 
@@ -55,11 +49,7 @@ export function SsrApp<
 		},
 	});
 	const SetupSuite = createMemo(() => {
-		const [setupFile, setupSuite] = props.setupId.split("/") as [
-			TSetupFile,
-			TSetupSuite,
-		];
-		// biome-ignore lint/performance/noDynamicNamespaceImportAccess: test code
+		const [setupFile, setupSuite] = props.setupId.split("/") as [TSetupFile, TSetupSuite];
 		return Setups[setupFile][setupSuite];
 	});
 

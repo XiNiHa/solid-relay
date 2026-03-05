@@ -17,14 +17,7 @@ import {
 	type SingularReaderSelector,
 	type VariablesOf,
 } from "relay-runtime";
-import {
-	type Accessor,
-	batch,
-	createEffect,
-	createMemo,
-	createSignal,
-	untrack,
-} from "solid-js";
+import { type Accessor, batch, createEffect, createMemo, createSignal, untrack } from "solid-js";
 import invariant from "tiny-invariant";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import type { KeyType, KeyTypeData } from "../types/keyType";
@@ -60,63 +53,43 @@ export type LoadMoreFn<_TQuery extends OperationType> = (
 	},
 ) => Disposable;
 
-export function createPaginationFragment<
-	TQuery extends OperationType,
-	TKey extends KeyType,
->(
+export function createPaginationFragment<TQuery extends OperationType, TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey>,
 ): CreatePaginationFragmentReturn<TQuery, TKey, KeyTypeData<TKey>>;
-export function createPaginationFragment<
-	TQuery extends OperationType,
-	TKey extends KeyType,
->(
+export function createPaginationFragment<TQuery extends OperationType, TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
-): CreatePaginationFragmentReturn<
-	TQuery,
-	TKey | null,
-	KeyTypeData<TKey> | null | undefined
->;
-export function createPaginationFragment<
-	TQuery extends OperationType,
-	TKey extends KeyType,
->(
+): CreatePaginationFragmentReturn<TQuery, TKey | null, KeyTypeData<TKey> | null | undefined>;
+export function createPaginationFragment<TQuery extends OperationType, TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
-): CreatePaginationFragmentReturn<
-	TQuery,
-	TKey | null,
-	KeyTypeData<TKey> | null | undefined
-> {
+): CreatePaginationFragmentReturn<TQuery, TKey | null, KeyTypeData<TKey> | null | undefined> {
 	const fragmentNode = getFragment(fragment);
 	const componentDisplayName = "createPaginationFragment()";
-	const {
-		connectionPathInFragmentData,
-		paginationRequest,
-		paginationMetadata,
-	} = getPaginationMetadata(fragmentNode, componentDisplayName);
-	const { fragmentData, fragmentRef, refetch } =
-		createRefetchableFragmentInternal(fragment, key, componentDisplayName);
-	const fragmentIdentifier = createMemo(() =>
-		getFragmentIdentifier(fragmentNode, fragmentRef()),
+	const { connectionPathInFragmentData, paginationRequest, paginationMetadata } =
+		getPaginationMetadata(fragmentNode, componentDisplayName);
+	const { fragmentData, fragmentRef, refetch } = createRefetchableFragmentInternal(
+		fragment,
+		key,
+		componentDisplayName,
 	);
-	const [loadPrevious, hasPrevious, isLoadingPrevious, disposeFetchPrevious] =
-		createLoadMore<TQuery, TKey>({
-			direction: "backward",
-			fragmentNode,
-			fragmentRef,
-			fragmentIdentifier,
-			fragmentData,
-			connectionPathInFragmentData,
-			paginationRequest,
-			paginationMetadata,
-			componentDisplayName,
-		});
-	const [loadNext, hasNext, isLoadingNext, disposeFetchNext] = createLoadMore<
+	const fragmentIdentifier = createMemo(() => getFragmentIdentifier(fragmentNode, fragmentRef()));
+	const [loadPrevious, hasPrevious, isLoadingPrevious, disposeFetchPrevious] = createLoadMore<
 		TQuery,
 		TKey
 	>({
+		direction: "backward",
+		fragmentNode,
+		fragmentRef,
+		fragmentIdentifier,
+		fragmentData,
+		connectionPathInFragmentData,
+		paginationRequest,
+		paginationMetadata,
+		componentDisplayName,
+	});
+	const [loadNext, hasNext, isLoadingNext, disposeFetchNext] = createLoadMore<TQuery, TKey>({
 		direction: "forward",
 		fragmentNode,
 		fragmentRef,
@@ -128,10 +101,7 @@ export function createPaginationFragment<
 		componentDisplayName,
 	});
 
-	const refetchPagination = (
-		variables: VariablesOf<TQuery>,
-		options?: RefetchOptions,
-	) => {
+	const refetchPagination = (variables: VariablesOf<TQuery>, options?: RefetchOptions) => {
 		disposeFetchNext();
 		disposeFetchPrevious();
 		return refetch(variables, options);
@@ -187,40 +157,20 @@ function createLoadMore<TQuery extends OperationType, TKey extends KeyType>({
 			reallySetIsLoadingMore(value);
 		}
 	};
-	const { isFetching, startFetch, disposeFetch, completeFetch } =
-		createFetchTracker();
-	// Outdated type definitions on DT, fix PR: https://github.com/DefinitelyTyped/DefinitelyTyped/pull/71342
-	const { identifierInfo } = getRefetchMetadata(
-		fragmentNode,
-		componentDisplayName,
-	) as ReturnType<typeof getRefetchMetadata> & {
-		readonly identifierInfo:
-			| {
-					readonly identifierField: string;
-					readonly identifierQueryVariableName: string;
-			  }
-			| null
-			| undefined;
-	};
+	const { isFetching, startFetch, disposeFetch, completeFetch } = createFetchTracker();
+	const { identifierInfo } = getRefetchMetadata(fragmentNode, componentDisplayName);
 	const identifierValue = createMemo(() =>
 		identifierInfo?.identifierField != null && fragmentData.latest != null
-			? (fragmentData.latest as Record<string, unknown>)[
-					identifierInfo.identifierField
-				]
+			? (fragmentData.latest as Record<string, unknown>)[identifierInfo.identifierField]
 			: null,
 	);
 
 	const isMounted = useIsMounted();
-	const [mirroredEnvironment, setMirroredEnvironment] = createSignal(
-		environment(),
-	);
+	const [mirroredEnvironment, setMirroredEnvironment] = createSignal(environment());
 	const [mirroredFragmentIdentifier, setMirroredFragmentIdentifier] =
 		createSignal(fragmentIdentifier());
 
-	const isParentQueryActive = useIsOperationNodeActive(
-		fragmentNode,
-		fragmentRef,
-	);
+	const isParentQueryActive = useIsOperationNodeActive(fragmentNode, fragmentRef);
 
 	const shouldReset = createMemo(
 		() =>
@@ -239,16 +189,9 @@ function createLoadMore<TQuery extends OperationType, TKey extends KeyType>({
 	});
 
 	const connectionState = createMemo(() =>
-		getConnectionState(
-			direction,
-			fragmentNode,
-			fragmentData.latest,
-			connectionPathInFragmentData,
-		),
+		getConnectionState(direction, fragmentNode, fragmentData.latest, connectionPathInFragmentData),
 	);
-	const isRequestInvalid = createMemo(
-		() => fragmentData.latest == null || isParentQueryActive(),
-	);
+	const isRequestInvalid = createMemo(() => fragmentData.latest == null || isParentQueryActive());
 
 	return [
 		(count, options) => {
@@ -280,8 +223,7 @@ function createLoadMore<TQuery extends OperationType, TKey extends KeyType>({
 			}
 
 			invariant(
-				fragmentSelector != null &&
-					fragmentSelector.kind !== "PluralReaderSelector",
+				fragmentSelector != null && fragmentSelector.kind !== "PluralReaderSelector",
 				"Relay: Expected to be able to find a non-plural fragment owner for " +
 					`fragment \`${fragmentNode.name}\` when using \`${componentDisplayName}\`. If you're seeing this, ` +
 					"this is likely a bug in Relay.",
@@ -308,17 +250,15 @@ function createLoadMore<TQuery extends OperationType, TKey extends KeyType>({
 				if (typeof value !== "string") {
 					console.warn(
 						"Relay: Expected result to have a string  " +
-							`\`${identifierInfo.identifierField}\` in order to refetch, got \`${value}\`.`,
+							`\`${identifierInfo.identifierField}\` in order to refetch, got \`${String(value)}\`.`,
 					);
 				}
 				paginationVariables[identifierInfo.identifierQueryVariableName] = value;
 			}
 
-			const paginationQuery = createOperationDescriptor(
-				paginationRequest,
-				paginationVariables,
-				{ force: true },
-			);
+			const paginationQuery = createOperationDescriptor(paginationRequest, paginationVariables, {
+				force: true,
+			});
 			__internal.fetchQuery(untrack(environment), paginationQuery).subscribe({
 				start(subscription) {
 					startFetch(subscription);

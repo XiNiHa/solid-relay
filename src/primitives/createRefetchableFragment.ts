@@ -43,80 +43,59 @@ export type RefetchFnDynamic<
 	TQuery extends OperationType,
 	_TKey extends KeyType | null | undefined,
 	TOptions = RefetchOptions,
-> = RefetchInexactDynamicResponse<TQuery, TOptions> &
-	RefetchExactDynamicResponse<TQuery, TOptions>;
+> = RefetchInexactDynamicResponse<TQuery, TOptions> & RefetchExactDynamicResponse<TQuery, TOptions>;
 
 type RefetchInexact<TQuery extends OperationType, TOptions> = (
 	data?: unknown,
 ) => RefetchFnInexact<TQuery, TOptions>;
-type RefetchInexactDynamicResponse<
-	TQuery extends OperationType,
-	TOptions,
-> = ReturnType<RefetchInexact<TQuery, TOptions>>;
+type RefetchInexactDynamicResponse<TQuery extends OperationType, TOptions> = ReturnType<
+	RefetchInexact<TQuery, TOptions>
+>;
 
 type RefetchExact<TQuery extends OperationType, TOptions> = (
-	data?: unknown | null,
+	data?: unknown,
 ) => RefetchFnExact<TQuery, TOptions>;
-type RefetchExactDynamicResponse<
-	TQuery extends OperationType,
-	TOptions,
-> = ReturnType<RefetchExact<TQuery, TOptions>>;
+type RefetchExactDynamicResponse<TQuery extends OperationType, TOptions> = ReturnType<
+	RefetchExact<TQuery, TOptions>
+>;
 
-type RefetchFnBase<TVars, TOptions> = (
-	vars: TVars,
-	options?: TOptions,
-) => Disposable;
+type RefetchFnBase<TVars, TOptions> = (vars: TVars, options?: TOptions) => Disposable;
 
-type RefetchFnExact<
-	TQuery extends OperationType,
-	TOptions = RefetchOptions,
-> = RefetchFnBase<VariablesOf<TQuery>, TOptions>;
-type RefetchFnInexact<
-	TQuery extends OperationType,
-	TOptions = RefetchOptions,
-> = RefetchFnBase<Partial<VariablesOf<TQuery>>, TOptions>;
+type RefetchFnExact<TQuery extends OperationType, TOptions = RefetchOptions> = RefetchFnBase<
+	VariablesOf<TQuery>,
+	TOptions
+>;
+type RefetchFnInexact<TQuery extends OperationType, TOptions = RefetchOptions> = RefetchFnBase<
+	Partial<VariablesOf<TQuery>>,
+	TOptions
+>;
 
 export interface RefetchOptions {
 	fetchPolicy?: FetchPolicy | undefined;
 	onComplete?: ((arg: Error | null) => void) | undefined;
 }
 
-export function createRefetchableFragment<
-	TQuery extends OperationType,
-	TKey extends KeyType,
->(
+export function createRefetchableFragment<TQuery extends OperationType, TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey>,
 	options?: {
 		deferStream?: boolean;
 	},
 ): [DataStore<KeyTypeData<TKey>>, RefetchFnDynamic<TQuery, TKey>];
-export function createRefetchableFragment<
-	TQuery extends OperationType,
-	TKey extends KeyType,
->(
+export function createRefetchableFragment<TQuery extends OperationType, TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
 	options?: {
 		deferStream?: boolean;
 	},
-): [
-	DataStore<KeyTypeData<TKey> | null | undefined>,
-	RefetchFnDynamic<TQuery, TKey>,
-];
-export function createRefetchableFragment<
-	TQuery extends OperationType,
-	TKey extends KeyType,
->(
+): [DataStore<KeyTypeData<TKey> | null | undefined>, RefetchFnDynamic<TQuery, TKey>];
+export function createRefetchableFragment<TQuery extends OperationType, TKey extends KeyType>(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
 	options?: {
 		deferStream?: boolean;
 	},
-): [
-	DataStore<KeyTypeData<TKey> | null | undefined>,
-	RefetchFnDynamic<TQuery, TKey>,
-] {
+): [DataStore<KeyTypeData<TKey> | null | undefined>, RefetchFnDynamic<TQuery, TKey>] {
 	const { fragmentData, refetch } = createRefetchableFragmentInternal(
 		fragment,
 		key,
@@ -146,18 +125,18 @@ export function createRefetchableFragmentInternal<
 	const isMounted = useIsMounted();
 	const fragmentNode = getFragment(fragment);
 	// Outdated type definitions on DT, fix PR: https://github.com/DefinitelyTyped/DefinitelyTyped/pull/71342
-	const { refetchableRequest, fragmentRefPathInResponse, identifierInfo } =
-		getRefetchMetadata(fragmentNode, componentDisplayName) as ReturnType<
-			typeof getRefetchMetadata
-		> & {
-			readonly identifierInfo:
-				| {
-						readonly identifierField: string;
-						readonly identifierQueryVariableName: string;
-				  }
-				| null
-				| undefined;
-		};
+	const { refetchableRequest, fragmentRefPathInResponse, identifierInfo } = getRefetchMetadata(
+		fragmentNode,
+		componentDisplayName,
+	) as ReturnType<typeof getRefetchMetadata> & {
+		readonly identifierInfo:
+			| {
+					readonly identifierField: string;
+					readonly identifierQueryVariableName: string;
+			  }
+			| null
+			| undefined;
+	};
 	const fragmentIdentifier = createMemo(() =>
 		getFragmentIdentifier(fragmentNode, parentFragmentRef()),
 	);
@@ -178,9 +157,7 @@ export function createRefetchableFragmentInternal<
 		refetchQuery: null,
 	});
 
-	const environment = createMemo(
-		() => state().refetchEnvironment ?? parentEnvironment(),
-	);
+	const environment = createMemo(() => state().refetchEnvironment ?? parentEnvironment());
 
 	const [preloadedQueryRef, loadQuery, disposeQuery] =
 		createQueryLoader<TQuery>(refetchableRequest);
@@ -203,7 +180,8 @@ export function createRefetchableFragmentInternal<
 
 		const replaySubject = new ReplaySubject<GraphQLResponse>();
 		fetchObservable.subscribe({
-			...replaySubject,
+			next: (value) => replaySubject.next(value),
+			unsubscribe: () => replaySubject.unsubscribe(),
 			complete() {
 				replaySubject.complete();
 				state().onComplete?.(null);
@@ -228,10 +206,7 @@ export function createRefetchableFragmentInternal<
 					getQueryRef(refetchQuery),
 				);
 				if (!data) return;
-				const refetchedFragmentRef = getValueAtPath(
-					unwrap(data),
-					fragmentRefPathInResponse,
-				);
+				const refetchedFragmentRef = getValueAtPath(unwrap(data), fragmentRefPathInResponse);
 				if (!refetchedFragmentRef) return;
 				setFragmentRef(unwrap(refetchedFragmentRef));
 			},
@@ -247,17 +222,13 @@ export function createRefetchableFragmentInternal<
 		setState((state) => ({
 			...state,
 			fetchPolicy: action.fetchPolicy,
-			mirroredEnvironment:
-				state.refetchEnvironment ?? state.mirroredEnvironment,
+			mirroredEnvironment: state.refetchEnvironment ?? state.mirroredEnvironment,
 			onComplete: action.onComplete,
 			refetchEnvironment: action.refetchEnvironment,
 			refetchQuery: action.refetchQuery,
 		}));
 
-	const reset = (action: {
-		environment: IEnvironment;
-		fragmentIdentifier: string;
-	}) =>
+	const reset = (action: { environment: IEnvironment; fragmentIdentifier: string }) =>
 		setState({
 			fetchPolicy: undefined,
 			mirroredEnvironment: action.environment,
@@ -271,8 +242,7 @@ export function createRefetchableFragmentInternal<
 		const env = environment();
 		const fragmentIdent = fragmentIdentifier();
 		const shouldReset =
-			env !== state().mirroredEnvironment ||
-			fragmentIdent !== state().mirroredFragmentIdentifier;
+			env !== state().mirroredEnvironment || fragmentIdent !== state().mirroredFragmentIdentifier;
 		if (shouldReset) {
 			reset({
 				environment: env,
@@ -300,9 +270,7 @@ export function createRefetchableFragmentInternal<
 				identifierInfo?.identifierField != null &&
 				fragmentData.latest != null &&
 				typeof fragmentData.latest === "object"
-					? (fragmentData.latest as Record<string, unknown>)[
-							identifierInfo.identifierField
-						]
+					? (fragmentData.latest as Record<string, unknown>)[identifierInfo.identifierField]
 					: null;
 
 			if (!untrack(isMounted)) {
@@ -351,27 +319,21 @@ export function createRefetchableFragmentInternal<
 
 			if (
 				identifierInfo != null &&
-				!Object.hasOwn(
-					providedRefetchVariables,
-					identifierInfo.identifierQueryVariableName,
-				)
+				!Object.hasOwn(providedRefetchVariables, identifierInfo.identifierQueryVariableName)
 			) {
 				if (typeof identifierValue !== "string") {
 					console.warn(
 						"Relay: Expected result to have a string  " +
-							`\`${identifierInfo.identifierField}\` in order to refetch, got \`${identifierValue}\`. `,
+							`\`${identifierInfo.identifierField}\` in order to refetch, got \`${String(identifierValue)}\`. `,
 					);
 				}
-				(refetchVariables as Record<string, unknown>)[
-					identifierInfo.identifierQueryVariableName
-				] = identifierValue;
+				(refetchVariables as Record<string, unknown>)[identifierInfo.identifierQueryVariableName] =
+					identifierValue;
 			}
 
-			const refetchQuery = createOperationDescriptor(
-				refetchableRequest,
-				refetchVariables,
-				{ force: true },
-			);
+			const refetchQuery = createOperationDescriptor(refetchableRequest, refetchVariables, {
+				force: true,
+			});
 
 			batch(() => {
 				loadQuery(refetchQuery.request.variables, {

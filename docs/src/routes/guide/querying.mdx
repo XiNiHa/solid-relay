@@ -17,31 +17,31 @@ import { graphql } from "relay-runtime";
 import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
 
 const UserQuery = graphql`
-  query UserQuery($userId: ID!) {
-    user(id: $userId) {
-      id
-      name
-      email
-      avatar
-    }
-  }
+	query UserQuery($userId: ID!) {
+		user(id: $userId) {
+			id
+			name
+			email
+			avatar
+		}
+	}
 `;
 
 function UserProfile(props: { userId: string }) {
-  const data = createLazyLoadQuery<UserQuery>(UserQuery, { userId: props.userId });
+	const data = createLazyLoadQuery<UserQuery>(UserQuery, { userId: props.userId });
 
-  return (
-    // data() is undefined when loading
-    <Show when={data()}>
-      {(data) => (
-        <div>
-          <h1>{data().user.name}</h1>
-          <p>{data().user.email}</p>
-          <img src={data().user.avatar} alt={data().user.name} />
-        </div>
-      )}
-    </Show>
-  );
+	return (
+		// data() is undefined when loading
+		<Show when={data()}>
+			{(data) => (
+				<div>
+					<h1>{data().user.name}</h1>
+					<p>{data().user.email}</p>
+					<img src={data().user.avatar} alt={data().user.name} />
+				</div>
+			)}
+		</Show>
+	);
 }
 ```
 
@@ -55,33 +55,31 @@ import { createLazyLoadQuery } from "solid-relay";
 import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
 
 function SearchResults() {
-  const [searchTerm, setSearchTerm] = createSignal<string>("");
+	const [searchTerm, setSearchTerm] = createSignal<string>("");
 
-  const data = createLazyLoadQuery<UserQuery>(
-    SearchQuery,
-    () => ({ term: searchTerm() }) // Reactive variables
-  );
+	const data = createLazyLoadQuery<UserQuery>(
+		SearchQuery,
+		() => ({ term: searchTerm() }), // Reactive variables
+	);
 
-  return (
-    <div>
-      <input
-        value={searchTerm()}
-        onInput={(e) => setSearchTerm(e.target.value)}
-        placeholder="Search..."
-      />
-      <Suspense fallback="Loading...">
-        <Show when={data()}>
-          {(data) => (
-            <div>
-              <For each={data().search.results}>
-                {(result) => <div>{result.title}</div>}
-              </For>
-            </div>
-          )}
-        </Show>
-      </Suspense>
-    </div>
-  );
+	return (
+		<div>
+			<input
+				value={searchTerm()}
+				onInput={(e) => setSearchTerm(e.target.value)}
+				placeholder="Search..."
+			/>
+			<Suspense fallback="Loading...">
+				<Show when={data()}>
+					{(data) => (
+						<div>
+							<For each={data().search.results}>{(result) => <div>{result.title}</div>}</For>
+						</div>
+					)}
+				</Show>
+			</Suspense>
+		</div>
+	);
 }
 ```
 
@@ -91,12 +89,12 @@ Control when and how data is fetched using fetch policies:
 
 ```tsx
 const data = createLazyLoadQuery(
-  UserQuery,
-  { userId: props.userId },
-  {
-    fetchPolicy: 'store-and-network', // Fetch from store first, then network
-    // Other options: 'store-only', 'cache-first', 'network-only'
-  }
+	UserQuery,
+	{ userId: props.userId },
+	{
+		fetchPolicy: "store-and-network", // Fetch from store first, then network
+		// Other options: 'store-only', 'cache-first', 'network-only'
+	},
 );
 ```
 
@@ -119,40 +117,41 @@ import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
 
 // Example using SolidStart with Solid Router
 export const route = {
-  preload() {
-    // With this, you can start preloading the query in many cases, including link hovers
-    // You can also use route params to set the variables for the preload
-    void loadUserQuery('123');
-  }
-} satisfies RouteDefinition
+	preload() {
+		// With this, you can start preloading the query in many cases, including link hovers
+		// You can also use route params to set the variables for the preload
+		void loadUserQuery("123");
+	},
+} satisfies RouteDefinition;
 
 const loadUserQuery = query(
-  async (userId: string) => loadQuery<UserQuery>(
-    // The first call returns the accessor for the environment,
-    // and the second call reads the accessor to get the environment
-    useRelayEnvironment()(),
-    UserQuery,
-    { userId }
-  ),
-  "UserQuery"
+	async (userId: string) =>
+		loadQuery<UserQuery>(
+			// The first call returns the accessor for the environment,
+			// and the second call reads the accessor to get the environment
+			useRelayEnvironment()(),
+			UserQuery,
+			{ userId },
+		),
+	"UserQuery",
 );
 
 export default function Page() {
-  // The preloaded queries passed into `createPreloadedQuery`
-  // get disposed automatically when the user navigates away
-  // or the fetch variable changes
-  const data = createPreloadedQuery(UserQuery, () => loadUserQuery('123'));
+	// The preloaded queries passed into `createPreloadedQuery`
+	// get disposed automatically when the user navigates away
+	// or the fetch variable changes
+	const data = createPreloadedQuery(UserQuery, () => loadUserQuery("123"));
 
-  return (
-    <Show when={data()}>
-      {(data) => (
-        <div>
-          <h1>{data().user.name}</h1>
-          <p>{data().user.email}</p>
-        </div>
-      )}
-    </Show>
-  );
+	return (
+		<Show when={data()}>
+			{(data) => (
+				<div>
+					<h1>{data().user.name}</h1>
+					<p>{data().user.email}</p>
+				</div>
+			)}
+		</Show>
+	);
 }
 ```
 
@@ -166,36 +165,34 @@ import { createPreloadedQuery, createQueryLoader, type PreloadedQuery } from "so
 import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
 
 function App() {
-  // The preloaded queries auto-disposes when `App` unmounts
-  const [queryRef, loadQuery] = createQueryLoader<UserQuery>(UserQuery);
+	// The preloaded queries auto-disposes when `App` unmounts
+	const [queryRef, loadQuery] = createQueryLoader<UserQuery>(UserQuery);
 
-  const handleLoadUser = (userId: string) => {
-    loadQuery({ userId }); // Start loading immediately
-  };
+	const handleLoadUser = (userId: string) => {
+		loadQuery({ userId }); // Start loading immediately
+	};
 
-  return (
-    <div>
-      <button onClick={() => handleLoadUser('123')}>Load User</button>
-      <Show when={queryRef()}>
-        {(queryRef) => <UserProfile queryRef={queryRef()} />}
-      </Show>
-    </div>
-  );
+	return (
+		<div>
+			<button onClick={() => handleLoadUser("123")}>Load User</button>
+			<Show when={queryRef()}>{(queryRef) => <UserProfile queryRef={queryRef()} />}</Show>
+		</div>
+	);
 }
 
 function UserProfile(props: { queryRef: PreloadedQuery<UserQuery> }) {
-  const data = createPreloadedQuery(UserQuery, () => props.queryRef);
+	const data = createPreloadedQuery(UserQuery, () => props.queryRef);
 
-  return (
-    <Show when={data()}>
-      {(data) => (
-        <div>
-          <h1>{data().user.name}</h1>
-          <p>{data().user.email}</p>
-        </div>
-      )}
-    </Show>
-  );
+	return (
+		<Show when={data()}>
+			{(data) => (
+				<div>
+					<h1>{data().user.name}</h1>
+					<p>{data().user.email}</p>
+				</div>
+			)}
+		</Show>
+	);
 }
 ```
 
@@ -204,20 +201,20 @@ function UserProfile(props: { queryRef: PreloadedQuery<UserQuery> }) {
 Handle query errors using Solid's ErrorBoundary:
 
 ```tsx
-import { ErrorBoundary } from 'solid-js';
+import { ErrorBoundary } from "solid-js";
 
 function App() {
-  return (
-    <ErrorBoundary
-      fallback={() => (
-        <div>
-          <h2>Something went wrong</h2>
-        </div>
-      )}
-    >
-      <UserProfile userId="123" />
-    </ErrorBoundary>
-  );
+	return (
+		<ErrorBoundary
+			fallback={() => (
+				<div>
+					<h2>Something went wrong</h2>
+				</div>
+			)}
+		>
+			<UserProfile userId="123" />
+		</ErrorBoundary>
+	);
 }
 ```
 
@@ -226,13 +223,13 @@ function App() {
 Use Suspense to handle loading states:
 
 ```tsx
-import { Suspense } from 'solid-js';
+import { Suspense } from "solid-js";
 
 function App() {
-  return (
-    <Suspense fallback={<div>Loading user...</div>}>
-      <UserProfile userId="123" />
-    </Suspense>
-  );
+	return (
+		<Suspense fallback={<div>Loading user...</div>}>
+			<UserProfile userId="123" />
+		</Suspense>
+	);
 }
 ```

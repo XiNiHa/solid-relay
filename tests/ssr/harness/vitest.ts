@@ -54,9 +54,7 @@ export function ssrTestPlugin(): Plugin {
 								res.statusCode = status;
 								res.setHeader(
 									"content-type",
-									isStreaming
-										? 'multipart/mixed; boundary="-"'
-										: "application/json",
+									isStreaming ? 'multipart/mixed; boundary="-"' : "application/json",
 								);
 								res.flushHeaders();
 								if (isStreaming) res.write("\r\n---\r\n");
@@ -105,10 +103,7 @@ const sendSsrTestRunChunk: BrowserCommand<
 	[
 		{
 			testRunId: string;
-		} & (
-			| { chunk: GraphQLSingularResponse; error?: never }
-			| { chunk?: never; error: Error }
-		),
+		} & ({ chunk: GraphQLSingularResponse; error?: never } | { chunk?: never; error: Error }),
 	]
 > = async (_ctx, input) => {
 	const testRun = testRuns.get(input.testRunId);
@@ -119,10 +114,7 @@ const sendSsrTestRunChunk: BrowserCommand<
 	else testRun.replaySubject.error(input.error);
 };
 
-const stopSsrTestRun: BrowserCommand<[{ testRunId: string }]> = async (
-	_ctx,
-	input,
-) => {
+const stopSsrTestRun: BrowserCommand<[{ testRunId: string }]> = async (_ctx, input) => {
 	const testRun = testRuns.get(input.testRunId);
 	if (!testRun) return;
 	testRun.replaySubject.complete();

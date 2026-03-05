@@ -12,14 +12,10 @@ export function createSubscription<TSubscriptionPayload extends OperationType>(
 	requestSubscriptionFn?: typeof requestSubscription,
 ): void {
 	const environment = useRelayEnvironment();
-	const actualRequestSubscription =
-		requestSubscriptionFn ?? requestSubscription;
+	const actualRequestSubscription = requestSubscriptionFn ?? requestSubscription;
 
 	onMount(() => {
-		const subscription = actualRequestSubscription(
-			environment(),
-			access(config),
-		);
+		const subscription = actualRequestSubscription(environment(), access(config));
 		onCleanup(() => subscription.dispose());
 	});
 }

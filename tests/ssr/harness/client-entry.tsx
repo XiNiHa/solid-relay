@@ -15,9 +15,4 @@ if (!root || !testRunId || !setupId) {
 	throw new Error("Missing SSR test bootstrap state");
 }
 
-hydrate(
-	() => (
-		<SsrApp origin={location.origin} testRunId={testRunId} setupId={setupId} />
-	),
-	root,
-);
+hydrate(() => <SsrApp origin={location.origin} testRunId={testRunId} setupId={setupId} />, root);

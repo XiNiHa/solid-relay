@@ -28,7 +28,7 @@ function rewritePath(path) {
 	return path.replace(/\.mdx?$/, "");
 }
 
-// biome-ignore lint/suspicious/noControlCharactersInRegex: needed
+// oxlint-disable-next-line no-control-regex
 const rControl = /[\u0000-\u001f]/g;
 const rSpecial = /[\s~`!@#$%^&*()\-_+=[\]{}|\\;:"'“”‘’<>,.?/]+/g;
 const rCombining = /[\u0300-\u036F]/g;
