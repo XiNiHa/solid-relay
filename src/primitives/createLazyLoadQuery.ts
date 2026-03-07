@@ -224,18 +224,21 @@ export function createLazyLoadQueryInternal<TQuery extends OperationType>(params
 		onCleanup(retention.dispose);
 	});
 
-	const initialResult: QueryResult<TQuery["response"]> = {
-		data: undefined,
-		error: undefined,
-		pending: true,
-	};
 	const [result, setResult] = createDataStore<QueryResult<TQuery["response"]>>(
-		initialResult,
+		{
+			data: undefined,
+			error: undefined,
+			pending: true,
+		},
 		() => cacheEntry()?.resource,
 	);
 
 	createComputed(() => {
-		setResult(initialResult);
+		batch(() => {
+			setResult("data", undefined);
+			setResult("error", undefined);
+			setResult("pending", true);
+		});
 
 		const operation = params.query();
 		const env = environment();
