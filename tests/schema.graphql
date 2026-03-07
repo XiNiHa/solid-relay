@@ -1,5 +1,10 @@
 type Query {
 	node(id: ID!): Node
+	users(first: Int, after: String, last: Int, before: String): UserConnection!
+}
+
+type Mutation {
+	renameUser(input: RenameUserInput!): RenameUserPayload
 }
 
 interface Node {
@@ -9,4 +14,30 @@ interface Node {
 type User implements Node {
 	id: ID!
 	name: String!
+}
+
+input RenameUserInput {
+	id: ID!
+	name: String!
+}
+
+type RenameUserPayload {
+	user: User
+}
+
+type UserConnection {
+	edges: [UserEdge]
+	pageInfo: PageInfo!
+}
+
+type UserEdge {
+	cursor: String!
+	node: User
+}
+
+type PageInfo {
+	hasNextPage: Boolean!
+	hasPreviousPage: Boolean!
+	startCursor: String
+	endCursor: String
 }
