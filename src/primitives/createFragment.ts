@@ -72,12 +72,6 @@ export function createFragmentInternal<TKey extends KeyType>(
 ): DataStore<KeyTypeData<TKey> | null | undefined> {
 	const environment = useRelayEnvironment();
 
-	const initialResult: FragmentResult<TKey[" $data"]> = {
-		data: undefined,
-		error: undefined,
-		pending: false,
-	};
-
 	type FragmentObserver = Parameters<ReturnType<typeof observeFragment>["subscribe"]>[0];
 	const resultUpdateObserver = {
 		next(res) {
@@ -115,7 +109,9 @@ export function createFragmentInternal<TKey extends KeyType>(
 			batch(() => {
 				untrack(subscription)?.unsubscribe();
 				setSubscription(undefined);
-				setResult(initialResult);
+				setResult("data", undefined);
+				setResult("error", undefined);
+				setResult("pending", false);
 			});
 
 			void environment();
@@ -165,7 +161,14 @@ export function createFragmentInternal<TKey extends KeyType>(
 		},
 	);
 
-	const store = createDataStore<FragmentResult<TKey[" $data"]>>(initialResult, () => resource);
+	const store = createDataStore<FragmentResult<TKey[" $data"]>>(
+		{
+			data: undefined,
+			error: undefined,
+			pending: false,
+		},
+		() => resource,
+	);
 	for (const args of setResultQueue) {
 		store[1].apply(undefined, args as never);
 	}
