@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.19
+
+### Patch Changes
+
+- 6187ff6: fix: resolve hydration flicker in queries
+
 ## 1.0.0-beta.18
 
 ### Patch Changes
