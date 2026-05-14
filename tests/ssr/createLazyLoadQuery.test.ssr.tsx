@@ -103,7 +103,7 @@ describe("streaming SSR", () => {
 		});
 	});
 
-	describe.skip("flicker", () => {
+	describe("flicker", () => {
 		it("no flicker happens", async () => {
 			const { testRunId, url } = await commands.startSsrTestRun("createLazyLoadQuery/Flicker");
 			const frame = mountTestRunFrame(url);
