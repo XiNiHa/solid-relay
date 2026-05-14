@@ -7,7 +7,7 @@ const testRuns = new Map<
 	string,
 	{
 		setupId: SetupId;
-		replaySubject: ReplaySubject<GraphQLSingularResponse>;
+		replaySubjects: ReplaySubject<GraphQLSingularResponse>[];
 	}
 >();
 
@@ -33,8 +33,10 @@ export function ssrTestPlugin(): Plugin {
 					res.setHeader("cache-control", "no-store");
 
 					if (requestUrl.pathname === "/__ssr/graphql") {
+						const fetchCount = Number(requestUrl.searchParams.get("fetchCount") ?? 0);
 						let isStreaming: boolean | undefined;
-						const subscription = testRun.replaySubject.subscribe({
+						const subscription = (testRun.replaySubjects[fetchCount] ??=
+							new ReplaySubject()).subscribe({
 							next(response) {
 								if (isStreaming == null) {
 									isStreaming = response.extensions?.is_final === false;
@@ -92,7 +94,7 @@ export function ssrTestPlugin(): Plugin {
 
 const startSsrTestRun: BrowserCommand<[SetupId]> = async (_, setupId) => {
 	const id = `ssr-test-${crypto.randomUUID()}`;
-	testRuns.set(id, { setupId, replaySubject: new ReplaySubject() });
+	testRuns.set(id, { setupId, replaySubjects: [] });
 	return {
 		testRunId: id,
 		url: `/__ssr?testRunId=${encodeURIComponent(id)}`,
@@ -103,6 +105,7 @@ const sendSsrTestRunChunk: BrowserCommand<
 	[
 		{
 			testRunId: string;
+			fetchCount?: number;
 		} & ({ chunk: GraphQLSingularResponse; error?: never } | { chunk?: never; error: Error }),
 	]
 > = async (_ctx, input) => {
@@ -110,19 +113,29 @@ const sendSsrTestRunChunk: BrowserCommand<
 	if (!testRun) {
 		throw new Error(`Unknown test run '${input.testRunId}'`);
 	}
-	if (input.chunk) testRun.replaySubject.next(input.chunk);
-	else testRun.replaySubject.error(input.error);
+	const replaySubject = (testRun.replaySubjects[input.fetchCount ?? 0] ??= new ReplaySubject());
+	if (input.chunk) replaySubject.next(input.chunk);
+	else replaySubject.error(input.error);
+};
+
+const completeSsrTestRunQuery: BrowserCommand<
+	[{ testRunId: string; fetchCount?: number }]
+> = async (_ctx, input) => {
+	const testRun = testRuns.get(input.testRunId);
+	if (!testRun) return;
+	testRun.replaySubjects[input.fetchCount ?? 0].complete();
 };
 
 const stopSsrTestRun: BrowserCommand<[{ testRunId: string }]> = async (_ctx, input) => {
 	const testRun = testRuns.get(input.testRunId);
 	if (!testRun) return;
-	testRun.replaySubject.complete();
+	for (const subject of testRun.replaySubjects) subject.complete();
 	testRuns.delete(input.testRunId);
 };
 
 export const ssrBrowserCommands = {
 	startSsrTestRun,
 	sendSsrTestRunChunk,
+	completeSsrTestRunQuery,
 	stopSsrTestRun,
 };

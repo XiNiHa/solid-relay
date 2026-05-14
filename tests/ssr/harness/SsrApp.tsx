@@ -22,6 +22,7 @@ export function SsrApp<
 	TSetupSuite extends SetupSuite<TSetupFile>,
 	TSetupId extends SetupId<TSetupFile, TSetupSuite> = SetupId<TSetupFile, TSetupSuite>,
 >(props: { origin: string; testRunId: string; setupId: TSetupId }) {
+	let fetchCount = 0;
 	const environment = new Environment({
 		store: new Store(new RecordSource(), { gcReleaseBufferSize: 0 }),
 		network: {
@@ -29,7 +30,10 @@ export function SsrApp<
 				Observable.create((sink) => {
 					(async () => {
 						const response = await fetch(
-							new URL(`/__ssr/graphql?testRunId=${props.testRunId}`, props.origin),
+							new URL(
+								`/__ssr/graphql?testRunId=${props.testRunId}&fetchCount=${fetchCount++}`,
+								props.origin,
+							),
 						);
 						if (!response.ok) throw new Error("HTTP Error");
 
