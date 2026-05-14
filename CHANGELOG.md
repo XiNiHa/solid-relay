@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.20
+
+### Patch Changes
+
+- 7111fe8: fix: only try hydrating queries when SSR
+
 ## 1.0.0-beta.19
 
 ### Patch Changes
