@@ -20,7 +20,11 @@ import {
 	createComputed,
 	createMemo,
 	createResource,
+	createSignal,
 	onCleanup,
+	Setter,
+	Signal,
+	untrack,
 } from "solid-js";
 import { reconcile } from "solid-js/store";
 import { getQueryCache, type QueryCacheEntry } from "../queryCache";
@@ -146,43 +150,64 @@ export function createLazyLoadQueryInternal<TQuery extends OperationType>(params
 					),
 				})
 			: undefined;
-		const [resource] = createResource(
+
+		type RecursiveResult = {
+			value: GraphQLResponse;
+			next: Promise<RecursiveResult>;
+		} | null;
+
+		const [resource] = createResource<RecursiveResult, Observable<GraphQLResponse>>(
 			() => shouldFetch && params.fetchObservable(),
 			async (observable) => {
 				subscriptionTarget = observable;
-				const stream = new ReadableStream<GraphQLResponse>({
-					start(controller) {
-						observable.subscribe({
-							next(response) {
-								controller.enqueue(response);
-							},
-							error(error: unknown) {
-								controller.error(error);
-							},
-							complete() {
-								controller.close();
-							},
-						});
+
+				let pr = Promise.withResolvers<RecursiveResult>();
+				observable.subscribe({
+					next(response) {
+						const nextPr = Promise.withResolvers<RecursiveResult>();
+						pr.resolve({ value: response, next: nextPr.promise });
+						pr = nextPr;
+					},
+					error(error: unknown) {
+						pr.reject(error);
+					},
+					complete() {
+						pr.resolve(null);
 					},
 				});
-				await observable.toPromise();
-				return stream;
+				return await pr.promise;
 			},
 			{
 				deferStream: params.deferStream,
-				onHydrated(operation, { value }) {
-					if (!operation || !value) return;
+				storage(init) {
+					let hydrated = false;
+					const [value, setValue] = createSignal(init);
 
-					void (async () => {
-						try {
-							for await (const response of value.values()) {
-								replaySubject.next(response);
+					return [
+						value,
+						(next: Setter<RecursiveResult | undefined>) => {
+							const current = untrack(value);
+							const nextValue = typeof next === "function" ? next(current) : next;
+
+							if (!hydrated) {
+								void (async () => {
+									let result = nextValue;
+									try {
+										while (result) {
+											replaySubject.next(result.value);
+											result = await result.next;
+										}
+										replaySubject.complete();
+									} catch (error) {
+										replaySubject.error(error instanceof Error ? error : new Error(String(error)));
+									}
+								})();
+								hydrated = true;
 							}
-							replaySubject.complete();
-						} catch (error) {
-							replaySubject.error(error instanceof Error ? error : new Error(String(error)));
-						}
-					})();
+
+							setValue(() => nextValue);
+						},
+					] as Signal<RecursiveResult | undefined>;
 				},
 			},
 		);
