@@ -156,10 +156,12 @@ export function createLazyLoadQueryInternal<TQuery extends OperationType>(params
 			next: Promise<RecursiveResult>;
 		} | null;
 
+		let fetchedInSameEnv = false;
 		const [resource] = createResource<RecursiveResult, Observable<GraphQLResponse>>(
 			() => shouldFetch && params.fetchObservable(),
 			async (observable) => {
 				subscriptionTarget = observable;
+				fetchedInSameEnv = true;
 
 				let pr = Promise.withResolvers<RecursiveResult>();
 				observable.subscribe({
@@ -189,7 +191,7 @@ export function createLazyLoadQueryInternal<TQuery extends OperationType>(params
 							const current = untrack(value);
 							const nextValue = typeof next === "function" ? next(current) : next;
 
-							if (!hydrated) {
+							if (!fetchedInSameEnv && !hydrated) {
 								void (async () => {
 									let result = nextValue;
 									try {
