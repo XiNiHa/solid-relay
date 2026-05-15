@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.21
+
+### Patch Changes
+
+- a58e803: fix: properly transition on fragment refetch
+
 ## 1.0.0-beta.20
 
 ### Patch Changes
