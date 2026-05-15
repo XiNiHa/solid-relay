@@ -148,13 +148,13 @@ describe("createPaginationFragment", () => {
 			</View>
 		));
 
+		await expect.element(page.getByText("Alice")).toBeInTheDocument();
+		await expect.element(page.getByText("Bob")).toBeInTheDocument();
 		expect(typeof paginationStore?.loadNext).toBe("function");
 		expect(typeof paginationStore?.loadPrevious).toBe("function");
 		expect(typeof paginationStore?.refetch).toBe("function");
 		expect(paginationStore?.hasNext).toBe(true);
 		expect(paginationStore?.hasPrevious).toBe(false);
-		await expect.element(page.getByText("Alice")).toBeInTheDocument();
-		await expect.element(page.getByText("Bob")).toBeInTheDocument();
 	});
 
 	it("loads the next page, appends edges, and resets isLoadingNext", async () => {

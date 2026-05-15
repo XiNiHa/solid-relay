@@ -182,7 +182,6 @@ export function createLazyLoadQueryInternal<TQuery extends OperationType>(params
 			{
 				deferStream: params.deferStream,
 				storage(init) {
-					let hydrated = false;
 					const [value, setValue] = createSignal(init);
 
 					return [
@@ -190,10 +189,10 @@ export function createLazyLoadQueryInternal<TQuery extends OperationType>(params
 						(next: Setter<RecursiveResult | undefined>) => {
 							const current = untrack(value);
 							const nextValue = typeof next === "function" ? next(current) : next;
+							let result = nextValue;
 
-							if (!fetchedInSameEnv && !hydrated) {
+							if (!fetchedInSameEnv && nextValue) {
 								void (async () => {
-									let result = nextValue;
 									try {
 										while (result) {
 											replaySubject.next(result.value);
@@ -204,7 +203,6 @@ export function createLazyLoadQueryInternal<TQuery extends OperationType>(params
 										replaySubject.error(error instanceof Error ? error : new Error(String(error)));
 									}
 								})();
-								hydrated = true;
 							}
 
 							setValue(() => nextValue);

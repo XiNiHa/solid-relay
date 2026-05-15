@@ -1,6 +1,6 @@
 import type { GraphQLResponse, GraphQLTaggedNode, Subscribable, Subscription } from "relay-runtime";
 import { observeFragment } from "relay-runtime/experimental.js";
-import type { Accessor } from "solid-js";
+import type { Accessor, Setter, Signal } from "solid-js";
 import { batch, createResource, createSignal, untrack } from "solid-js";
 import { reconcile, type SetStoreFunction, unwrap } from "solid-js/store";
 import { isServer } from "solid-js/web";
@@ -75,25 +75,30 @@ export function createFragmentInternal<TKey extends KeyType>(
 	type FragmentObserver = Parameters<ReturnType<typeof observeFragment>["subscribe"]>[0];
 	const resultUpdateObserver = {
 		next(res) {
-			batch(() => {
-				switch (res.state) {
-					case "ok":
-						setResult("error", undefined);
-						setResult("pending", false);
-						setResult(
-							"data",
-							reconcile(res.value as Record<string, unknown>, {
-								key: "__id",
-								merge: true,
-							}),
-						);
-						break;
-					case "error":
-						setResult("data", undefined);
-						setResult("error", res.error);
-						setResult("pending", false);
-						break;
-				}
+			queueMicrotask(() => {
+				batch(() => {
+					setResult("data", undefined);
+					setResult("error", undefined);
+
+					switch (res.state) {
+						case "ok":
+							setResult("error", undefined);
+							setResult("pending", false);
+							setResult(
+								"data",
+								reconcile(res.value as Record<string, unknown>, {
+									key: "__id",
+									merge: true,
+								}),
+							);
+							break;
+						case "error":
+							setResult("data", undefined);
+							setResult("error", res.error);
+							setResult("pending", false);
+							break;
+					}
+				});
 			});
 		},
 	} satisfies FragmentObserver;
@@ -104,23 +109,27 @@ export function createFragmentInternal<TKey extends KeyType>(
 		setResultQueue.push(args);
 	};
 
+	let fetchedInSameEnv = false;
 	const [resource] = createResource(
 		() => {
-			batch(() => {
+			return batch(() => {
 				untrack(subscription)?.unsubscribe();
 				setSubscription(undefined);
-				setResult("data", undefined);
-				setResult("error", undefined);
 				setResult("pending", false);
-			});
 
-			void environment();
-			const k = unwrap(key());
-			if (!k) return;
-			return { key: k, parentOperation: options?.().parentOperation };
+				void environment();
+				const k = unwrap(key());
+				if (!k) {
+					setResult("data", undefined);
+					setResult("error", undefined);
+					return;
+				}
+				return { key: k, parentOperation: options?.().parentOperation };
+			});
 		},
 		async ({ key, parentOperation }) => {
 			setResult("pending", true);
+			fetchedInSameEnv = true;
 
 			if (parentOperation) {
 				await new Promise<void>((resolve, reject) => {
@@ -152,11 +161,25 @@ export function createFragmentInternal<TKey extends KeyType>(
 		},
 		{
 			deferStream: createResourceOptions?.deferStream,
-			onHydrated(source) {
-				if (!source) return;
-				setSubscription(
-					observeFragment(environment(), fragment, source.key).subscribe(resultUpdateObserver),
-				);
+			storage(init) {
+				const [value, setValue] = createSignal(init);
+
+				return [
+					value,
+					(next: Setter<true | undefined>) => {
+						const current = untrack(value);
+						const nextValue = typeof next === "function" ? next(current) : next;
+						const k = unwrap(untrack(key));
+
+						if (!fetchedInSameEnv && !current && nextValue && k) {
+							setSubscription(
+								observeFragment(environment(), fragment, k).subscribe(resultUpdateObserver),
+							);
+						}
+
+						setValue(() => nextValue);
+					},
+				] as Signal<true | undefined>;
 			},
 		},
 	);
