@@ -42,7 +42,8 @@ describe("createPreloadedQuery", () => {
 			| Promise<PreloadedQuery<createPreloadedQueryTestQuery>>
 			| (() =>
 					| PreloadedQuery<createPreloadedQueryTestQuery>
-					| Promise<PreloadedQuery<createPreloadedQueryTestQuery>>),
+					| Promise<PreloadedQuery<createPreloadedQueryTestQuery>>)
+			| null,
 	) =>
 		renderToBody(() => (
 			<View>
@@ -56,7 +57,8 @@ describe("createPreloadedQuery", () => {
 			| Promise<PreloadedQuery<createPreloadedQueryTestQuery>>
 			| (() =>
 					| PreloadedQuery<createPreloadedQueryTestQuery>
-					| Promise<PreloadedQuery<createPreloadedQueryTestQuery>>);
+					| Promise<PreloadedQuery<createPreloadedQueryTestQuery>>)
+			| null;
 	}) => {
 		const data = createPreloadedQuery<createPreloadedQueryTestQuery>(query, props.preloaded);
 		return (
@@ -72,6 +74,13 @@ describe("createPreloadedQuery", () => {
 		environment = createMockEnvironment({
 			store: new Store(new RecordSource(), { gcReleaseBufferSize: 0 }),
 		});
+	});
+
+	it("doesn't break with nullable preloaded query", async () => {
+		renderScreen(null);
+
+		await expect.element(page.getByTestId("name")).toBeEmptyDOMElement();
+		await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
 	});
 
 	it("renders a direct preloaded ref without refetching when the store already has data", async () => {

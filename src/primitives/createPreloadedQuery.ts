@@ -22,7 +22,15 @@ type MaybePromise<T> = T | Promise<T>;
 export function createPreloadedQuery<TQuery extends OperationType>(
 	query: GraphQLTaggedNode,
 	preloadedQuery: MaybeAccessor<MaybePromise<PreloadedQuery<TQuery>>>,
-): DataStore<TQuery["response"]> {
+): DataStore<TQuery["response"]>;
+export function createPreloadedQuery<TQuery extends OperationType>(
+	query: GraphQLTaggedNode,
+	preloadedQuery: MaybeAccessor<MaybePromise<PreloadedQuery<TQuery> | null | undefined>>,
+): DataStore<TQuery["response"] | null | undefined>;
+export function createPreloadedQuery<TQuery extends OperationType>(
+	query: GraphQLTaggedNode,
+	preloadedQuery: MaybeAccessor<MaybePromise<PreloadedQuery<TQuery> | null | undefined>>,
+): DataStore<TQuery["response"] | null | undefined> {
 	const environment = useRelayEnvironment();
 	const [maybePreloaded] = createResource(
 		() => access(preloadedQuery),
