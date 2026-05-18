@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.23
+
+### Minor Changes
+
+- ff2a8a4: feat: update createPreloadedQuery types to accept nulls
+
 ## 1.0.0-beta.22
 
 ### Minor Changes
