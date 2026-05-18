@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.22
+
+### Minor Changes
+
+- 27e0ea0: feat: support plural fragments
+
 ## 1.0.0-beta.21
 
 ### Patch Changes
