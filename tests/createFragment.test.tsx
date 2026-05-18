@@ -6,11 +6,12 @@ import {
 	Store,
 } from "relay-runtime";
 import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
-import { createSignal, ErrorBoundary, Suspense, type JSXElement } from "solid-js";
+import { createSignal, ErrorBoundary, For, Show, Suspense, type JSXElement } from "solid-js";
 import {
 	createFragment,
 	createLazyLoadQuery,
 	type DataStore,
+	type MaybeArray,
 	RelayEnvironmentProvider,
 } from "solid-relay";
 import { page } from "vitest/browser";
@@ -19,6 +20,11 @@ import type {
 	createFragmentTest_user$key,
 } from "./__generated__/createFragmentTest_user.graphql";
 import type { createFragmentTestOwnerQuery } from "./__generated__/createFragmentTestOwnerQuery.graphql";
+import {
+	createFragmentTestPlural_users$data,
+	createFragmentTestPlural_users$key,
+} from "./__generated__/createFragmentTestPlural_users.graphql";
+import { createFragmentTestPluralQuery } from "./__generated__/createFragmentTestPluralQuery.graphql";
 import { renderToBody, wait } from "./utils";
 
 let environment: MockEnvironment;
@@ -208,5 +214,72 @@ describe("createFragment", () => {
 		await expect.element(page.getByTestId("name")).toBeEmptyDOMElement();
 		expect(store?.()).toBeUndefined();
 		expect(store?.latest).toBeUndefined();
+	});
+
+	describe("plural", () => {
+		let pluralStore: DataStore<MaybeArray<createFragmentTestPlural_users$data>> | undefined;
+		const pluralQuery = graphql`
+			query createFragmentTestPluralQuery($ids: [ID!]!) {
+				nodes(ids: $ids) {
+					...createFragmentTestPlural_users
+				}
+			}
+		` as ConcreteRequest;
+		const pluralFragment = graphql`
+			fragment createFragmentTestPlural_users on User @relay(plural: true) {
+				id
+				name
+			}
+		`;
+		const pluralOperation = createOperationDescriptor(pluralQuery, { ids: ["1"] });
+
+		const PluralChild = (props: {
+			users: MaybeArray<createFragmentTestPlural_users$key>;
+			testId?: string;
+		}) => {
+			pluralStore = createFragment(pluralFragment, () => props.users);
+			return (
+				<ul>
+					<For each={pluralStore()}>
+						{(node, i) => <li data-testid={`${props.testId ?? "name"}-${i()}`}>{node?.name}</li>}
+					</For>
+				</ul>
+			);
+		};
+
+		const PluralQueryScreen = (props: {
+			users?: createFragmentTestPlural_users$key | null | undefined;
+		}) => {
+			const data = createLazyLoadQuery<createFragmentTestPluralQuery>(pluralQuery, { ids: ["1"] });
+			return (
+				<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
+					<Suspense fallback="Fallback">
+						<Show when={data()}>
+							{(data) => <PluralChild users={props.users ?? data().nodes} />}
+						</Show>
+					</Suspense>
+				</ErrorBoundary>
+			);
+		};
+
+		beforeEach(() => {
+			pluralStore = undefined;
+		});
+
+		it("reads fragment data from a parent query key", async () => {
+			renderToBody(() => (
+				<View>
+					<PluralQueryScreen />
+				</View>
+			));
+
+			await expect.element(page.getByText("Fallback")).toBeInTheDocument();
+			environment.mock.resolve(pluralOperation, {
+				data: { nodes: [{ __typename: "User", id: "1", name: "Alice" }] },
+			});
+			await wait(2);
+			await expect.element(page.getByTestId("name-0")).toHaveTextContent("Alice");
+			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
+		});
 	});
 });

@@ -17,10 +17,10 @@ import {
 	type SingularReaderSelector,
 	type VariablesOf,
 } from "relay-runtime";
+import { KeyType, KeyTypeData } from "relay-runtime/lib/store/FragmentTypes";
 import { type Accessor, batch, createEffect, createMemo, createSignal, untrack } from "solid-js";
 import invariant from "tiny-invariant";
 import { useRelayEnvironment } from "../RelayEnvironment";
-import type { KeyType, KeyTypeData } from "../types/keyType";
 import { createFetchTracker } from "../utils/createFetchTracker";
 import type { DataStore } from "../utils/dataStore";
 import { getConnectionState } from "../utils/getConnectionState";

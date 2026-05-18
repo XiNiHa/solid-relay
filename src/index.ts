@@ -1,5 +1,5 @@
 export { loadQuery, type LoadQueryOptions, type PreloadedQuery } from "./loadQuery";
-export { createFragment } from "./primitives/createFragment";
+export { createFragment, type MaybeArray } from "./primitives/createFragment";
 export { createLazyLoadQuery } from "./primitives/createLazyLoadQuery";
 export { createMutation } from "./primitives/createMutation";
 export { createPaginationFragment } from "./primitives/createPaginationFragment.js";

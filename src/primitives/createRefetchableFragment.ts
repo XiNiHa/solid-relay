@@ -20,6 +20,7 @@ import {
 	type VariablesOf,
 } from "relay-runtime";
 import { waitForFragmentData } from "relay-runtime/experimental.js";
+import { KeyType, KeyTypeData } from "relay-runtime/lib/store/FragmentTypes";
 import {
 	type Accessor,
 	batch,
@@ -32,7 +33,6 @@ import {
 import { unwrap } from "solid-js/store";
 import { isServer } from "solid-js/web";
 import { useRelayEnvironment } from "../RelayEnvironment";
-import type { KeyType, KeyTypeData } from "../types/keyType";
 import type { DataStore } from "../utils/dataStore";
 import { getQueryRef } from "../utils/getQueryRef";
 import { useIsMounted } from "../utils/useIsMounted";

@@ -1,11 +1,23 @@
-import type { GraphQLResponse, GraphQLTaggedNode, Subscribable, Subscription } from "relay-runtime";
+import type {
+	GraphQLResponse,
+	GraphQLTaggedNode,
+	Observer,
+	Subscribable,
+	Subscription,
+} from "relay-runtime";
 import { observeFragment } from "relay-runtime/experimental.js";
+import {
+	ArrayKeyType,
+	ArrayKeyTypeData,
+	FragmentState,
+	KeyType,
+	KeyTypeData,
+} from "relay-runtime/lib/store/FragmentTypes";
 import type { Accessor, Setter, Signal } from "solid-js";
 import { batch, createResource, createSignal, untrack } from "solid-js";
 import { reconcile, type SetStoreFunction, unwrap } from "solid-js/store";
 import { isServer } from "solid-js/web";
 import { useRelayEnvironment } from "../RelayEnvironment";
-import type { KeyType, KeyTypeData } from "../types/keyType";
 import { createDataStore, type DataStore } from "../utils/dataStore";
 
 type FragmentResult<T> =
@@ -50,17 +62,60 @@ export function createFragment<TKey extends KeyType>(
 		deferStream?: boolean;
 	},
 ): DataStore<KeyTypeData<TKey> | null | undefined>;
-export function createFragment<TKey extends KeyType>(
+export function createFragment<TKey extends ArrayKeyType>(
+	fragment: GraphQLTaggedNode,
+	key: Accessor<TKey>,
+	options?: {
+		deferStream?: boolean;
+	},
+): DataStore<ArrayKeyTypeData<TKey>>;
+export function createFragment<TKey extends MaybeArray<ArrayKeyType>>(
+	fragment: GraphQLTaggedNode,
+	key: Accessor<TKey>,
+	options?: {
+		deferStream?: boolean;
+	},
+): DataStore<MaybeArray<ArrayKeyTypeData<RequiredArray<TKey>>>>;
+export function createFragment<TKey extends ArrayKeyType>(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
 	options?: {
 		deferStream?: boolean;
 	},
-): DataStore<KeyTypeData<TKey> | null | undefined> {
+): DataStore<ArrayKeyTypeData<TKey> | null | undefined>;
+export function createFragment<TKey extends MaybeArray<ArrayKeyType>>(
+	fragment: GraphQLTaggedNode,
+	key: Accessor<TKey | null | undefined>,
+	options?: {
+		deferStream?: boolean;
+	},
+): DataStore<MaybeArray<ArrayKeyTypeData<RequiredArray<TKey>>> | null | undefined>;
+export function createFragment<TKey extends KeyType | ArrayKeyType>(
+	fragment: GraphQLTaggedNode,
+	key: Accessor<TKey | null | undefined>,
+	options?: {
+		deferStream?: boolean;
+	},
+): DataStore<Data<TKey> | null | undefined> {
 	return createFragmentInternal(fragment, key, undefined, options);
 }
 
-export function createFragmentInternal<TKey extends KeyType>(
+export type MaybeArray<T> =
+	T extends ReadonlyArray<unknown> ? ReadonlyArray<T[number] | null | undefined> : never;
+type RequiredArray<T> =
+	T extends ReadonlyArray<(infer U) | null | undefined> ? ReadonlyArray<U> : never;
+
+type Data<TKey extends KeyType | ArrayKeyType | MaybeArray<ArrayKeyType>> = TKey extends KeyType
+	? KeyTypeData<TKey>
+	: TKey extends MaybeArray<ArrayKeyType>
+		? ArrayKeyTypeData<RequiredArray<TKey>>
+		: TKey extends ArrayKeyType
+			? ArrayKeyTypeData<TKey>
+			: never;
+
+export function createFragmentInternal<
+	TKey extends KeyType | ArrayKeyType | MaybeArray<ArrayKeyType>,
+>(
 	fragment: GraphQLTaggedNode,
 	key: Accessor<TKey | null | undefined>,
 	options?: Accessor<{
@@ -69,10 +124,9 @@ export function createFragmentInternal<TKey extends KeyType>(
 	createResourceOptions?: {
 		deferStream?: boolean;
 	},
-): DataStore<KeyTypeData<TKey> | null | undefined> {
+): DataStore<Data<TKey> | null | undefined> {
 	const environment = useRelayEnvironment();
 
-	type FragmentObserver = Parameters<ReturnType<typeof observeFragment>["subscribe"]>[0];
 	const resultUpdateObserver = {
 		next(res) {
 			queueMicrotask(() => {
@@ -86,7 +140,7 @@ export function createFragmentInternal<TKey extends KeyType>(
 							setResult("pending", false);
 							setResult(
 								"data",
-								reconcile(res.value as Record<string, unknown>, {
+								reconcile(res.value, {
 									key: "__id",
 									merge: true,
 								}),
@@ -101,11 +155,11 @@ export function createFragmentInternal<TKey extends KeyType>(
 				});
 			});
 		},
-	} satisfies FragmentObserver;
+	} satisfies Observer<FragmentState<unknown>>;
 	const [subscription, setSubscription] = createSignal<Subscription>();
 
 	const setResultQueue: unknown[][] = [];
-	let setResult: SetStoreFunction<FragmentResult<TKey[" $data"]>> = (...args: unknown[]) => {
+	let setResult: SetStoreFunction<FragmentResult<unknown>> = (...args: unknown[]) => {
 		setResultQueue.push(args);
 	};
 
@@ -140,7 +194,7 @@ export function createFragmentInternal<TKey extends KeyType>(
 				});
 			}
 
-			const source = observeFragment(environment(), fragment, key);
+			const source = observeFragment(environment(), fragment, key as KeyType);
 
 			return new Promise<true>((resolve, reject) => {
 				setSubscription(
@@ -173,7 +227,9 @@ export function createFragmentInternal<TKey extends KeyType>(
 
 						if (!fetchedInSameEnv && !current && nextValue && k) {
 							setSubscription(
-								observeFragment(environment(), fragment, k).subscribe(resultUpdateObserver),
+								observeFragment(environment(), fragment, k as KeyType).subscribe(
+									resultUpdateObserver,
+								),
 							);
 						}
 
@@ -184,7 +240,7 @@ export function createFragmentInternal<TKey extends KeyType>(
 		},
 	);
 
-	const store = createDataStore<FragmentResult<TKey[" $data"]>>(
+	const store = createDataStore<FragmentResult<unknown>>(
 		{
 			data: undefined,
 			error: undefined,
@@ -197,5 +253,5 @@ export function createFragmentInternal<TKey extends KeyType>(
 	}
 	setResult = store[1];
 
-	return store[0];
+	return store[0] as DataStore<Data<TKey> | null | undefined>;
 }
