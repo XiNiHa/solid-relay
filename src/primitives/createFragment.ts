@@ -18,6 +18,7 @@ import { batch, createResource, createSignal, untrack } from "solid-js";
 import { reconcile, type SetStoreFunction, unwrap } from "solid-js/store";
 import { isServer } from "solid-js/web";
 import { useRelayEnvironment } from "../RelayEnvironment";
+import { cloneServerSnapshot } from "../utils/cloneServerSnapshot";
 import { createDataStore, type DataStore } from "../utils/dataStore";
 
 type FragmentResult<T> =
@@ -140,10 +141,7 @@ export function createFragmentInternal<
 							setResult("pending", false);
 							setResult(
 								"data",
-								reconcile(res.value, {
-									key: "__id",
-									merge: true,
-								}),
+								reconcile(cloneServerSnapshot(res.value), { key: "__id", merge: true }),
 							);
 							break;
 						case "error":
