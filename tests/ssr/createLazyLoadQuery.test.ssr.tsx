@@ -138,4 +138,68 @@ describe("streaming SSR", () => {
 			await expect.element(frame.getByTestId("error")).not.toBeInTheDocument();
 		});
 	});
+
+	describe("frozen snapshots", () => {
+		it("handles a second store notification during server rendering", async () => {
+			const { testRunId, url } = await commands.startSsrTestRun(
+				"createLazyLoadQuery/FrozenSnapshot",
+			);
+			const frame = mountTestRunFrame(url);
+			onTestFailed(() => commands.stopSsrTestRun({ testRunId }));
+
+			await expect.element(frame.getByText("Primary fallback")).toBeInTheDocument();
+			await expect.element(frame.getByText("Blocker fallback")).toBeInTheDocument();
+
+			await commands.sendSsrTestRunChunk({
+				testRunId,
+				fetchCount: 0,
+				chunk: {
+					data: {
+						node: {
+							__typename: "User",
+							id: "1",
+							name: "Alice",
+						},
+					},
+					extensions: { is_final: false },
+				},
+			});
+			await expect.element(frame.getByTestId("primary")).toHaveTextContent("Alice");
+			await expect.element(frame.getByText("Blocker fallback")).toBeInTheDocument();
+
+			await commands.sendSsrTestRunChunk({
+				testRunId,
+				fetchCount: 0,
+				chunk: {
+					data: {
+						node: {
+							__typename: "User",
+							id: "1",
+							name: "Bob",
+						},
+					},
+					extensions: { is_final: true },
+				},
+			});
+
+			await commands.sendSsrTestRunChunk({
+				testRunId,
+				fetchCount: 1,
+				chunk: {
+					data: {
+						node: {
+							__typename: "User",
+							id: "2",
+							name: "Carol",
+						},
+					},
+				},
+			});
+			await commands.stopSsrTestRun({ testRunId });
+
+			await expect.element(frame.getByTestId("primary")).toBeInTheDocument();
+			await expect.element(frame.getByTestId("blocker")).toHaveTextContent("Carol");
+			await expect.element(frame.getByTestId("error")).not.toBeInTheDocument();
+		});
+	});
 });

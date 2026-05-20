@@ -2,6 +2,8 @@ import { graphql } from "relay-runtime";
 import { createSignal, ErrorBoundary, Show, Suspense } from "solid-js";
 import { createLazyLoadQuery } from "solid-relay";
 import { createLazyLoadQuerySsrFlickerTestQuery } from "./__generated__/createLazyLoadQuerySsrFlickerTestQuery.graphql";
+import type { createLazyLoadQuerySsrFrozenSnapshotBlockerTestQuery } from "./__generated__/createLazyLoadQuerySsrFrozenSnapshotBlockerTestQuery.graphql";
+import type { createLazyLoadQuerySsrFrozenSnapshotPrimaryTestQuery } from "./__generated__/createLazyLoadQuerySsrFrozenSnapshotPrimaryTestQuery.graphql";
 import type { createLazyLoadQuerySsrMainTestQuery } from "./__generated__/createLazyLoadQuerySsrMainTestQuery.graphql";
 import { createLazyLoadQuerySsrParallelTestAQuery } from "./__generated__/createLazyLoadQuerySsrParallelTestAQuery.graphql";
 import { createLazyLoadQuerySsrParallelTestBQuery } from "./__generated__/createLazyLoadQuerySsrParallelTestBQuery.graphql";
@@ -128,6 +130,46 @@ export function Flicker() {
 				<button data-testid="rerender" onClick={() => rerender()}>
 					Rerender text
 				</button>
+			</Suspense>
+		</ErrorBoundary>
+	);
+}
+
+export function FrozenSnapshot() {
+	const primary = createLazyLoadQuery<createLazyLoadQuerySsrFrozenSnapshotPrimaryTestQuery>(
+		graphql`
+			query createLazyLoadQuerySsrFrozenSnapshotPrimaryTestQuery {
+				node(id: "1") {
+					id
+					... on User {
+						name
+					}
+				}
+			}
+		`,
+		{},
+	);
+	const blocker = createLazyLoadQuery<createLazyLoadQuerySsrFrozenSnapshotBlockerTestQuery>(
+		graphql`
+			query createLazyLoadQuerySsrFrozenSnapshotBlockerTestQuery {
+				node(id: "2") {
+					id
+					... on User {
+						name
+					}
+				}
+			}
+		`,
+		{},
+	);
+
+	return (
+		<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
+			<Suspense fallback="Primary fallback">
+				<h1 data-testid="primary">{primary()?.node?.name}</h1>
+			</Suspense>
+			<Suspense fallback="Blocker fallback">
+				<h2 data-testid="blocker">{blocker()?.node?.name}</h2>
 			</Suspense>
 		</ErrorBoundary>
 	);

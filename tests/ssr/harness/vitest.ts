@@ -68,7 +68,7 @@ export function ssrTestPlugin(): Plugin {
 							);
 						};
 						const cleanup = () => {
-							if (isStreaming) res.write("-----");
+							if (isStreaming) res.write("--\r\n");
 							res.end();
 							subscription.unsubscribe();
 						};
