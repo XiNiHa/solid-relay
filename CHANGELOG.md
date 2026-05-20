@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.24
+
+### Patch Changes
+
+- c5f084f: fix: clone Relay snapshot on server before reconciling
+
 ## 1.0.0-beta.23
 
 ### Minor Changes
