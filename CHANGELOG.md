@@ -1,5 +1,11 @@
 # solid-relay
 
+## 1.0.0-beta.25
+
+### Minor Changes
+
+- a0d19f2: perf: opt out of fine-grained reactivity for fragment owners
+
 ## 1.0.0-beta.24
 
 ### Patch Changes
