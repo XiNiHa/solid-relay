@@ -132,9 +132,6 @@ export function createFragmentInternal<
 		next(res) {
 			queueMicrotask(() => {
 				batch(() => {
-					setResult("data", undefined);
-					setResult("error", undefined);
-
 					switch (res.state) {
 						case "ok":
 							setResult("error", undefined);
@@ -145,6 +142,11 @@ export function createFragmentInternal<
 							setResult("data", undefined);
 							setResult("error", res.error);
 							setResult("pending", false);
+							break;
+						case "loading":
+							setResult("data", undefined);
+							setResult("error", undefined);
+							setResult("pending", true);
 							break;
 					}
 				});
