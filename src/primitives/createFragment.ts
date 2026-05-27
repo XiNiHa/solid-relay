@@ -143,6 +143,11 @@ export function createFragmentInternal<
 							setResult("error", res.error);
 							setResult("pending", false);
 							break;
+						case "loading":
+							setResult("data", undefined);
+							setResult("error", undefined);
+							setResult("pending", true);
+							break;
 					}
 				});
 			});
