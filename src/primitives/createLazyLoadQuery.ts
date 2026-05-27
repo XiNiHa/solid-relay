@@ -49,7 +49,7 @@ type QueryResult<T> =
 	| {
 			data: undefined;
 			error: undefined;
-			pending: true;
+			pending: boolean;
 	  };
 
 /**
@@ -254,7 +254,7 @@ export function createLazyLoadQueryInternal<TQuery extends OperationType>(params
 		{
 			data: undefined,
 			error: undefined,
-			pending: true,
+			pending: false,
 		},
 		() => cacheEntry()?.resource,
 	);
@@ -263,34 +263,47 @@ export function createLazyLoadQueryInternal<TQuery extends OperationType>(params
 		batch(() => {
 			setResult("data", undefined);
 			setResult("error", undefined);
+			setResult("pending", false);
+
+			const operation = params.query();
+			const env = environment();
+			if (!operation || !env) return;
+
 			setResult("pending", true);
-		});
 
-		const operation = params.query();
-		const env = environment();
-		if (!operation || !env) return;
-
-		const fragmentSubscription = observeFragment(
-			env,
-			params.fragment(),
-			getQueryRef(operation),
-		).subscribe({
-			next(state) {
-				batch(() => {
-					if (state.state === "ok") {
-						setResult("error", undefined);
-						setResult("pending", false);
-						setResult("data", reconcile(cleanSnapshot(state.value), { key: "__id", merge: true }));
-					} else if (state.state === "error") {
-						setResult("data", undefined);
-						setResult("error", state.error);
-						setResult("pending", false);
-					}
-				});
-			},
-		});
-		onCleanup(() => {
-			fragmentSubscription.unsubscribe();
+			const fragmentSubscription = observeFragment(
+				env,
+				params.fragment(),
+				getQueryRef(operation),
+			).subscribe({
+				next(state) {
+					batch(() => {
+						switch (state.state) {
+							case "ok":
+								setResult("error", undefined);
+								setResult("pending", false);
+								setResult(
+									"data",
+									reconcile(cleanSnapshot(state.value), { key: "__id", merge: true }),
+								);
+								break;
+							case "error":
+								setResult("data", undefined);
+								setResult("error", state.error);
+								setResult("pending", false);
+								break;
+							case "loading":
+								setResult("data", undefined);
+								setResult("error", undefined);
+								setResult("pending", true);
+								break;
+						}
+					});
+				},
+			});
+			onCleanup(() => {
+				fragmentSubscription.unsubscribe();
+			});
 		});
 	});
 
