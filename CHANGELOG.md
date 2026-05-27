@@ -1,5 +1,12 @@
 # solid-relay
 
+## 1.0.0-beta.26
+
+### Patch Changes
+
+- 311ab2b: fix: preserve fragment data identity across snapshot updates
+- b86235d: fix: consistently handle loading states across primitives
+
 ## 1.0.0-beta.25
 
 ### Minor Changes
