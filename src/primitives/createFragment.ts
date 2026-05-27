@@ -132,24 +132,6 @@ export function createFragmentInternal<
 		next(res) {
 			queueMicrotask(() => {
 				batch(() => {
-					// Each branch owns its full state transition; we do not
-					// pre-clear `data` to `undefined` before reconciling.
-					//
-					// `reconcile({ key: "__id", merge: true })` only walks the
-					// existing tree in place when the current store value is
-					// wrappable — solid-js/store's modifiers.ts early-returns
-					// the new value as-is when it isn't. Reconciling against
-					// `undefined` therefore always produces a fresh top-level
-					// reference, defeating the merge contract. Identity-
-					// sensitive consumers (e.g. `<Show keyed when={data()}>`)
-					// would re-mount on every snapshot tick, even on pure
-					// field updates.
-					//
-					// The "loading" state intentionally has no case: leaving
-					// `data` / `error` / `pending` as-is gives consumers
-					// stale-while-revalidate behaviour rather than flashing an
-					// empty UI on every transient missing-data snapshot, and
-					// matches `createLazyLoadQuery`'s observer.
 					switch (res.state) {
 						case "ok":
 							setResult("error", undefined);
