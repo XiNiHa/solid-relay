@@ -49,7 +49,7 @@ type QueryResult<T> =
 	| {
 			data: undefined;
 			error: undefined;
-			pending: true;
+			pending: boolean;
 	  };
 
 /**
