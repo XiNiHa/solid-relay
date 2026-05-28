@@ -1,5 +1,12 @@
 # solid-relay
 
+## 1.0.0-beta.27
+
+### Patch Changes
+
+- 80696e9: fix: stop caching queries that wasn't fetched
+- d685bbc: fix: proper fragment subscription cleanup
+
 ## 1.0.0-beta.26
 
 ### Patch Changes
