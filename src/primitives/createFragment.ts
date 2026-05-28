@@ -14,9 +14,8 @@ import {
 	KeyTypeData,
 } from "relay-runtime/lib/store/FragmentTypes";
 import type { Accessor, Setter, Signal } from "solid-js";
-import { batch, createResource, createSignal, untrack } from "solid-js";
+import { batch, createEffect, createResource, createSignal, onCleanup, untrack } from "solid-js";
 import { reconcile, type SetStoreFunction, unwrap } from "solid-js/store";
-import { isServer } from "solid-js/web";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import { createDataStore, type DataStore } from "../utils/dataStore";
 import { cleanSnapshot } from "../utils/snapshot";
@@ -154,6 +153,14 @@ export function createFragmentInternal<
 		},
 	} satisfies Observer<FragmentState<unknown>>;
 	const [subscription, setSubscription] = createSignal<Subscription>();
+	createEffect(() => {
+		const sub = subscription();
+		if (sub) {
+			onCleanup(() => {
+				sub.unsubscribe();
+			});
+		}
+	});
 
 	const setResultQueue: unknown[][] = [];
 	let setResult: SetStoreFunction<FragmentResult<unknown>> = (...args: unknown[]) => {
@@ -164,7 +171,6 @@ export function createFragmentInternal<
 	const [resource] = createResource(
 		() => {
 			return batch(() => {
-				untrack(subscription)?.unsubscribe();
 				setSubscription(undefined);
 				setResult("pending", false);
 
@@ -203,11 +209,6 @@ export function createFragmentInternal<
 						},
 					}),
 				);
-			}).finally(() => {
-				if (isServer) {
-					subscription()?.unsubscribe();
-					setSubscription(undefined);
-				}
 			});
 		},
 		{
