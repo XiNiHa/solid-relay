@@ -4,7 +4,7 @@ import type { Resource } from "solid-js";
 export type QueryCacheEntry = {
 	resource: Resource<unknown>;
 	retain: (environment: IEnvironment) => Disposable;
-} | null;
+};
 
 const caches = new WeakMap<IEnvironment, Map<string, QueryCacheEntry>>();
 

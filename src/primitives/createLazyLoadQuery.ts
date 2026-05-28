@@ -213,7 +213,7 @@ export function createLazyLoadQueryInternal<TQuery extends OperationType>(params
 			},
 		);
 
-		let entry: QueryCacheEntry = null;
+		let entry: QueryCacheEntry | undefined;
 		if (shouldFetch) {
 			const subscription = subscriptionTarget?.subscribe({});
 			let retainCount = 0;
@@ -237,9 +237,9 @@ export function createLazyLoadQueryInternal<TQuery extends OperationType>(params
 					};
 				},
 			};
+			cache.set(key, entry);
 		}
 
-		cache.set(key, entry);
 		return entry;
 	});
 
