@@ -6,7 +6,16 @@ import {
 	Store,
 } from "relay-runtime";
 import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
-import { createSignal, ErrorBoundary, For, Show, Suspense, type JSXElement } from "solid-js";
+import {
+	createResource,
+	createSignal,
+	ErrorBoundary,
+	For,
+	Show,
+	startTransition,
+	Suspense,
+	type JSXElement,
+} from "solid-js";
 import {
 	createFragment,
 	createLazyLoadQuery,
@@ -214,6 +223,93 @@ describe("createFragment", () => {
 		await expect.element(page.getByTestId("name")).toBeEmptyDOMElement();
 		expect(store?.()).toBeUndefined();
 		expect(store?.latest).toBeUndefined();
+	});
+
+	it("publishes data already in the store synchronously", async () => {
+		environment.commitPayload(ownerOperation, {
+			node: { __typename: "User", id: "1", name: "Alice" },
+		});
+
+		let syncName: string | undefined;
+		let childRuns = 0;
+		const Comp = () => {
+			const data = createLazyLoadQuery<createFragmentTestOwnerQuery>(
+				ownerQuery,
+				{ id: "1" },
+				{ fetchPolicy: () => "store-only" },
+			);
+			const user = createFragment<createFragmentTest_user$key>(fragment, () => data()?.node);
+			store = user;
+			syncName = user()?.name;
+			return (
+				<Show when={user()} keyed>
+					{(user) => {
+						childRuns++;
+						return <h1 data-testid="name">{user.name}</h1>;
+					}}
+				</Show>
+			);
+		};
+
+		renderToBody(() => (
+			<View>
+				<Suspense fallback="Fallback">
+					<Comp />
+				</Suspense>
+			</View>
+		));
+
+		expect(syncName).toBe("Alice");
+		expect(store?.pending).toBe(false);
+		await expect.element(page.getByTestId("name")).toHaveTextContent("Alice");
+		await wait(10);
+		expect(childRuns).toBe(1);
+	});
+
+	it("creates gated children once when mounted inside a pending transition", async () => {
+		environment.commitPayload(ownerOperation, {
+			node: { __typename: "User", id: "1", name: "Alice" },
+		});
+
+		const [show, setShow] = createSignal(false);
+		let childRuns = 0;
+		const Comp = () => {
+			const data = createLazyLoadQuery<createFragmentTestOwnerQuery>(
+				ownerQuery,
+				{ id: "1" },
+				{ fetchPolicy: () => "store-only" },
+			);
+			const user = createFragment<createFragmentTest_user$key>(fragment, () => data()?.node);
+			return (
+				<Show when={user()} keyed>
+					{(user) => {
+						childRuns++;
+						return <h1 data-testid="name">{user.name}</h1>;
+					}}
+				</Show>
+			);
+		};
+		// A sibling that keeps the transition pending for a while.
+		const Pending = () => {
+			const [pending] = createResource(() => new Promise((r) => setTimeout(() => r(1), 30)));
+			return <Show when={pending()}>done</Show>;
+		};
+
+		renderToBody(() => (
+			<View>
+				<Suspense fallback="Fallback">
+					<Show when={show()}>
+						<Comp />
+						<Pending />
+					</Show>
+				</Suspense>
+			</View>
+		));
+
+		void startTransition(() => setShow(true));
+		await expect.element(page.getByTestId("name")).toHaveTextContent("Alice");
+		await expect.element(page.getByText("done")).toBeInTheDocument();
+		expect(childRuns).toBe(1);
 	});
 
 	describe("plural", () => {

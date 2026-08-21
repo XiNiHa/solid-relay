@@ -127,9 +127,12 @@ export function createFragmentInternal<
 ): DataStore<Data<TKey> | null | undefined> {
 	const environment = useRelayEnvironment();
 
-	const resultUpdateObserver = {
-		next(res) {
-			queueMicrotask(() => {
+	const subscribeResult = (
+		source: Subscribable<FragmentState<unknown>>,
+		onResult?: (res: FragmentState<unknown>) => void,
+	) => {
+		return source.subscribe({
+			next(res) {
 				batch(() => {
 					switch (res.state) {
 						case "ok":
@@ -149,9 +152,10 @@ export function createFragmentInternal<
 							break;
 					}
 				});
-			});
-		},
-	} satisfies Observer<FragmentState<unknown>>;
+				onResult?.(res);
+			},
+		} satisfies Observer<FragmentState<unknown>>);
+	};
 	const [subscription, setSubscription] = createSignal<Subscription>();
 	createEffect(() => {
 		const sub = subscription();
@@ -184,32 +188,42 @@ export function createFragmentInternal<
 				return { key: k, parentOperation: options?.().parentOperation };
 			});
 		},
-		async ({ key, parentOperation }) => {
+		({ key, parentOperation }) => {
 			setResult("pending", true);
 			fetchedInSameEnv = true;
 
-			if (parentOperation) {
-				await new Promise<void>((resolve, reject) => {
-					parentOperation.subscribe({
-						complete: resolve,
-						error: reject,
-					});
-				});
-			}
-
-			const source = observeFragment(environment(), fragment, key as KeyType);
-
-			return new Promise<true>((resolve, reject) => {
+			const observe = (): true | Promise<true> => {
+				let settled: { ok: true } | { ok: false; error: unknown } | undefined;
+				let resolve: ((value: true) => void) | undefined;
+				let reject: ((error: unknown) => void) | undefined;
 				setSubscription(
-					source.subscribe({
-						next(res) {
-							resultUpdateObserver.next(res);
-							if (res.state === "ok") resolve(true);
-							else if (res.state === "error") reject(res.error);
-						},
+					subscribeResult(observeFragment(environment(), fragment, key as KeyType), (res) => {
+						if (res.state === "ok") {
+							settled ??= { ok: true };
+							resolve?.(true);
+						} else if (res.state === "error") {
+							settled ??= { ok: false, error: res.error };
+							reject?.(res.error);
+						}
 					}),
 				);
-			});
+				// Resolve synchronously when the data is already in the store, so the
+				// resource never enters a pending state (and never suspends) for it.
+				if (settled?.ok) return true;
+				if (settled) return Promise.reject(settled.error);
+				return new Promise<true>((res, rej) => {
+					resolve = res;
+					reject = rej;
+				});
+			};
+
+			if (!parentOperation) return observe();
+			return new Promise<void>((resolve, reject) => {
+				parentOperation.subscribe({
+					complete: resolve,
+					error: reject,
+				});
+			}).then(observe);
 		},
 		{
 			deferStream: createResourceOptions?.deferStream,
@@ -225,9 +239,7 @@ export function createFragmentInternal<
 
 						if (!fetchedInSameEnv && !current && nextValue && k) {
 							setSubscription(
-								observeFragment(environment(), fragment, k as KeyType).subscribe(
-									resultUpdateObserver,
-								),
+								subscribeResult(observeFragment(environment(), fragment, k as KeyType)),
 							);
 						}
 
