@@ -1,5 +1,17 @@
 # solid-relay
 
+## 1.0.0-beta.29
+
+### Patch Changes
+
+- b286558: feat: add `solid-relay` agent skill
+
+  Adds a pointer skill under `skills/solid-relay` that routes agents to the guide docs. The guides are embedded into the skill's `references/` directory at build time, and the reference table is generated from each guide's `skillPointer` frontmatter field.
+
+- 012e77b: feat: add `createSubscriptionToInvalidationState`
+
+  Solid counterpart of React Relay's `useSubscribeToInvalidationState`. Subscribes a callback to the invalidation state of a set of data IDs, re-establishing the subscription when the IDs change and disposing it on cleanup.
+
 ## 1.0.0-beta.28
 
 ### Patch Changes
