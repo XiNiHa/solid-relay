@@ -1,0 +1,91 @@
+---
+title: Store Invalidation
+---
+
+# Store Invalidation
+
+Relay lets you mark records (or the whole store) as _stale_ so that the next time a query that
+reads them is rendered, it is refetched instead of being served from the cache. This guide covers
+how to react to invalidation from Solid components using `createSubscriptionToInvalidationState`.
+
+## Invalidating Data
+
+Invalidation happens inside an updater, for example in a mutation `updater` or via
+`commitLocalUpdate`:
+
+```tsx
+import { commitLocalUpdate } from "relay-runtime";
+
+// Invalidate a single record
+commitLocalUpdate(environment, (store) => {
+	store.get(userId)?.invalidateRecord();
+});
+
+// Invalidate the whole store
+commitLocalUpdate(environment, (store) => {
+	store.invalidateStore();
+});
+```
+
+See the [Relay docs on staleness](https://relay.dev/docs/guided-tour/reusing-cached-data/staleness-of-data/)
+for more details on how invalidation affects queries.
+
+## Subscribing with createSubscriptionToInvalidationState
+
+Use `createSubscriptionToInvalidationState` to run a callback whenever the invalidation state of
+a set of data IDs changes. This is useful for triggering a refetch of data that is displayed
+outside the regular query flow, or for showing a "stale" indicator:
+
+```tsx
+import { createSignal } from "solid-js";
+import { createSubscriptionToInvalidationState } from "solid-relay";
+
+function UserProfile(props: { userId: string }) {
+	const [isStale, setIsStale] = createSignal(false);
+
+	createSubscriptionToInvalidationState(
+		() => [props.userId],
+		() => setIsStale(true),
+	);
+
+	return (
+		<div>
+			<Show when={isStale()}>
+				<p>This profile may be out of date.</p>
+			</Show>
+			{/* ... */}
+		</div>
+	);
+}
+```
+
+The first argument is either a static array of data IDs or an accessor returning one. When the
+accessor's result changes (compared by contents, so the order of the IDs does not matter), the
+subscription is re-established and the previous one is disposed. The subscription is also
+automatically disposed when the owner is cleaned up.
+
+The callback is invoked whenever any of the given records is invalidated, or when the whole store
+is invalidated. It can also be passed as an accessor, in which case the latest callback is read at
+invalidation time (without re-establishing the subscription):
+
+```tsx
+const [onInvalidate, setOnInvalidate] = createSignal<() => void>(() => {});
+
+createSubscriptionToInvalidationState(() => [props.userId], onInvalidate);
+```
+
+Note that a zero-argument callback and an accessor cannot be told apart at runtime, so the value
+is resolved by calling it: if the result is a function, that function is invoked as the callback.
+Avoid returning a function from a plain callback.
+
+## Disposing Early
+
+`createSubscriptionToInvalidationState` returns a `Disposable`, so you can stop listening before
+the owner is cleaned up:
+
+```tsx
+const disposable = createSubscriptionToInvalidationState(["4"], () => refetch());
+
+// Later...
+disposable.dispose();
+```

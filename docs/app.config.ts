@@ -79,6 +79,10 @@ export default defineConfig(
 									title: "Subscriptions",
 									link: "/subscriptions",
 								},
+								{
+									title: "Store Invalidation",
+									link: "/invalidation",
+								},
 							],
 						},
 					],

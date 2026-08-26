@@ -7,5 +7,6 @@ export { createPreloadedQuery } from "./primitives/createPreloadedQuery";
 export { createQueryLoader } from "./primitives/createQueryLoader";
 export { createRefetchableFragment } from "./primitives/createRefetchableFragment";
 export { createSubscription } from "./primitives/createSubscription";
+export { createSubscriptionToInvalidationState } from "./primitives/createSubscriptionToInvalidationState";
 export { RelayEnvironmentProvider, useRelayEnvironment } from "./RelayEnvironment";
 export type { DataStore } from "./utils/dataStore";
