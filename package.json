@@ -10,7 +10,8 @@
 		"url": "git+https://github.com/XiNiHa/solid-relay.git"
 	},
 	"files": [
-		"dist"
+		"dist",
+		"skills"
 	],
 	"type": "module",
 	"main": "./dist/index.cjs",
@@ -31,7 +32,8 @@
 	},
 	"scripts": {
 		"prepare": "playwright install",
-		"build": "tsdown",
+		"build": "tsdown && pnpm build:skill",
+		"build:skill": "node scripts/build-skill.ts",
 		"lint": "oxlint",
 		"format": "oxfmt",
 		"check": "oxlint && oxfmt --check",

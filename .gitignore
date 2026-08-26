@@ -4,3 +4,4 @@ dist/
 __generated__/
 .pnpm-store/
 coverage/
+skills/solid-relay/references/

@@ -4,5 +4,5 @@
 	"sortImports": {
 		"newlinesBetween": false,
 	},
-	"ignorePatterns": [".changeset/", "docs/**/api"],
+	"ignorePatterns": [".changeset/", "docs/**/api", "skills/"],
 }
