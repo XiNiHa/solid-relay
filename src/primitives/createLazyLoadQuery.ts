@@ -15,18 +15,12 @@ import {
 	type VariablesOf,
 } from "relay-runtime";
 import { observeFragment } from "relay-runtime/experimental.js";
-import {
-	type Accessor,
-	createMemo,
-	createStore,
-	isHydrating,
-	onCleanup,
-	reconcile,
-} from "solid-js";
+import { type Accessor, createMemo, isHydrating, onCleanup } from "solid-js";
 import { getQueryCache, type QueryCacheEntry, type ResponseChain } from "../queryCache";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import { access, type MaybeAccessor } from "../utils/access";
 import { createMemoOperationDescriptor } from "../utils/createMemoOperationDescriptor";
+import { createResultStore } from "../utils/createResultStore";
 import { createDataStore, type DataStore } from "../utils/dataStore";
 import { getQueryRef } from "../utils/getQueryRef";
 import { cleanSnapshot } from "../utils/snapshot";
@@ -228,8 +222,8 @@ export function createLazyLoadQueryInternal<TQuery extends OperationType>(params
 		return entry;
 	});
 
-	const [result] = createStore<QueryResult<TQuery["response"]>>(
-		(draft) => {
+	const result = createResultStore<QueryResult<TQuery["response"]>>(
+		(draft, commit) => {
 			const operation = params.query();
 			const env = environment();
 			const entry = cacheEntry();
@@ -249,20 +243,13 @@ export function createLazyLoadQueryInternal<TQuery extends OperationType>(params
 				next(state) {
 					switch (state.state) {
 						case "ok":
-							reconcile(
-								{ data: cleanSnapshot(state.value), error: undefined, pending: false },
-								"__id",
-							)(draft);
+							commit({ data: cleanSnapshot(state.value), error: undefined, pending: false });
 							break;
 						case "error":
-							draft.data = undefined;
-							draft.error = state.error;
-							draft.pending = false;
+							commit({ data: undefined, error: state.error, pending: false });
 							break;
 						case "loading":
-							draft.data = undefined;
-							draft.error = undefined;
-							draft.pending = true;
+							commit({ data: undefined, error: undefined, pending: true });
 							break;
 					}
 				},

@@ -13,8 +13,9 @@ import {
 	KeyType,
 	KeyTypeData,
 } from "relay-runtime/lib/store/FragmentTypes";
-import { type Accessor, createMemo, createStore, onCleanup, reconcile, snapshot } from "solid-js";
+import { type Accessor, createMemo, onCleanup, snapshot } from "solid-js";
 import { useRelayEnvironment } from "../RelayEnvironment";
+import { createResultStore } from "../utils/createResultStore";
 import { createDataStore, type DataStore } from "../utils/dataStore";
 import { cleanSnapshot } from "../utils/snapshot";
 
@@ -126,8 +127,8 @@ export function createFragmentInternal<
 	const environment = useRelayEnvironment();
 	let ready = createReady();
 
-	const [result] = createStore<FragmentResult<unknown>>(
-		(draft) => {
+	const result = createResultStore<FragmentResult<unknown>>(
+		(draft, commit) => {
 			const r = createReady();
 			ready = r; // The gate always reads the latest run's `ready`; callbacks resolve their own `r`.
 			const env = environment();
@@ -150,22 +151,15 @@ export function createFragmentInternal<
 					next(res) {
 						switch (res.state) {
 							case "ok":
-								reconcile(
-									{ data: cleanSnapshot(res.value), error: undefined, pending: false },
-									"__id",
-								)(draft);
+								commit({ data: cleanSnapshot(res.value), error: undefined, pending: false });
 								r.resolve(true);
 								break;
 							case "error":
-								draft.data = undefined;
-								draft.error = res.error;
-								draft.pending = false;
+								commit({ data: undefined, error: res.error, pending: false });
 								r.reject(res.error);
 								break;
 							case "loading":
-								draft.data = undefined;
-								draft.error = undefined;
-								draft.pending = true;
+								commit({ data: undefined, error: undefined, pending: true });
 								break;
 						}
 					},
@@ -179,9 +173,7 @@ export function createFragmentInternal<
 					parentOperation.subscribe({ complete: resolve, error: reject });
 				}).then(start, (error) => {
 					if (!live) return;
-					draft.data = undefined;
-					draft.error = error;
-					draft.pending = false;
+					commit({ data: undefined, error, pending: false });
 					r.reject(error);
 				});
 			} else {
