@@ -41,8 +41,23 @@ type CreatePaginationFragmentReturn<
 	loadPrevious: LoadMoreFn<TQuery>;
 	hasNext: boolean;
 	hasPrevious: boolean;
+	/**
+	 * Whether a `loadNext` request is in flight.
+	 *
+	 * `refetch` cancels an in-flight request immediately, but this flag stays
+	 * `true` until the refetch settles: Solid commits the cleared flag together
+	 * with the refetch.
+	 */
 	isLoadingNext: boolean;
+	/**
+	 * Whether a `loadPrevious` request is in flight.
+	 *
+	 * `refetch` cancels an in-flight request immediately, but this flag stays
+	 * `true` until the refetch settles: Solid commits the cleared flag together
+	 * with the refetch.
+	 */
 	isLoadingPrevious: boolean;
+	/** Refetches the fragment, cancelling in-flight `loadNext` and `loadPrevious` requests. */
 	refetch: RefetchFnDynamic<TQuery, TKey>;
 };
 

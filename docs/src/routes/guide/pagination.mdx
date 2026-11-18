@@ -331,6 +331,8 @@ function SearchResults(props: { $query: SearchResults_query$key }) {
 }
 ```
 
+`refetch` cancels any in-flight `loadNext` or `loadPrevious` request right away, but `isLoadingNext` and `isLoadingPrevious` stay `true` until the refetch settles. Solid commits the cleared flags together with the refetch, so the "Load More" button above stays disabled while new search results load.
+
 ## Virtualization for Large Lists
 
 For very large lists, consider using virtualization. It is recommended to use libraries like `@tanstack/solid-virtual`:
