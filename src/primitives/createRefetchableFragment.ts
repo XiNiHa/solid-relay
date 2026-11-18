@@ -166,7 +166,7 @@ export function createRefetchableFragmentInternal<
 	const [fragmentRef, setFragmentRef] = createSignal(() => parentFragmentRef());
 
 	const refetchObservable = createMemo(() => {
-		const refetchQuery = state().refetchQuery;
+		const { refetchQuery, onComplete } = state();
 		const preloadedQuery = preloadedQueryRef();
 		if (!refetchQuery || !preloadedQuery) return;
 
@@ -181,11 +181,12 @@ export function createRefetchableFragmentInternal<
 			unsubscribe: () => replaySubject.unsubscribe(),
 			complete() {
 				replaySubject.complete();
-				state().onComplete?.(null);
+				// Bind to this request: a deferred refetch keeps state() committed outside tracking.
+				onComplete?.(null);
 			},
 			error(err: Error) {
 				replaySubject.error(err);
-				state().onComplete?.(err);
+				onComplete?.(err);
 			},
 		});
 		return replaySubject;
