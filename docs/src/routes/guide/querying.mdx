@@ -156,6 +156,25 @@ export default function Page() {
 }
 ```
 
+#### Loading boundaries for preloaded queries
+
+`loadUserQuery` returns a promise, so the preloaded reference is not available on the first render.
+While the promise is unresolved, the reads that depend on it are pending, starting with the component that calls `createPreloadedQuery`.
+Place a `Loading` boundary around that component, for example in the route layout,
+instead of relying only on a boundary inside the component:
+
+```tsx
+import { Loading } from "solid-js";
+
+function UserRoute() {
+	return (
+		<Loading fallback={<div>Loading user...</div>}>
+			<Page />
+		</Loading>
+	);
+}
+```
+
 ### Using createQueryLoader
 
 `createQueryLoader` can be useful if you want to lazily preload additional queries.
