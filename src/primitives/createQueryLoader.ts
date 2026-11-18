@@ -25,6 +25,11 @@ const initialNullQueryReferenceState: NullQueryReference = {
  * - a `loadQuery` function to start loading with variables
  * - a `disposeQuery` function to clear and dispose the current reference
  *
+ * A new reference from `loadQuery` commits once its query settles; until then
+ * the accessor returns the previous reference. Render the consumer inside a
+ * `Loading` boundary nested under the reference check so the first load shows
+ * its fallback.
+ *
  * @param preloadableRequest - Query document or preloadable concrete request.
  * @param initialQueryReference - Optional initial query reference.
  * @returns `[queryRef, loadQuery, disposeQuery]`.

@@ -6,7 +6,7 @@ import {
 } from "relay-runtime";
 import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
 import type { Accessor, Element } from "solid-js";
-import { Errored, Show, Loading, createSignal } from "solid-js";
+import { Errored, Show, Loading, createSignal, flush } from "solid-js";
 import {
 	createPreloadedQuery,
 	createQueryLoader,
@@ -80,9 +80,14 @@ describe("createQueryLoader", () => {
 
 		return (
 			<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
-				<Loading fallback="Fallback">
-					<Show when={currentQueryRef()}>{(ref) => <Child queryRef={ref()} />}</Show>
-				</Loading>
+				{/* Loading sits inside Show: a boundary already showing content keeps it while pending. */}
+				<Show when={currentQueryRef()}>
+					{(ref) => (
+						<Loading fallback="Fallback">
+							<Child queryRef={ref()} />
+						</Loading>
+					)}
+				</Show>
 			</Errored>
 		);
 	};
@@ -132,14 +137,6 @@ describe("createQueryLoader", () => {
 		));
 
 		loadQueryRef?.({ id: "1" });
-
-		expect(queryRef?.()).toEqual(
-			expect.objectContaining({
-				kind: "PreloadedQuery",
-				name: "createQueryLoaderTestQuery",
-				variables: { id: "1" },
-			}),
-		);
 		await expect.element(page.getByText("Fallback")).toBeInTheDocument();
 
 		environment.mock.resolveMostRecentOperation(() => ({
@@ -149,6 +146,14 @@ describe("createQueryLoader", () => {
 
 		await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
 		await expect.element(page.getByTestId("name")).toHaveTextContent("Alice");
+		// The new reference commits with the transition its query starts.
+		expect(queryRef?.()).toEqual(
+			expect.objectContaining({
+				kind: "PreloadedQuery",
+				name: "createQueryLoaderTestQuery",
+				variables: { id: "1" },
+			}),
+		);
 	});
 
 	it("disposes the previous reference on replacement and resets on disposeQuery", async () => {
@@ -163,12 +168,22 @@ describe("createQueryLoader", () => {
 		));
 
 		loadQueryRef?.({ id: "1" });
+		flush();
 		const firstRef = queryRef?.();
 		// oxlint-disable-next-line typescript-eslint/no-non-null-assertion: test code, also always exists
 		const releaseQuery = vi.spyOn(firstRef!.controls!.value, "releaseQuery");
 
 		loadQueryRef?.({ id: "2" });
 		await wait(2);
+		// While the replacement is pending, the boundary keeps the previous content.
+		await expect.element(page.getByTestId("name")).toHaveTextContent("Alice");
+		await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
+		expect(queryRef?.()).toBe(firstRef);
+		// The replacement commits, and releases the previous reference, once its query settles.
+		environment.mock.resolveMostRecentOperation(() => ({
+			data: { node: { __typename: "User", id: "2", name: "Bob" } },
+		}));
+		await expect.element(page.getByTestId("name")).toHaveTextContent("Bob");
 
 		expect(releaseQuery).toHaveBeenCalledTimes(1);
 		expect(queryRef?.()?.variables).toEqual({ id: "2" });
@@ -185,6 +200,11 @@ describe("createQueryLoader", () => {
 		renderToBody(() => <View>{show() && <LoaderComp gqlQuery={liveQuery} />}</View>);
 
 		loadQueryRef?.({ id: "1" });
+		await wait(1);
+		environment.mock.nextValue(liveQuery, {
+			data: { node: { __typename: "User", id: "1", name: "Alice" } },
+		});
+		await expect.element(page.getByTestId("name")).toHaveTextContent("Alice");
 		const currentRef = queryRef?.();
 		// oxlint-disable-next-line typescript-eslint/no-non-null-assertion: test code, also always exists
 		const dispose = vi.spyOn(currentRef!.controls!.value, "dispose");
@@ -209,6 +229,7 @@ describe("createQueryLoader", () => {
 				__environment: overrideEnvironment,
 			},
 		);
+		flush();
 
 		expect(queryRef?.()?.controls?.value.environment).toBe(overrideEnvironment);
 	});

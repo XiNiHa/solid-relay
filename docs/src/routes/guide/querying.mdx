@@ -180,7 +180,7 @@ function UserRoute() {
 `createQueryLoader` can be useful if you want to lazily preload additional queries.
 
 ```tsx
-import { Show } from "solid-js";
+import { Loading, Show } from "solid-js";
 import { createPreloadedQuery, createQueryLoader, type PreloadedQuery } from "solid-relay";
 import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
 
@@ -195,7 +195,13 @@ function App() {
 	return (
 		<div>
 			<button onClick={() => handleLoadUser("123")}>Load User</button>
-			<Show when={queryRef()}>{(queryRef) => <UserProfile queryRef={queryRef()} />}</Show>
+			<Show when={queryRef()}>
+				{(queryRef) => (
+					<Loading fallback={<div>Loading user...</div>}>
+						<UserProfile queryRef={queryRef()} />
+					</Loading>
+				)}
+			</Show>
 		</div>
 	);
 }
@@ -215,6 +221,8 @@ function UserProfile(props: { queryRef: PreloadedQuery<UserQuery> }) {
 	);
 }
 ```
+
+Place the `Loading` boundary inside `Show`, as above, so the first load shows the fallback. A boundary that is already showing content keeps it while a later `loadQuery` call is pending, and `queryRef()` keeps returning the previous reference until the new query settles. This applies to a boundary placed outside `Show` too, so it would not show the fallback at all.
 
 ## Error Handling
 
