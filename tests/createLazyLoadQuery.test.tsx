@@ -8,7 +8,7 @@ import {
 	Store,
 } from "relay-runtime";
 import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
-import { createSignal, Errored, type Element, Loading } from "solid-js";
+import { createSignal, Errored, type Element, Loading, NotReadyError, Show } from "solid-js";
 import { createLazyLoadQuery, type DataStore, RelayEnvironmentProvider } from "solid-relay";
 import { page } from "vitest/browser";
 import type { createLazyLoadQueryTestQuery } from "./__generated__/createLazyLoadQueryTestQuery.graphql";
@@ -74,7 +74,8 @@ describe("createLazyLoadQuery", () => {
 		expect(store).toBeDefined();
 		expect(store?.pending).toBe(true);
 		expect(store?.error).toBeUndefined();
-		expect(store?.()).toBeUndefined();
+		// Outside a Loading boundary, reading pending data throws; latest reads without suspending.
+		expect(() => store?.()).toThrow(NotReadyError);
 		expect(store?.latest).toBeUndefined();
 
 		environment.mock.resolve(gqlQuery, {
@@ -196,7 +197,7 @@ describe("createLazyLoadQuery", () => {
 	it.each(["store-and-network", "network-only"] as const)(
 		"fetches even when data exists if fetchPolicy: %s",
 		async (fetchPolicy) => {
-			const executeWithSource = vi.spyOn(environment, "executeWithSource");
+			const networkExecute = vi.spyOn(environment.getNetwork(), "execute");
 			environment.commitPayload(query, {
 				node: { __typename: "User", id: "1", name: "Alice" },
 			});
@@ -208,7 +209,7 @@ describe("createLazyLoadQuery", () => {
 			));
 
 			await wait(1);
-			expect(executeWithSource).toHaveBeenCalledTimes(1);
+			expect(networkExecute).toHaveBeenCalledTimes(1);
 			environment.mock.resolve(gqlQuery, {
 				data: { node: { __typename: "User", id: "1", name: "Bob" } },
 			});
@@ -280,7 +281,7 @@ describe("createLazyLoadQuery", () => {
 		});
 
 		it("reuses cache for concurrent consumers and refetches after final disposal", async () => {
-			const executeWithSource = vi.spyOn(environment, "executeWithSource");
+			const networkExecute = vi.spyOn(environment.getNetwork(), "execute");
 			const [showA, setShowA] = createSignal(true);
 			const [showB, setShowB] = createSignal(true);
 			const MultiComp = () => (
@@ -296,30 +297,30 @@ describe("createLazyLoadQuery", () => {
 				</View>
 			));
 
-			expect(executeWithSource).toHaveBeenCalledTimes(1);
+			expect(networkExecute).toHaveBeenCalledTimes(1);
 			environment.mock.resolve(gqlQuery, {
 				data: { node: { __typename: "User", id: "1", name: "Alice" } },
 			});
 			await wait(2);
-			expect(executeWithSource).toHaveBeenCalledTimes(1);
+			expect(networkExecute).toHaveBeenCalledTimes(1);
 			await expect.element(page.getByTestId("name").first()).toHaveTextContent("Alice");
 
 			setShowA(false);
 			await wait(2);
-			expect(executeWithSource).toHaveBeenCalledTimes(1);
+			expect(networkExecute).toHaveBeenCalledTimes(1);
 
 			setShowB(false);
 			await wait(2);
 
 			setShowA(true);
 			await wait(2);
-			expect(executeWithSource).toHaveBeenCalledTimes(2);
+			expect(networkExecute).toHaveBeenCalledTimes(2);
 
 			environment.mock.resolve(gqlQuery, {
 				data: { node: { __typename: "User", id: "1", name: "Bob" } },
 			});
 			await wait(2);
-			expect(executeWithSource).toHaveBeenCalledTimes(2);
+			expect(networkExecute).toHaveBeenCalledTimes(2);
 			await expect.element(page.getByTestId("name")).toHaveTextContent("Bob");
 		});
 
@@ -332,7 +333,7 @@ describe("createLazyLoadQuery", () => {
 				},
 			} as GraphQLTaggedNode & ConcreteRequest;
 			const liveOperation = createOperationDescriptor(liveQuery, {});
-			const executeWithSource = vi.spyOn(environment, "executeWithSource");
+			const networkExecute = vi.spyOn(environment.getNetwork(), "execute");
 			environment.commitPayload(liveOperation, {
 				node: { __typename: "User", id: "1", name: "Alice" },
 			});
@@ -348,13 +349,27 @@ describe("createLazyLoadQuery", () => {
 				);
 			};
 
+			const [show, setShow] = createSignal(true);
 			renderToBody(() => (
 				<View>
-					<LiveComp />
+					<Show when={show()}>
+						<LiveComp />
+					</Show>
 				</View>
 			));
 			await wait(1);
-			expect(executeWithSource).toHaveBeenCalledTimes(1);
+			expect(networkExecute).toHaveBeenCalledTimes(1);
+			// store-and-network keeps the boundary pending until the first response,
+			// even with cached data (unchanged from 1.x), so assert after it arrives.
+			environment.mock.nextValue(liveQuery, {
+				data: { node: { __typename: "User", id: "1", name: "Bob" } },
+			});
+			await expect.element(page.getByTestId("live-name")).toHaveTextContent("Bob");
+			expect(environment.mock.isLoading(liveQuery, {})).toBe(true);
+
+			setShow(false);
+			await wait(2);
+			expect(environment.mock.isLoading(liveQuery, {})).toBe(false);
 		});
 	});
 });
