@@ -18,7 +18,7 @@ import {
 	type VariablesOf,
 } from "relay-runtime";
 import { KeyType, KeyTypeData } from "relay-runtime/lib/store/FragmentTypes";
-import { type Accessor, batch, createEffect, createMemo, createSignal, untrack } from "solid-js";
+import { type Accessor, createEffect, createMemo, createSignal, untrack } from "solid-js";
 import invariant from "tiny-invariant";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import { createFetchTracker } from "../utils/createFetchTracker";
@@ -186,16 +186,19 @@ function createLoadMore<TQuery extends OperationType, TKey extends KeyType>({
 			environment() !== mirroredEnvironment() ||
 			fragmentIdentifier() !== mirroredFragmentIdentifier(),
 	);
-	createEffect(() => {
-		if (shouldReset()) {
-			batch(() => {
-				disposeFetch();
-				setIsLoadingMore(false);
-				setMirroredEnvironment(untrack(environment));
-				setMirroredFragmentIdentifier(untrack(fragmentIdentifier));
-			});
-		}
-	});
+	createEffect(
+		() =>
+			shouldReset()
+				? { environment: environment(), fragmentIdentifier: fragmentIdentifier() }
+				: undefined,
+		(next) => {
+			if (!next) return;
+			disposeFetch();
+			setIsLoadingMore(false);
+			setMirroredEnvironment(next.environment);
+			setMirroredFragmentIdentifier(next.fragmentIdentifier);
+		},
+	);
 
 	const connectionState = createMemo(() =>
 		getConnectionState(direction, fragmentNode, fragmentData.latest, connectionPathInFragmentData),
