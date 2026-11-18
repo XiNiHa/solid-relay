@@ -1,3 +1,4 @@
+import { markSafeError } from "@solidjs/web";
 import { meros } from "meros/browser";
 import {
 	Environment,
@@ -35,7 +36,8 @@ export function SsrApp<
 								props.origin,
 							),
 						);
-						if (!response.ok) throw new Error("HTTP Error");
+						// Mark safe so Solid serializes the message instead of a generic one.
+						if (!response.ok) throw markSafeError(new Error("HTTP Error"));
 
 						const parts = await meros<GraphQLSingularResponse>(response);
 
