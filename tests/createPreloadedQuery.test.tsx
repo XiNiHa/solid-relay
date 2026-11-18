@@ -187,7 +187,7 @@ describe("createPreloadedQuery", () => {
 		await expect.element(page.getByTestId("name")).toHaveTextContent("Bob");
 	});
 
-	it("throws when given a disposed preloaded ref", async () => {
+	it("rejects a disposed preloaded ref through the error boundary", async () => {
 		const preloaded = loadQuery<createPreloadedQueryTestQuery>(
 			environment,
 			query,
@@ -196,10 +196,15 @@ describe("createPreloadedQuery", () => {
 		);
 		preloaded.controls?.value.dispose();
 
-		expect(() => renderScreen(preloaded)).toThrow(/Expected preloadedQuery to not be disposed yet/);
+		renderScreen(preloaded);
+
+		await expect
+			.element(page.getByTestId("error"))
+			.toHaveTextContent(/Expected preloadedQuery to not be disposed yet/);
+		await expect.element(page.getByTestId("name")).not.toBeInTheDocument();
 	});
 
-	it("throws when the preloaded ref was created with a different environment", async () => {
+	it("rejects a preloaded ref from a different environment through the error boundary", async () => {
 		const otherEnvironment = createMockEnvironment({
 			store: new Store(new RecordSource(), { gcReleaseBufferSize: 0 }),
 		});
@@ -212,7 +217,12 @@ describe("createPreloadedQuery", () => {
 			},
 		);
 
-		expect(() => renderScreen(preloaded)).toThrow(/created with a different environment/);
+		renderScreen(preloaded);
+
+		await expect
+			.element(page.getByTestId("error"))
+			.toHaveTextContent(/created with a different environment/);
+		await expect.element(page.getByTestId("name")).not.toBeInTheDocument();
 	});
 
 	it("falls back to a normal fetch when the preloaded ref has no reusable source", async () => {
