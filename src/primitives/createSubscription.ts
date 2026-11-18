@@ -3,7 +3,7 @@ import {
 	type OperationType,
 	requestSubscription,
 } from "relay-runtime";
-import { onCleanup, onMount } from "solid-js";
+import { onSettled } from "solid-js";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import { access, type MaybeAccessor } from "../utils/access";
 
@@ -22,8 +22,8 @@ export function createSubscription<TSubscriptionPayload extends OperationType>(
 	const environment = useRelayEnvironment();
 	const actualRequestSubscription = requestSubscriptionFn ?? requestSubscription;
 
-	onMount(() => {
+	onSettled(() => {
 		const subscription = actualRequestSubscription(environment(), access(config));
-		onCleanup(() => subscription.dispose());
+		return () => subscription.dispose();
 	});
 }
