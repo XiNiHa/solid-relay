@@ -1,5 +1,5 @@
 import { graphql } from "relay-runtime";
-import { ErrorBoundary, Suspense } from "solid-js";
+import { Errored, Loading } from "solid-js";
 import { createFragment, createLazyLoadQuery } from "solid-relay";
 import type { createFragmentSsrMain_user$key } from "./__generated__/createFragmentSsrMain_user.graphql";
 import type { createFragmentSsrMainTestQuery } from "./__generated__/createFragmentSsrMainTestQuery.graphql";
@@ -32,10 +32,10 @@ export function Main() {
 	);
 
 	return (
-		<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-			<Suspense fallback="Fallback">
+		<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+			<Loading fallback="Fallback">
 				<Child fragmentKey={data()?.node} />
-			</Suspense>
-		</ErrorBoundary>
+			</Loading>
+		</Errored>
 	);
 }

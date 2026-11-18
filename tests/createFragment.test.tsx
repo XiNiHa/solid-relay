@@ -9,12 +9,12 @@ import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
 import {
 	createResource,
 	createSignal,
-	ErrorBoundary,
+	Errored,
 	For,
 	Show,
 	startTransition,
-	Suspense,
-	type JSXElement,
+	Loading,
+	type Element,
 } from "solid-js";
 import {
 	createFragment,
@@ -39,7 +39,7 @@ import { renderToBody, wait } from "./utils";
 let environment: MockEnvironment;
 let store: DataStore<createFragmentTest_user$data | null | undefined> | undefined;
 
-const View = (props: { children: JSXElement }) => (
+const View = (props: { children: Element }) => (
 	<RelayEnvironmentProvider environment={environment}>{props.children}</RelayEnvironmentProvider>
 );
 
@@ -73,11 +73,11 @@ describe("createFragment", () => {
 	const QueryScreen = (props: { user?: createFragmentTest_user$key | null | undefined }) => {
 		const data = createLazyLoadQuery<createFragmentTestOwnerQuery>(ownerQuery, { id: "1" });
 		return (
-			<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-				<Suspense fallback="Fallback">
+			<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+				<Loading fallback="Fallback">
 					<Child user={props.user ?? data()?.node} />
-				</Suspense>
-			</ErrorBoundary>
+				</Loading>
+			</Errored>
 		);
 	};
 
@@ -253,9 +253,9 @@ describe("createFragment", () => {
 
 		renderToBody(() => (
 			<View>
-				<Suspense fallback="Fallback">
+				<Loading fallback="Fallback">
 					<Comp />
-				</Suspense>
+				</Loading>
 			</View>
 		));
 
@@ -297,12 +297,12 @@ describe("createFragment", () => {
 
 		renderToBody(() => (
 			<View>
-				<Suspense fallback="Fallback">
+				<Loading fallback="Fallback">
 					<Show when={show()}>
 						<Comp />
 						<Pending />
 					</Show>
-				</Suspense>
+				</Loading>
 			</View>
 		));
 
@@ -348,13 +348,13 @@ describe("createFragment", () => {
 		}) => {
 			const data = createLazyLoadQuery<createFragmentTestPluralQuery>(pluralQuery, { ids: ["1"] });
 			return (
-				<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-					<Suspense fallback="Fallback">
+				<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+					<Loading fallback="Fallback">
 						<Show when={data()}>
 							{(data) => <PluralChild users={props.users ?? data().nodes} />}
 						</Show>
-					</Suspense>
-				</ErrorBoundary>
+					</Loading>
+				</Errored>
 			);
 		};
 

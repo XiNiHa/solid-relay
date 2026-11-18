@@ -6,7 +6,7 @@ import {
 	RecordSource,
 	Store,
 } from "relay-runtime";
-import { createMemo, type JSXElement } from "solid-js";
+import { createMemo, type Element } from "solid-js";
 import { RelayEnvironmentProvider } from "solid-relay";
 import * as Setups from "../setups";
 
@@ -60,7 +60,7 @@ export function SsrApp<
 	return (
 		<RelayEnvironmentProvider environment={environment}>
 			{(() => {
-				const Comp = SetupSuite() as () => JSXElement;
+				const Comp = SetupSuite() as () => Element;
 				return <Comp />;
 			})()}
 		</RelayEnvironmentProvider>

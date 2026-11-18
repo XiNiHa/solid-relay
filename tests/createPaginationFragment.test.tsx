@@ -6,7 +6,7 @@ import {
 	Store,
 } from "relay-runtime";
 import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
-import { ErrorBoundary, type JSXElement, Suspense } from "solid-js";
+import { Errored, type Element, Loading } from "solid-js";
 import {
 	createLazyLoadQuery,
 	createPaginationFragment,
@@ -20,7 +20,7 @@ import { renderToBody, wait } from "./utils";
 
 let environment: MockEnvironment;
 
-const View = (props: { children: JSXElement }) => (
+const View = (props: { children: Element }) => (
 	<RelayEnvironmentProvider environment={environment}>{props.children}</RelayEnvironmentProvider>
 );
 
@@ -97,11 +97,11 @@ describe("createPaginationFragment", () => {
 	const QueryScreen = (props: { variables: createPaginationFragmentTestQuery["variables"] }) => {
 		const data = createLazyLoadQuery<createPaginationFragmentTestQuery>(gqlQuery, props.variables);
 		return (
-			<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-				<Suspense fallback="Fallback">
+			<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+				<Loading fallback="Fallback">
 					<Child fragmentKey={data()} />
-				</Suspense>
-			</ErrorBoundary>
+				</Loading>
+			</Errored>
 		);
 	};
 

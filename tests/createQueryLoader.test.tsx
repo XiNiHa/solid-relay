@@ -5,8 +5,8 @@ import {
 	ConcreteRequest,
 } from "relay-runtime";
 import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
-import type { Accessor, JSXElement } from "solid-js";
-import { ErrorBoundary, Show, Suspense, createSignal } from "solid-js";
+import type { Accessor, Element } from "solid-js";
+import { Errored, Show, Loading, createSignal } from "solid-js";
 import {
 	createPreloadedQuery,
 	createQueryLoader,
@@ -33,7 +33,7 @@ let loadQueryRef:
 	| undefined;
 let disposeQueryRef: (() => void) | undefined;
 
-const View = (props: { children: JSXElement }) => (
+const View = (props: { children: Element }) => (
 	<RelayEnvironmentProvider environment={environment}>{props.children}</RelayEnvironmentProvider>
 );
 
@@ -79,11 +79,11 @@ describe("createQueryLoader", () => {
 		disposeQueryRef = disposeQuery;
 
 		return (
-			<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-				<Suspense fallback="Fallback">
+			<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+				<Loading fallback="Fallback">
 					<Show when={currentQueryRef()}>{(ref) => <Child queryRef={ref()} />}</Show>
-				</Suspense>
-			</ErrorBoundary>
+				</Loading>
+			</Errored>
 		);
 	};
 

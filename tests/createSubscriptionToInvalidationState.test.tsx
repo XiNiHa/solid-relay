@@ -1,13 +1,13 @@
 import { commitLocalUpdate, type DataID, type Disposable } from "relay-runtime";
 import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
-import { createSignal, type JSXElement } from "solid-js";
+import { createSignal, type Element } from "solid-js";
 import { createSubscriptionToInvalidationState, RelayEnvironmentProvider } from "solid-relay";
 import { page } from "vitest/browser";
 import { renderToBody, wait } from "./utils";
 
 let environment: MockEnvironment;
 
-const View = (props: { children: JSXElement }) => (
+const View = (props: { children: Element }) => (
 	<RelayEnvironmentProvider environment={environment}>{props.children}</RelayEnvironmentProvider>
 );
 

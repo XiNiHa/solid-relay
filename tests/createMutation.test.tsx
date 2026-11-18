@@ -1,7 +1,7 @@
 import type { Disposable, MutationConfig } from "relay-runtime";
 import { graphql } from "relay-runtime";
 import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
-import type { Accessor, JSXElement } from "solid-js";
+import type { Accessor, Element } from "solid-js";
 import { createMutation, RelayEnvironmentProvider } from "solid-relay";
 import { page } from "vitest/browser";
 import type { createMutationTestMutation } from "./__generated__/createMutationTestMutation.graphql";
@@ -13,7 +13,7 @@ let commit:
 	| undefined;
 let isMutationInFlight: Accessor<boolean> | undefined;
 
-const View = (props: { children: JSXElement }) => (
+const View = (props: { children: Element }) => (
 	<RelayEnvironmentProvider environment={environment}>{props.children}</RelayEnvironmentProvider>
 );
 

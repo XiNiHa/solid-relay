@@ -6,7 +6,7 @@ import {
 	Store,
 } from "relay-runtime";
 import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
-import { createSignal, ErrorBoundary, type JSXElement, Suspense } from "solid-js";
+import { createSignal, Errored, type Element, Loading } from "solid-js";
 import {
 	createPreloadedQuery,
 	loadQuery,
@@ -19,7 +19,7 @@ import { renderToBody, wait } from "./utils";
 
 let environment: MockEnvironment;
 
-const View = (props: { children: JSXElement }) => (
+const View = (props: { children: Element }) => (
 	<RelayEnvironmentProvider environment={environment}>{props.children}</RelayEnvironmentProvider>
 );
 
@@ -62,11 +62,11 @@ describe("createPreloadedQuery", () => {
 	}) => {
 		const data = createPreloadedQuery<createPreloadedQueryTestQuery>(query, props.preloaded);
 		return (
-			<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-				<Suspense fallback="Fallback">
+			<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+				<Loading fallback="Fallback">
 					<h1 data-testid="name">{data()?.node?.name}</h1>
-				</Suspense>
-			</ErrorBoundary>
+				</Loading>
+			</Errored>
 		);
 	};
 
@@ -164,11 +164,11 @@ describe("createPreloadedQuery", () => {
 			setCurrent = actualSetCurrent;
 			const data = createPreloadedQuery<createPreloadedQueryTestQuery>(query, current);
 			return (
-				<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-					<Suspense fallback="Fallback">
+				<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+					<Loading fallback="Fallback">
 						<h1 data-testid="name">{data()?.node?.name}</h1>
-					</Suspense>
-				</ErrorBoundary>
+					</Loading>
+				</Errored>
 			);
 		};
 

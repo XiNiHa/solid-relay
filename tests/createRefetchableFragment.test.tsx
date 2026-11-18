@@ -6,7 +6,7 @@ import {
 	Store,
 } from "relay-runtime";
 import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
-import { ErrorBoundary, type JSXElement, Suspense } from "solid-js";
+import { Errored, type Element, Loading } from "solid-js";
 import {
 	createLazyLoadQuery,
 	createRefetchableFragment,
@@ -21,7 +21,7 @@ import { renderToBody, wait } from "./utils";
 
 let environment: MockEnvironment;
 
-const View = (props: { children: JSXElement }) => (
+const View = (props: { children: Element }) => (
 	<RelayEnvironmentProvider environment={environment}>{props.children}</RelayEnvironmentProvider>
 );
 
@@ -74,11 +74,11 @@ describe("createRefetchableFragment", () => {
 			id: props.id,
 		});
 		return (
-			<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-				<Suspense fallback="Fallback">
+			<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+				<Loading fallback="Fallback">
 					<Child fragmentKey={data()?.node} />
-				</Suspense>
-			</ErrorBoundary>
+				</Loading>
+			</Errored>
 		);
 	};
 
@@ -220,11 +220,11 @@ describe("createRefetchableFragment", () => {
 
 		renderToBody(() => (
 			<View>
-				<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-					<Suspense fallback="Fallback">
+				<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+					<Loading fallback="Fallback">
 						<Child fragmentKey={null} />
-					</Suspense>
-				</ErrorBoundary>
+					</Loading>
+				</Errored>
 			</View>
 		));
 		await wait(1);
