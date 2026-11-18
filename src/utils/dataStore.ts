@@ -1,6 +1,4 @@
-import { type Accessor, type Resource, untrack } from "solid-js";
-import { createStore, type SetStoreFunction } from "solid-js/store";
-import { useDataStores } from "../RelayEnvironment";
+import { type Accessor } from "solid-js";
 
 /**
  * A reactive data store containing the result of a query or fragment.
@@ -36,50 +34,21 @@ export const createDataStore = <
 		readonly pending: boolean;
 	},
 >(
-	init: T,
-	resourceAccessor: Accessor<Resource<unknown> | undefined>,
-): [DataStore<T>, SetStoreFunction<T>] => {
-	const [store, setStore] = createStableStore(
-		init,
-		untrack(() => resourceAccessor()),
-	);
-
+	store: T,
+	gate?: Accessor<unknown>,
+): DataStore<T> => {
 	const readData = () => {
-		const resource = resourceAccessor();
-		void resource?.();
-		const error = Reflect.get(store, "error");
+		gate?.();
+		const error = store.error;
 		if (error) throw error;
-		return Reflect.get(store, "data");
+		return store.data;
 	};
 
 	Object.defineProperties(readData, {
-		latest: {
-			get: () => Reflect.get(store, "data"),
-		},
-		error: {
-			get: () => Reflect.get(store, "error"),
-		},
-		pending: {
-			get: () => Reflect.get(store, "pending"),
-		},
+		latest: { get: () => store.data },
+		error: { get: () => store.error },
+		pending: { get: () => store.pending },
 	});
 
-	return [readData as unknown as DataStore<T>, setStore];
+	return readData as unknown as DataStore<T>;
 };
-
-function createStableStore<
-	T extends {
-		readonly data: unknown;
-		readonly error: unknown;
-		readonly pending: boolean;
-	},
->(init: T, resource: Resource<unknown> | undefined) {
-	const stores = useDataStores();
-	if (resource) {
-		const existing = stores?.get(resource);
-		if (existing) return existing as [T, SetStoreFunction<T>];
-	}
-	const store = createStore(init);
-	if (resource) stores?.set(resource, store);
-	return store;
-}

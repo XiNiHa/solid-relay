@@ -1,8 +1,11 @@
-import type { Disposable, IEnvironment } from "relay-runtime";
-import type { Resource } from "solid-js";
+import type { Disposable, GraphQLResponse, IEnvironment } from "relay-runtime";
+import type { Accessor } from "solid-js";
+
+export type ResponseChain = { value: GraphQLResponse; next: Promise<ResponseChain> } | null;
 
 export type QueryCacheEntry = {
-	resource: Resource<unknown>;
+	response: Accessor<ResponseChain>;
+	replay: (value: ResponseChain) => void;
 	retain: (environment: IEnvironment) => Disposable;
 };
 
