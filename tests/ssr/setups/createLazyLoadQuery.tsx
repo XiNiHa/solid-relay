@@ -103,14 +103,17 @@ export function Flicker() {
 	let error = "no error";
 	const env = typeof window === "object" ? "browser" : "server";
 	const [queryHydrated, setQueryHydrated] = createSignal(false);
-	const [track, rerender] = createSignal(undefined, { equals: false });
+	// Hydration keeps the server text, and Solid 2.0 skips a DOM write when the
+	// recomputed text is unchanged, so each rerender must produce a new string.
+	const [renderCount, setRenderCount] = createSignal(0);
+	const rerender = () => setRenderCount((count) => count + 1);
 
 	return (
 		<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
 			<Loading fallback="Fallback">
 				<h1 data-testid="name">
 					{(() => {
-						track();
+						const count = renderCount();
 						const name = data()?.node?.name;
 						if (env === "browser") {
 							if (!name) {
@@ -123,7 +126,7 @@ export function Flicker() {
 								queueMicrotask(() => setQueryHydrated(true));
 							}
 						}
-						return `${error} ${name} ${env}`;
+						return `${error} ${name} ${env} ${count}`;
 					})()}
 				</h1>
 				<h2 data-testid="query-hydrated">Query Hydrated: {String(queryHydrated())}</h2>
