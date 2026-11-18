@@ -51,7 +51,8 @@ export default defineConfig({
 			{
 				extends: true,
 				plugins: [
-					...solidPlugins({ ssr: true }),
+					// The plugin compiles with hydratable: false under vitest; these tests hydrate.
+					...solidPlugins({ ssr: true, solid: { hydratable: true } }),
 					ssrTestPlugin(),
 					cjsInterop({ dependencies: ["relay-runtime"] }),
 					...commonPlugins(),
