@@ -1,10 +1,10 @@
-import { createSignal, onCleanup, onMount } from "solid-js";
+import { createSignal, onSettled } from "solid-js";
 
 export const useIsMounted = (): (() => boolean) => {
 	const [isMounted, setIsMounted] = createSignal(false);
-	onMount(() => {
+	onSettled(() => {
 		setIsMounted(true);
-		onCleanup(() => setIsMounted(false));
+		return () => setIsMounted(false);
 	});
 	return isMounted;
 };
