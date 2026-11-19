@@ -152,7 +152,7 @@ export default App;
 Solid Relay now runs on Solid 2.0. Besides the renamed Solid APIs (`Suspense` is now `Loading`, `ErrorBoundary` is now `Errored`, and `solid-js/web` is now `@solidjs/web`), expect these behavior changes:
 
 - **Reading pending data outside a `Loading` boundary throws.** Calling `data()` from an event handler, a timer, or another untracked scope before the first response throws Solid's `NotReadyError` instead of returning `undefined`. Read `data.latest` to get the current value without suspending. See [Loading States](/guide/querying#loading-states).
-- **Changing variables keeps the previous data on screen.** A boundary that already shows content keeps it until the new query settles, and `data.latest` and `data.pending` keep describing the previous result in the meantime. Use `isPending(() => data())` to show a refresh indicator.
+- **Changing variables keeps the previous data on screen.** A boundary that already shows content keeps it until the new query settles. `data.latest` keeps the previous result in the meantime, and `data.pending` is `true` until the new result arrives, as in Solid 1.
 - **`createQueryLoader` references commit when their query settles.** Place the `Loading` boundary inside the `Show` that checks the reference so the first load shows its fallback. See [Using createQueryLoader](/guide/querying#using-createqueryloader).
 - **`Errored` recovers on its own.** When the store data that caused an error becomes valid again, the boundary renders its children again without `reset()`. See [Error Handling](/guide/querying#error-handling).
 - **Server errors are sanitized during SSR.** Unless you mark an error with `markSafeError`, the client receives `Internal Server Error` instead of its message.

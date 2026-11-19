@@ -284,17 +284,17 @@ function App() {
 }
 ```
 
-The fallback shows only on the first load. When the variables of a query change, a boundary that already shows content keeps the previous data until the new response arrives. Use `isPending` inside the boundary to show a refresh indicator:
+The fallback shows only on the first load. When the variables of a query change, a boundary that already shows content keeps the previous data until the new response arrives. `data.pending` is `true` during the first load and during such a refresh, so you can use it to show a refresh indicator:
 
 ```tsx
-import { isPending, Loading, Show } from "solid-js";
+import { Loading, Show } from "solid-js";
 
 function UserView(props: { userId: string }) {
 	const data = createLazyLoadQuery<UserQuery>(UserQuery, () => ({ id: props.userId }));
 
 	return (
 		<Loading fallback={<div>Loading user...</div>}>
-			<Show when={isPending(() => data())}>
+			<Show when={data.pending}>
 				<div>Refreshing...</div>
 			</Show>
 			<h1>{data()?.user?.name}</h1>
@@ -303,4 +303,4 @@ function UserView(props: { userId: string }) {
 }
 ```
 
-Reading `data()` outside a `Loading` boundary, such as in an event handler, throws Solid's `NotReadyError` while the query is pending. Read `data.latest` there instead; it returns the current value, or `undefined`, without suspending. Like `data.pending`, it keeps describing the previous result while a variable change is pending.
+Reading `data()` outside a `Loading` boundary, such as in an event handler, throws Solid's `NotReadyError` while the query is pending. Read `data.latest` there instead; it returns the current value, or `undefined`, without suspending, and keeps the previous result while a variable change is pending.
