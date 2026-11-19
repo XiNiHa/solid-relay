@@ -11,6 +11,7 @@ import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
 import { createSignal, Errored, type Element, Loading, NotReadyError, Show } from "solid-js";
 import { createLazyLoadQuery, type DataStore, RelayEnvironmentProvider } from "solid-relay";
 import { page } from "vitest/browser";
+import type { createLazyLoadQueryTestPendingQuery } from "./__generated__/createLazyLoadQueryTestPendingQuery.graphql";
 import type { createLazyLoadQueryTestQuery } from "./__generated__/createLazyLoadQueryTestQuery.graphql";
 import { renderToBody, wait } from "./utils";
 
@@ -370,6 +371,96 @@ describe("createLazyLoadQuery", () => {
 			setShow(false);
 			await wait(2);
 			expect(environment.mock.isLoading(liveQuery, {})).toBe(false);
+		});
+	});
+	describe("pending", () => {
+		const varsQuery = graphql`
+			query createLazyLoadQueryTestPendingQuery($id: ID!) {
+				node(id: $id) {
+					id
+					... on User {
+						name
+					}
+				}
+			}
+		` as GraphQLTaggedNode & ConcreteRequest;
+		const user = (id: string, name: string) => ({
+			data: { node: { __typename: "User", id, name } },
+		});
+
+		const renderPending = (fetchPolicy?: FetchPolicy) => {
+			const [id, setId] = createSignal("1");
+			let store: DataStore<createLazyLoadQueryTestPendingQuery["response"]> | undefined;
+			const PendingComp = () => {
+				const data = createLazyLoadQuery<createLazyLoadQueryTestPendingQuery>(
+					varsQuery,
+					() => ({
+						id: id(),
+					}),
+					{ fetchPolicy },
+				);
+				store = data;
+				return (
+					<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+						<Loading fallback="Fallback">
+							<p data-testid="pending">{String(data.pending)}</p>
+							<h1 data-testid="name">{data()?.node?.name}</h1>
+						</Loading>
+					</Errored>
+				);
+			};
+			renderToBody(() => (
+				<View>
+					<PendingComp />
+				</View>
+			));
+			return { setId, store: () => store };
+		};
+
+		it("stays true while a variable change refetches, keeping the previous data", async () => {
+			const { setId, store } = renderPending();
+			await wait(1);
+			expect(store()?.pending).toBe(true);
+
+			environment.mock.resolveMostRecentOperation(() => user("1", "Alice"));
+			await expect.element(page.getByTestId("name")).toHaveTextContent("Alice");
+			await expect.element(page.getByTestId("pending")).toHaveTextContent("false");
+			expect(store()?.pending).toBe(false);
+
+			setId("2");
+			await wait(2);
+			await expect.element(page.getByTestId("pending")).toHaveTextContent("true");
+			await expect.element(page.getByTestId("name")).toHaveTextContent("Alice");
+			expect(store()?.pending).toBe(true);
+			expect(store()?.latest?.node?.name).toBe("Alice");
+
+			environment.mock.resolveMostRecentOperation(() => user("2", "Bob"));
+			await expect.element(page.getByTestId("name")).toHaveTextContent("Bob");
+			await expect.element(page.getByTestId("pending")).toHaveTextContent("false");
+			expect(store()?.pending).toBe(false);
+		});
+
+		it("turns false when the request fails", async () => {
+			const { store } = renderPending();
+			await wait(1);
+			environment.mock.rejectMostRecentOperation(new Error("Network error"));
+
+			await expect.element(page.getByTestId("error")).toHaveTextContent("Network error");
+			expect(store()?.pending).toBe(false);
+		});
+
+		it("is true while store-and-network refetches over cached data", async () => {
+			environment.commitPayload(createOperationDescriptor(varsQuery, { id: "1" }), {
+				node: { __typename: "User", id: "1", name: "Cached" },
+			});
+			const { store } = renderPending("store-and-network");
+			await wait(1);
+			await expect.element(page.getByText("Fallback")).toBeInTheDocument();
+			expect(store()?.pending).toBe(true);
+
+			environment.mock.resolveMostRecentOperation(() => user("1", "Alice"));
+			await expect.element(page.getByTestId("name")).toHaveTextContent("Alice");
+			expect(store()?.pending).toBe(false);
 		});
 	});
 });
