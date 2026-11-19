@@ -1,8 +1,8 @@
 import path from "node:path";
+import solid from "@solidjs/vite-plugin";
 import { playwright } from "@vitest/browser-playwright";
 import { cjsInterop } from "vite-plugin-cjs-interop";
 import relay from "vite-plugin-relay-lite";
-import solid from "vite-plugin-solid";
 import { defineConfig, type Plugin } from "vitest/config";
 import { ssrBrowserCommands, ssrTestPlugin } from "./tests/ssr/harness/vitest";
 
@@ -13,6 +13,9 @@ const commonPlugins = (): Plugin[] => [
 		relayConfig: "tests/relay.config.json",
 	}),
 ];
+
+const solidPlugins = (options?: Parameters<typeof solid>[0]): Plugin[] =>
+	solid(options).map((plugin) => ({ ...plugin, configEnvironment: undefined }));
 
 export default defineConfig({
 	resolve: {
@@ -31,7 +34,7 @@ export default defineConfig({
 		projects: [
 			{
 				extends: true,
-				plugins: [{ ...solid(), configEnvironment: undefined }, ...commonPlugins()],
+				plugins: [...solidPlugins(), ...commonPlugins()],
 				resolve: {
 					conditions: ["solid", "development", "browser"],
 				},
@@ -48,10 +51,8 @@ export default defineConfig({
 			{
 				extends: true,
 				plugins: [
-					{
-						...solid({ ssr: true }),
-						configEnvironment: undefined,
-					},
+					// The plugin compiles with hydratable: false under vitest; these tests hydrate.
+					...solidPlugins({ ssr: true, solid: { hydratable: true } }),
 					ssrTestPlugin(),
 					cjsInterop({ dependencies: ["relay-runtime"] }),
 					...commonPlugins(),

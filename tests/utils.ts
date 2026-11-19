@@ -1,5 +1,5 @@
-import type { JSXElement } from "solid-js";
-import { render } from "solid-js/web";
+import { render } from "@solidjs/web";
+import type { Element } from "solid-js";
 
 export async function wait(times: number) {
 	for (let i = 0; i < times; i++) {
@@ -7,7 +7,7 @@ export async function wait(times: number) {
 	}
 }
 
-export function renderToBody(fn: () => JSXElement) {
+export function renderToBody(fn: () => Element) {
 	const cleanup = render(fn, document.body);
 	onTestFinished(() => cleanup());
 }

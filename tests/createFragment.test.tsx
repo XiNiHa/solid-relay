@@ -6,16 +6,7 @@ import {
 	Store,
 } from "relay-runtime";
 import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
-import {
-	createResource,
-	createSignal,
-	ErrorBoundary,
-	For,
-	Show,
-	startTransition,
-	Suspense,
-	type JSXElement,
-} from "solid-js";
+import { createMemo, createSignal, Errored, For, Show, Loading, type Element } from "solid-js";
 import {
 	createFragment,
 	createLazyLoadQuery,
@@ -39,7 +30,7 @@ import { renderToBody, wait } from "./utils";
 let environment: MockEnvironment;
 let store: DataStore<createFragmentTest_user$data | null | undefined> | undefined;
 
-const View = (props: { children: JSXElement }) => (
+const View = (props: { children: Element }) => (
 	<RelayEnvironmentProvider environment={environment}>{props.children}</RelayEnvironmentProvider>
 );
 
@@ -73,11 +64,11 @@ describe("createFragment", () => {
 	const QueryScreen = (props: { user?: createFragmentTest_user$key | null | undefined }) => {
 		const data = createLazyLoadQuery<createFragmentTestOwnerQuery>(ownerQuery, { id: "1" });
 		return (
-			<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-				<Suspense fallback="Fallback">
+			<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+				<Loading fallback="Fallback">
 					<Child user={props.user ?? data()?.node} />
-				</Suspense>
-			</ErrorBoundary>
+				</Loading>
+			</Errored>
 		);
 	};
 
@@ -253,9 +244,9 @@ describe("createFragment", () => {
 
 		renderToBody(() => (
 			<View>
-				<Suspense fallback="Fallback">
+				<Loading fallback="Fallback">
 					<Comp />
-				</Suspense>
+				</Loading>
 			</View>
 		));
 
@@ -266,7 +257,7 @@ describe("createFragment", () => {
 		expect(childRuns).toBe(1);
 	});
 
-	it("creates gated children once when mounted inside a pending transition", async () => {
+	it("creates gated children once when mounted inside a pending boundary", async () => {
 		environment.commitPayload(ownerOperation, {
 			node: { __typename: "User", id: "1", name: "Alice" },
 		});
@@ -289,24 +280,24 @@ describe("createFragment", () => {
 				</Show>
 			);
 		};
-		// A sibling that keeps the transition pending for a while.
+		// A sibling that keeps the boundary pending for a while.
 		const Pending = () => {
-			const [pending] = createResource(() => new Promise((r) => setTimeout(() => r(1), 30)));
+			const pending = createMemo(() => new Promise((r) => setTimeout(() => r(1), 30)));
 			return <Show when={pending()}>done</Show>;
 		};
 
 		renderToBody(() => (
 			<View>
-				<Suspense fallback="Fallback">
+				<Loading fallback="Fallback">
 					<Show when={show()}>
 						<Comp />
 						<Pending />
 					</Show>
-				</Suspense>
+				</Loading>
 			</View>
 		));
 
-		void startTransition(() => setShow(true));
+		setShow(true);
 		await expect.element(page.getByTestId("name")).toHaveTextContent("Alice");
 		await expect.element(page.getByText("done")).toBeInTheDocument();
 		expect(childRuns).toBe(1);
@@ -348,13 +339,13 @@ describe("createFragment", () => {
 		}) => {
 			const data = createLazyLoadQuery<createFragmentTestPluralQuery>(pluralQuery, { ids: ["1"] });
 			return (
-				<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-					<Suspense fallback="Fallback">
+				<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+					<Loading fallback="Fallback">
 						<Show when={data()}>
 							{(data) => <PluralChild users={props.users ?? data().nodes} />}
 						</Show>
-					</Suspense>
-				</ErrorBoundary>
+					</Loading>
+				</Errored>
 			);
 		};
 

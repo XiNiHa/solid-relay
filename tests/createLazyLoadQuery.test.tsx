@@ -8,14 +8,15 @@ import {
 	Store,
 } from "relay-runtime";
 import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
-import { createSignal, ErrorBoundary, type JSXElement, Suspense } from "solid-js";
+import { createSignal, Errored, type Element, Loading, NotReadyError, Show } from "solid-js";
 import { createLazyLoadQuery, type DataStore, RelayEnvironmentProvider } from "solid-relay";
 import { page } from "vitest/browser";
+import type { createLazyLoadQueryTestPendingQuery } from "./__generated__/createLazyLoadQueryTestPendingQuery.graphql";
 import type { createLazyLoadQueryTestQuery } from "./__generated__/createLazyLoadQueryTestQuery.graphql";
 import { renderToBody, wait } from "./utils";
 
 let environment: MockEnvironment;
-const View = (props: { children: JSXElement }) => (
+const View = (props: { children: Element }) => (
 	<RelayEnvironmentProvider environment={environment}>{props.children}</RelayEnvironmentProvider>
 );
 
@@ -38,11 +39,11 @@ describe("createLazyLoadQuery", () => {
 			{ fetchPolicy: () => props.fetchPolicy },
 		);
 		return (
-			<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-				<Suspense fallback="Fallback">
+			<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+				<Loading fallback="Fallback">
 					<h1 data-testid="name">{data()?.node?.name}</h1>
-				</Suspense>
-			</ErrorBoundary>
+				</Loading>
+			</Errored>
 		);
 	};
 
@@ -57,11 +58,11 @@ describe("createLazyLoadQuery", () => {
 		const Comp = () => {
 			store = createLazyLoadQuery<createLazyLoadQueryTestQuery>(gqlQuery, {});
 			return (
-				<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-					<Suspense fallback="Fallback">
+				<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+					<Loading fallback="Fallback">
 						<h1 data-testid="getter-name">{store()?.node?.name}</h1>
-					</Suspense>
-				</ErrorBoundary>
+					</Loading>
+				</Errored>
 			);
 		};
 
@@ -74,7 +75,8 @@ describe("createLazyLoadQuery", () => {
 		expect(store).toBeDefined();
 		expect(store?.pending).toBe(true);
 		expect(store?.error).toBeUndefined();
-		expect(store?.()).toBeUndefined();
+		// Outside a Loading boundary, reading pending data throws; latest reads without suspending.
+		expect(() => store?.()).toThrow(NotReadyError);
 		expect(store?.latest).toBeUndefined();
 
 		environment.mock.resolve(gqlQuery, {
@@ -128,7 +130,7 @@ describe("createLazyLoadQuery", () => {
 			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
 		});
 
-		it("throws on network error and gets caught by ErrorBoundary", async () => {
+		it("throws on network error and gets caught by Errored", async () => {
 			render();
 			await expect.element(page.getByText("Fallback")).toBeInTheDocument();
 
@@ -196,7 +198,7 @@ describe("createLazyLoadQuery", () => {
 	it.each(["store-and-network", "network-only"] as const)(
 		"fetches even when data exists if fetchPolicy: %s",
 		async (fetchPolicy) => {
-			const executeWithSource = vi.spyOn(environment, "executeWithSource");
+			const networkExecute = vi.spyOn(environment.getNetwork(), "execute");
 			environment.commitPayload(query, {
 				node: { __typename: "User", id: "1", name: "Alice" },
 			});
@@ -208,7 +210,7 @@ describe("createLazyLoadQuery", () => {
 			));
 
 			await wait(1);
-			expect(executeWithSource).toHaveBeenCalledTimes(1);
+			expect(networkExecute).toHaveBeenCalledTimes(1);
 			environment.mock.resolve(gqlQuery, {
 				data: { node: { __typename: "User", id: "1", name: "Bob" } },
 			});
@@ -235,7 +237,7 @@ describe("createLazyLoadQuery", () => {
 				</View>
 			));
 
-		it("throws on field error and gets caught by ErrorBoundary", async () => {
+		it("throws on field error and gets caught by Errored", async () => {
 			renderScreen();
 			await expect.element(page.getByText("Fallback")).toBeInTheDocument();
 
@@ -251,7 +253,7 @@ describe("createLazyLoadQuery", () => {
 			await expect.element(page.getByText("Fallback")).not.toBeInTheDocument();
 		});
 
-		it("throws on missing data and gets caught by ErrorBoundary", async () => {
+		it("throws on missing data and gets caught by Errored", async () => {
 			renderScreen("store-only");
 			await expect.element(page.getByTestId("error")).toHaveTextContent("Missing expected data");
 			await expect.element(page.getByText("name")).not.toBeInTheDocument();
@@ -280,7 +282,7 @@ describe("createLazyLoadQuery", () => {
 		});
 
 		it("reuses cache for concurrent consumers and refetches after final disposal", async () => {
-			const executeWithSource = vi.spyOn(environment, "executeWithSource");
+			const networkExecute = vi.spyOn(environment.getNetwork(), "execute");
 			const [showA, setShowA] = createSignal(true);
 			const [showB, setShowB] = createSignal(true);
 			const MultiComp = () => (
@@ -296,30 +298,30 @@ describe("createLazyLoadQuery", () => {
 				</View>
 			));
 
-			expect(executeWithSource).toHaveBeenCalledTimes(1);
+			expect(networkExecute).toHaveBeenCalledTimes(1);
 			environment.mock.resolve(gqlQuery, {
 				data: { node: { __typename: "User", id: "1", name: "Alice" } },
 			});
 			await wait(2);
-			expect(executeWithSource).toHaveBeenCalledTimes(1);
+			expect(networkExecute).toHaveBeenCalledTimes(1);
 			await expect.element(page.getByTestId("name").first()).toHaveTextContent("Alice");
 
 			setShowA(false);
 			await wait(2);
-			expect(executeWithSource).toHaveBeenCalledTimes(1);
+			expect(networkExecute).toHaveBeenCalledTimes(1);
 
 			setShowB(false);
 			await wait(2);
 
 			setShowA(true);
 			await wait(2);
-			expect(executeWithSource).toHaveBeenCalledTimes(2);
+			expect(networkExecute).toHaveBeenCalledTimes(2);
 
 			environment.mock.resolve(gqlQuery, {
 				data: { node: { __typename: "User", id: "1", name: "Bob" } },
 			});
 			await wait(2);
-			expect(executeWithSource).toHaveBeenCalledTimes(2);
+			expect(networkExecute).toHaveBeenCalledTimes(2);
 			await expect.element(page.getByTestId("name")).toHaveTextContent("Bob");
 		});
 
@@ -332,7 +334,7 @@ describe("createLazyLoadQuery", () => {
 				},
 			} as GraphQLTaggedNode & ConcreteRequest;
 			const liveOperation = createOperationDescriptor(liveQuery, {});
-			const executeWithSource = vi.spyOn(environment, "executeWithSource");
+			const networkExecute = vi.spyOn(environment.getNetwork(), "execute");
 			environment.commitPayload(liveOperation, {
 				node: { __typename: "User", id: "1", name: "Alice" },
 			});
@@ -340,21 +342,125 @@ describe("createLazyLoadQuery", () => {
 			const LiveComp = () => {
 				const data = createLazyLoadQuery<createLazyLoadQueryTestQuery>(liveQuery, {});
 				return (
-					<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-						<Suspense fallback="Fallback">
+					<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+						<Loading fallback="Fallback">
 							<h1 data-testid="live-name">{data()?.node?.name}</h1>
-						</Suspense>
-					</ErrorBoundary>
+						</Loading>
+					</Errored>
 				);
 			};
 
+			const [show, setShow] = createSignal(true);
 			renderToBody(() => (
 				<View>
-					<LiveComp />
+					<Show when={show()}>
+						<LiveComp />
+					</Show>
 				</View>
 			));
 			await wait(1);
-			expect(executeWithSource).toHaveBeenCalledTimes(1);
+			expect(networkExecute).toHaveBeenCalledTimes(1);
+			// store-and-network keeps the boundary pending until the first response,
+			// even with cached data (unchanged from 1.x), so assert after it arrives.
+			environment.mock.nextValue(liveQuery, {
+				data: { node: { __typename: "User", id: "1", name: "Bob" } },
+			});
+			await expect.element(page.getByTestId("live-name")).toHaveTextContent("Bob");
+			expect(environment.mock.isLoading(liveQuery, {})).toBe(true);
+
+			setShow(false);
+			await wait(2);
+			expect(environment.mock.isLoading(liveQuery, {})).toBe(false);
+		});
+	});
+	describe("pending", () => {
+		const varsQuery = graphql`
+			query createLazyLoadQueryTestPendingQuery($id: ID!) {
+				node(id: $id) {
+					id
+					... on User {
+						name
+					}
+				}
+			}
+		` as GraphQLTaggedNode & ConcreteRequest;
+		const user = (id: string, name: string) => ({
+			data: { node: { __typename: "User", id, name } },
+		});
+
+		const renderPending = (fetchPolicy?: FetchPolicy) => {
+			const [id, setId] = createSignal("1");
+			let store: DataStore<createLazyLoadQueryTestPendingQuery["response"]> | undefined;
+			const PendingComp = () => {
+				const data = createLazyLoadQuery<createLazyLoadQueryTestPendingQuery>(
+					varsQuery,
+					() => ({
+						id: id(),
+					}),
+					{ fetchPolicy },
+				);
+				store = data;
+				return (
+					<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+						<Loading fallback="Fallback">
+							<p data-testid="pending">{String(data.pending)}</p>
+							<h1 data-testid="name">{data()?.node?.name}</h1>
+						</Loading>
+					</Errored>
+				);
+			};
+			renderToBody(() => (
+				<View>
+					<PendingComp />
+				</View>
+			));
+			return { setId, store: () => store };
+		};
+
+		it("stays true while a variable change refetches, keeping the previous data", async () => {
+			const { setId, store } = renderPending();
+			await wait(1);
+			expect(store()?.pending).toBe(true);
+
+			environment.mock.resolveMostRecentOperation(() => user("1", "Alice"));
+			await expect.element(page.getByTestId("name")).toHaveTextContent("Alice");
+			await expect.element(page.getByTestId("pending")).toHaveTextContent("false");
+			expect(store()?.pending).toBe(false);
+
+			setId("2");
+			await wait(2);
+			await expect.element(page.getByTestId("pending")).toHaveTextContent("true");
+			await expect.element(page.getByTestId("name")).toHaveTextContent("Alice");
+			expect(store()?.pending).toBe(true);
+			expect(store()?.latest?.node?.name).toBe("Alice");
+
+			environment.mock.resolveMostRecentOperation(() => user("2", "Bob"));
+			await expect.element(page.getByTestId("name")).toHaveTextContent("Bob");
+			await expect.element(page.getByTestId("pending")).toHaveTextContent("false");
+			expect(store()?.pending).toBe(false);
+		});
+
+		it("turns false when the request fails", async () => {
+			const { store } = renderPending();
+			await wait(1);
+			environment.mock.rejectMostRecentOperation(new Error("Network error"));
+
+			await expect.element(page.getByTestId("error")).toHaveTextContent("Network error");
+			expect(store()?.pending).toBe(false);
+		});
+
+		it("is true while store-and-network refetches over cached data", async () => {
+			environment.commitPayload(createOperationDescriptor(varsQuery, { id: "1" }), {
+				node: { __typename: "User", id: "1", name: "Cached" },
+			});
+			const { store } = renderPending("store-and-network");
+			await wait(1);
+			await expect.element(page.getByText("Fallback")).toBeInTheDocument();
+			expect(store()?.pending).toBe(true);
+
+			environment.mock.resolveMostRecentOperation(() => user("1", "Alice"));
+			await expect.element(page.getByTestId("name")).toHaveTextContent("Alice");
+			expect(store()?.pending).toBe(false);
 		});
 	});
 });

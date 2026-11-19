@@ -16,10 +16,10 @@ export function createMemoOperationDescriptor(
 	variables: MaybeAccessor<Variables | undefined>,
 	cacheConfig?: MaybeAccessor<CacheConfig | undefined>,
 ): Accessor<OperationDescriptor | undefined> {
-	const memoizedVariables = createMemo(() => access(variables), undefined, {
+	const memoizedVariables = createMemo(() => access(variables), {
 		equals: dequal,
 	});
-	const memoizedCacheConfig = createMemo(() => access(cacheConfig), undefined, {
+	const memoizedCacheConfig = createMemo(() => access(cacheConfig), {
 		equals: dequal,
 	});
 

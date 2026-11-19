@@ -7,7 +7,7 @@ import {
 	type PreloadableConcreteRequest,
 	type VariablesOf,
 } from "relay-runtime";
-import { type Accessor, createEffect, createSignal, onCleanup, untrack } from "solid-js";
+import { type Accessor, createEffect, createSignal, untrack } from "solid-js";
 import { type LoadQueryOptions, loadQuery, type PreloadedQuery } from "../loadQuery";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import { useIsMounted } from "../utils/useIsMounted";
@@ -24,6 +24,11 @@ const initialNullQueryReferenceState: NullQueryReference = {
  * - an accessor for the current `PreloadedQuery` reference
  * - a `loadQuery` function to start loading with variables
  * - a `disposeQuery` function to clear and dispose the current reference
+ *
+ * A new reference from `loadQuery` commits once its query settles; until then
+ * the accessor returns the previous reference. Render the consumer inside a
+ * `Loading` boundary nested under the reference check so the first load shows
+ * its fallback.
  *
  * @param preloadableRequest - Query document or preloadable concrete request.
  * @param initialQueryReference - Optional initial query reference.
@@ -51,18 +56,19 @@ export function createQueryLoader<TQuery extends OperationType>(
 		PreloadedQuery<TQuery> | NullQueryReference
 	>(initialQueryReferenceInternal);
 
-	createEffect(() => {
-		const ref = queryReference();
-		onCleanup(() => {
-			if ("controls" in ref) {
+	createEffect(
+		() => queryReference(),
+		(ref) => {
+			if (!("controls" in ref)) return;
+			return () => {
 				if (requestIsLiveQuery(preloadableRequest)) {
 					ref.controls?.value.dispose();
 				} else {
 					ref.controls?.value.releaseQuery();
 				}
-			}
-		});
-	});
+			};
+		},
+	);
 
 	return [
 		() => {

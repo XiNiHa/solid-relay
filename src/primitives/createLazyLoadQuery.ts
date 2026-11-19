@@ -11,26 +11,16 @@ import {
 	type OperationType,
 	type ReaderFragment,
 	ReplaySubject,
+	type Subscription,
 	type VariablesOf,
 } from "relay-runtime";
 import { observeFragment } from "relay-runtime/experimental.js";
-import {
-	type Accessor,
-	batch,
-	createComputed,
-	createMemo,
-	createResource,
-	createSignal,
-	onCleanup,
-	Setter,
-	Signal,
-	untrack,
-} from "solid-js";
-import { reconcile } from "solid-js/store";
-import { getQueryCache, type QueryCacheEntry } from "../queryCache";
+import { type Accessor, createMemo, isHydrating, onCleanup } from "solid-js";
+import { getQueryCache, type QueryCacheEntry, type ResponseChain } from "../queryCache";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import { access, type MaybeAccessor } from "../utils/access";
 import { createMemoOperationDescriptor } from "../utils/createMemoOperationDescriptor";
+import { createResultStore } from "../utils/createResultStore";
 import { createDataStore, type DataStore } from "../utils/dataStore";
 import { getQueryRef } from "../utils/getQueryRef";
 import { cleanSnapshot } from "../utils/snapshot";
@@ -142,34 +132,28 @@ export function createLazyLoadQueryInternal<TQuery extends OperationType>(params
 			}
 		})();
 
+		if (!shouldFetch) return;
+
 		const replaySubject = new ReplaySubject<GraphQLResponse>();
-		let subscriptionTarget = shouldFetch
-			? environment().executeWithSource({
-					operation,
-					source: __internal.fetchQueryDeduped(environment(), operation.request.identifier, () =>
-						Observable.create((sink) => replaySubject.subscribe(sink)),
-					),
-				})
-			: undefined;
-
-		type RecursiveResult = {
-			value: GraphQLResponse;
-			next: Promise<RecursiveResult>;
-		} | null;
-
+		let subscription: Subscription | undefined;
 		let fetchedInSameEnv = false;
-		const [resource] = createResource<RecursiveResult, Observable<GraphQLResponse>>(
-			() => shouldFetch && params.fetchObservable(),
-			async (observable) => {
-				subscriptionTarget = observable;
+		let replayed = false;
+
+		const response = createMemo(
+			() => {
+				// During hydration the serialized server value is adopted; skip the fetch side effect.
+				if (isHydrating()) return null;
+				const observable = params.fetchObservable();
+				if (!observable) return null;
 				fetchedInSameEnv = true;
 
-				let pr = Promise.withResolvers<RecursiveResult>();
-				observable.subscribe({
-					next(response) {
-						const nextPr = Promise.withResolvers<RecursiveResult>();
-						pr.resolve({ value: response, next: nextPr.promise });
-						pr = nextPr;
+				let pr = Promise.withResolvers<ResponseChain>();
+				const head = pr.promise;
+				subscription = observable.subscribe({
+					next(value) {
+						const next = Promise.withResolvers<ResponseChain>();
+						pr.resolve({ value, next: next.promise });
+						pr = next;
 					},
 					error(error: unknown) {
 						pr.reject(error);
@@ -178,134 +162,110 @@ export function createLazyLoadQueryInternal<TQuery extends OperationType>(params
 						pr.resolve(null);
 					},
 				});
-				return await pr.promise;
+				return head;
 			},
-			{
-				deferStream: params.deferStream,
-				storage(init) {
-					const [value, setValue] = createSignal(init);
-
-					return [
-						value,
-						(next: Setter<RecursiveResult | undefined>) => {
-							const current = untrack(value);
-							const nextValue = typeof next === "function" ? next(current) : next;
-							let result = nextValue;
-
-							if (!fetchedInSameEnv && nextValue) {
-								void (async () => {
-									try {
-										while (result) {
-											replaySubject.next(result.value);
-											result = await result.next;
-										}
-										replaySubject.complete();
-									} catch (error) {
-										replaySubject.error(error instanceof Error ? error : new Error(String(error)));
-									}
-								})();
-							}
-
-							setValue(() => nextValue);
-						},
-					] as Signal<RecursiveResult | undefined>;
-				},
-			},
+			{ deferStream: params.deferStream },
 		);
 
-		let entry: QueryCacheEntry | undefined;
-		if (shouldFetch) {
-			const subscription = subscriptionTarget?.subscribe({});
-			let retainCount = 0;
-			let retention: Disposable | undefined;
-			entry = {
-				resource,
-				retain: (environment) => {
-					retainCount++;
-					if (retainCount === 1) {
-						retention = environment.retain(operation);
+		// Feed the server-serialized responses into the client Relay store.
+		const replay = (value: ResponseChain) => {
+			if (fetchedInSameEnv || replayed || !value) return;
+			replayed = true;
+			const env = environment();
+			subscription = env
+				.executeWithSource({
+					operation,
+					source: __internal.fetchQueryDeduped(env, operation.request.identifier, () =>
+						Observable.create((sink) => replaySubject.subscribe(sink)),
+					),
+				})
+				.subscribe({});
+			void (async () => {
+				let result: ResponseChain = value;
+				try {
+					while (result) {
+						// The first response is pushed synchronously, so the hydrating render can read it.
+						replaySubject.next(result.value);
+						result = await result.next;
 					}
-					return {
-						dispose: () => {
-							retainCount = Math.max(retainCount - 1, 0);
-							if (retainCount === 0) {
-								retention?.dispose();
-								if (isLiveQuery()) subscription?.unsubscribe();
-								cache.delete(key);
-							}
-						},
-					};
-				},
-			};
-			cache.set(key, entry);
-		}
+					replaySubject.complete();
+				} catch (error) {
+					replaySubject.error(error instanceof Error ? error : new Error(String(error)));
+				}
+			})();
+		};
+
+		let retainCount = 0;
+		let retention: Disposable | undefined;
+		const entry: QueryCacheEntry = {
+			response,
+			replay,
+			retain: (environment) => {
+				retainCount++;
+				if (retainCount === 1) {
+					retention = environment.retain(operation);
+				}
+				return {
+					dispose: () => {
+						retainCount = Math.max(retainCount - 1, 0);
+						if (retainCount === 0) {
+							retention?.dispose();
+							if (isLiveQuery()) subscription?.unsubscribe();
+							cache.delete(key);
+						}
+					},
+				};
+			},
+		};
+		cache.set(key, entry);
 
 		return entry;
 	});
 
-	createComputed(() => {
-		const entry = cacheEntry();
-		if (!entry) return;
-		const retention = entry.retain(environment());
-		onCleanup(retention.dispose);
-	});
-
-	const [result, setResult] = createDataStore<QueryResult<TQuery["response"]>>(
-		{
-			data: undefined,
-			error: undefined,
-			pending: false,
-		},
-		() => cacheEntry()?.resource,
-	);
-
-	createComputed(() => {
-		batch(() => {
-			setResult("data", undefined);
-			setResult("error", undefined);
-			setResult("pending", false);
-
+	const result = createResultStore<QueryResult<TQuery["response"]>>(
+		(draft, commit) => {
 			const operation = params.query();
 			const env = environment();
-			if (!operation || !env) return;
+			const entry = cacheEntry();
+			if (!operation || !env) {
+				draft.data = undefined;
+				draft.error = undefined;
+				draft.pending = false;
+				return;
+			}
+			if (entry) {
+				const retention = entry.retain(env);
+				onCleanup(() => retention.dispose());
+			}
 
-			setResult("pending", true);
-
-			const fragmentSubscription = observeFragment(
-				env,
-				params.fragment(),
-				getQueryRef(operation),
-			).subscribe({
+			draft.pending = true;
+			const sub = observeFragment(env, params.fragment(), getQueryRef(operation)).subscribe({
 				next(state) {
-					batch(() => {
-						switch (state.state) {
-							case "ok":
-								setResult("error", undefined);
-								setResult("pending", false);
-								setResult(
-									"data",
-									reconcile(cleanSnapshot(state.value), { key: "__id", merge: true }),
-								);
-								break;
-							case "error":
-								setResult("data", undefined);
-								setResult("error", state.error);
-								setResult("pending", false);
-								break;
-							case "loading":
-								setResult("data", undefined);
-								setResult("error", undefined);
-								setResult("pending", true);
-								break;
-						}
-					});
+					switch (state.state) {
+						case "ok":
+							commit({ data: cleanSnapshot(state.value), error: undefined, pending: false });
+							break;
+						case "error":
+							commit({ data: undefined, error: state.error, pending: false });
+							break;
+						case "loading":
+							commit({ data: undefined, error: undefined, pending: true });
+							break;
+					}
 				},
 			});
-			onCleanup(() => {
-				fragmentSubscription.unsubscribe();
-			});
-		});
+			onCleanup(() => sub.unsubscribe());
+		},
+		{ data: undefined, error: undefined, pending: false },
+	);
+
+	const gate = createMemo(() => {
+		const entry = cacheEntry();
+		// Suspends until the first response; adopts the server value when hydrating.
+		const value = entry?.response();
+		entry?.replay(value ?? null);
+		return true;
 	});
 
-	return result;
+	return createDataStore(result, gate);
 }

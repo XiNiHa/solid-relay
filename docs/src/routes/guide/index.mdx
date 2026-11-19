@@ -1,6 +1,6 @@
 ---
 title: Getting Started
-skillPointer: "Installing, Vite/SolidStart plugin config, `relay.config`, environment + `RelayEnvironmentProvider`"
+skillPointer: "Installing, Vite/SSR plugin config, Solid 1.x migration, `relay.config`, environment + `RelayEnvironmentProvider`"
 ---
 
 # Getting Started
@@ -14,6 +14,7 @@ Before getting started, make sure you have:
 - A GraphQL schema and server
 - [Watchman](https://facebook.github.io/watchman/) installed (required for Relay compiler in watch mode)
 - Node.js and your preferred package manager (npm, pnpm, or yarn)
+- Solid 2.0 (`solid-js` and `@solidjs/web` 2.x)
 
 ## Installation
 
@@ -31,33 +32,17 @@ relay-compiler @types/relay-runtime vite-plugin-relay-lite vite-plugin-cjs-inter
 
 ## Project Setup
 
-### SolidStart
+### Requirements
 
-For SolidStart applications, configure your `app.config.ts`:
-
-```typescript
-import { defineConfig } from "@solidjs/start/config";
-import relay from "vite-plugin-relay-lite";
-import { cjsInterop } from "vite-plugin-cjs-interop";
-
-export default defineConfig({
-	vite: () => ({
-		plugins: [
-			relay(),
-			// required since Relay only gets published in CJS
-			cjsInterop({ dependencies: ["relay-runtime"] }),
-		],
-	}),
-});
-```
+Solid Relay requires Solid 2.0. Install `solid-js` and `@solidjs/web` 2.x alongside it, and compile with [`@solidjs/vite-plugin`](https://www.npmjs.com/package/@solidjs/vite-plugin).
 
 ### Vite
 
-For Vite-based applications, configure your `vite.config.ts`:
+Configure your `vite.config.ts`:
 
 ```typescript
 import { defineConfig } from "vite";
-import solid from "vite-plugin-solid";
+import solid from "@solidjs/vite-plugin";
 import relay from "vite-plugin-relay-lite";
 import { cjsInterop } from "vite-plugin-cjs-interop";
 
@@ -70,6 +55,28 @@ export default defineConfig({
 	],
 });
 ```
+
+### Server-Side Rendering
+
+SolidStart releases target Solid 1, so they cannot run Solid Relay. For streaming SSR, use the start mode of `@solidjs/vite-plugin`, which takes over the role of SolidStart:
+
+```typescript
+import { defineConfig } from "vite";
+import solid from "@solidjs/vite-plugin";
+import relay from "vite-plugin-relay-lite";
+import { cjsInterop } from "vite-plugin-cjs-interop";
+
+export default defineConfig({
+	plugins: [
+		solid({ start: true, ssr: true }),
+		relay(),
+		// required since Relay only gets published in CJS
+		cjsInterop({ dependencies: ["relay-runtime"] }),
+	],
+});
+```
+
+See the [`@solidjs/vite-plugin` documentation](https://www.npmjs.com/package/@solidjs/vite-plugin) for entries, routing, and deployment.
 
 ## Relay Configuration
 
@@ -139,6 +146,19 @@ function App() {
 
 export default App;
 ```
+
+## Migrating from Solid 1.x
+
+Solid Relay now runs on Solid 2.0. Besides the renamed Solid APIs (`Suspense` is now `Loading`, `ErrorBoundary` is now `Errored`, and `solid-js/web` is now `@solidjs/web`), expect these behavior changes:
+
+- **Reading pending data outside a `Loading` boundary throws.** Calling `data()` from an event handler, a timer, or another untracked scope before the first response throws Solid's `NotReadyError` instead of returning `undefined`. Read `data.latest` to get the current value without suspending. See [Loading States](/guide/querying#loading-states).
+- **Changing variables keeps the previous data on screen.** A boundary that already shows content keeps it until the new query settles. `data.latest` keeps the previous result in the meantime, and `data.pending` is `true` until the new result arrives, as in Solid 1.
+- **`createQueryLoader` references commit when their query settles.** Place the `Loading` boundary inside the `Show` that checks the reference so the first load shows its fallback. See [Using createQueryLoader](/guide/querying#using-createqueryloader).
+- **`Errored` recovers on its own.** When the store data that caused an error becomes valid again, the boundary renders its children again without `reset()`. See [Error Handling](/guide/querying#error-handling).
+- **Server errors are sanitized during SSR.** Unless you mark an error with `markSafeError`, the client receives `Internal Server Error` instead of its message.
+- **A preloaded query reference from another environment, or one already disposed, reaches the nearest `Errored` boundary** instead of throwing during render.
+- **`refetch` holds the cleared load-more flags.** `isLoadingNext` and `isLoadingPrevious` stay `true` until a refetch that cancelled them settles. See [Pagination](/guide/pagination#search-with-pagination).
+- **Calling `loadQuery`, `refetch`, or `loadNext` in a component body now fails.** Solid 1 ignored these calls before mount. Solid 2 rejects writes during render in development, so call them from event handlers or effects.
 
 ## Next Steps
 

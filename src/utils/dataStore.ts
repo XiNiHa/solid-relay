@@ -1,11 +1,12 @@
-import { type Accessor, type Resource, untrack } from "solid-js";
-import { createStore, type SetStoreFunction } from "solid-js/store";
-import { useDataStores } from "../RelayEnvironment";
+import { type Accessor, isPending, NotReadyError } from "solid-js";
 
 /**
  * A reactive data store containing the result of a query or fragment.
  *
  * Call `()` to read the value.
+ *
+ * `pending` is `true` during the first load and while a newer result is on its way,
+ * such as after a variable change. `latest` keeps the previous value in the meantime.
  *
  * @param T - The type of the value stored in the data store.
  */
@@ -23,6 +24,12 @@ export type DataStore<T> =
 			readonly pending: false;
 	  }
 	| {
+			(): T;
+			readonly latest: T;
+			readonly error: undefined;
+			readonly pending: true;
+	  }
+	| {
 			(): undefined;
 			readonly latest: undefined;
 			readonly error: undefined;
@@ -36,50 +43,37 @@ export const createDataStore = <
 		readonly pending: boolean;
 	},
 >(
-	init: T,
-	resourceAccessor: Accessor<Resource<unknown> | undefined>,
-): [DataStore<T>, SetStoreFunction<T>] => {
-	const [store, setStore] = createStableStore(
-		init,
-		untrack(() => resourceAccessor()),
-	);
-
+	store: T,
+	gate?: Accessor<unknown>,
+): DataStore<T> => {
 	const readData = () => {
-		const resource = resourceAccessor();
-		void resource?.();
-		const error = Reflect.get(store, "error");
+		gate?.();
+		const error = store.error;
 		if (error) throw error;
-		return Reflect.get(store, "data");
+		return store.data;
 	};
 
 	Object.defineProperties(readData, {
-		latest: {
-			get: () => Reflect.get(store, "data"),
-		},
-		error: {
-			get: () => Reflect.get(store, "error"),
-		},
+		latest: { get: () => store.data },
+		error: { get: () => store.error },
 		pending: {
-			get: () => Reflect.get(store, "pending"),
+			get: () => {
+				// Ask the gate first: isPending sees a pending refresh, and reading the gate
+				// throws NotReadyError while its first value is in flight (isPending swallows
+				// that outside a tracking scope). A failed request throws its error instead,
+				// which data() surfaces; it is no longer pending.
+				if (gate) {
+					try {
+						if (isPending(gate)) return true;
+						gate();
+					} catch (error) {
+						return error instanceof NotReadyError;
+					}
+				}
+				return store.pending;
+			},
 		},
 	});
 
-	return [readData as unknown as DataStore<T>, setStore];
+	return readData as unknown as DataStore<T>;
 };
-
-function createStableStore<
-	T extends {
-		readonly data: unknown;
-		readonly error: unknown;
-		readonly pending: boolean;
-	},
->(init: T, resource: Resource<unknown> | undefined) {
-	const stores = useDataStores();
-	if (resource) {
-		const existing = stores?.get(resource);
-		if (existing) return existing as [T, SetStoreFunction<T>];
-	}
-	const store = createStore(init);
-	if (resource) stores?.set(resource, store);
-	return store;
-}

@@ -13,10 +13,9 @@ import {
 	KeyType,
 	KeyTypeData,
 } from "relay-runtime/lib/store/FragmentTypes";
-import type { Accessor, Setter, Signal } from "solid-js";
-import { batch, createEffect, createResource, createSignal, onCleanup, untrack } from "solid-js";
-import { reconcile, type SetStoreFunction, unwrap } from "solid-js/store";
+import { type Accessor, createMemo, onCleanup, snapshot } from "solid-js";
 import { useRelayEnvironment } from "../RelayEnvironment";
+import { createResultStore } from "../utils/createResultStore";
 import { createDataStore, type DataStore } from "../utils/dataStore";
 import { cleanSnapshot } from "../utils/snapshot";
 
@@ -126,142 +125,82 @@ export function createFragmentInternal<
 	},
 ): DataStore<Data<TKey> | null | undefined> {
 	const environment = useRelayEnvironment();
+	let ready = createReady();
 
-	const subscribeResult = (
-		source: Subscribable<FragmentState<unknown>>,
-		onResult?: (res: FragmentState<unknown>) => void,
-	) => {
-		return source.subscribe({
-			next(res) {
-				batch(() => {
-					switch (res.state) {
-						case "ok":
-							setResult("error", undefined);
-							setResult("pending", false);
-							setResult("data", reconcile(cleanSnapshot(res.value), { key: "__id", merge: true }));
-							break;
-						case "error":
-							setResult("data", undefined);
-							setResult("error", res.error);
-							setResult("pending", false);
-							break;
-						case "loading":
-							setResult("data", undefined);
-							setResult("error", undefined);
-							setResult("pending", true);
-							break;
-					}
-				});
-				onResult?.(res);
-			},
-		} satisfies Observer<FragmentState<unknown>>);
-	};
-	const [subscription, setSubscription] = createSignal<Subscription>();
-	createEffect(() => {
-		const sub = subscription();
-		if (sub) {
-			onCleanup(() => {
-				sub.unsubscribe();
-			});
-		}
-	});
+	const result = createResultStore<FragmentResult<unknown>>(
+		(draft, commit) => {
+			const r = createReady();
+			ready = r; // The gate always reads the latest run's `ready`; callbacks resolve their own `r`.
+			const env = environment();
+			const k = snapshot(key());
 
-	const setResultQueue: unknown[][] = [];
-	let setResult: SetStoreFunction<FragmentResult<unknown>> = (...args: unknown[]) => {
-		setResultQueue.push(args);
-	};
+			if (!k) {
+				draft.data = undefined;
+				draft.error = undefined;
+				draft.pending = false;
+				r.resolve(true);
+				return;
+			}
 
-	let fetchedInSameEnv = false;
-	const [resource] = createResource(
-		() => {
-			return batch(() => {
-				setSubscription(undefined);
-				setResult("pending", false);
+			let sub: Subscription | undefined;
+			let live = true;
 
-				void environment();
-				const k = unwrap(key());
-				if (!k) {
-					setResult("data", undefined);
-					setResult("error", undefined);
-					return;
-				}
-				return { key: k, parentOperation: options?.().parentOperation };
-			});
-		},
-		({ key, parentOperation }) => {
-			setResult("pending", true);
-			fetchedInSameEnv = true;
-
-			const observe = (): true | Promise<true> => {
-				let settled: { ok: true } | { ok: false; error: unknown } | undefined;
-				let resolve: ((value: true) => void) | undefined;
-				let reject: ((error: unknown) => void) | undefined;
-				setSubscription(
-					subscribeResult(observeFragment(environment(), fragment, key as KeyType), (res) => {
-						if (res.state === "ok") {
-							settled ??= { ok: true };
-							resolve?.(true);
-						} else if (res.state === "error") {
-							settled ??= { ok: false, error: res.error };
-							reject?.(res.error);
+			const start = () => {
+				if (!live) return;
+				sub = observeFragment(env, fragment, k as KeyType).subscribe({
+					next(res) {
+						switch (res.state) {
+							case "ok":
+								commit({ data: cleanSnapshot(res.value), error: undefined, pending: false });
+								r.resolve(true);
+								break;
+							case "error":
+								commit({ data: undefined, error: res.error, pending: false });
+								r.reject(res.error);
+								break;
+							case "loading":
+								commit({ data: undefined, error: undefined, pending: true });
+								break;
 						}
-					}),
-				);
-				// Resolve synchronously when the data is already in the store, so the
-				// resource never enters a pending state (and never suspends) for it.
-				if (settled?.ok) return true;
-				if (settled) return Promise.reject(settled.error);
-				return new Promise<true>((res, rej) => {
-					resolve = res;
-					reject = rej;
-				});
+					},
+				}) satisfies Observer<FragmentState<unknown>>;
 			};
 
-			if (!parentOperation) return observe();
-			return new Promise<void>((resolve, reject) => {
-				parentOperation.subscribe({
-					complete: resolve,
-					error: reject,
+			const parentOperation = options?.().parentOperation;
+			if (parentOperation) {
+				draft.pending = true;
+				new Promise<void>((resolve, reject) => {
+					parentOperation.subscribe({ complete: resolve, error: reject });
+				}).then(start, (error) => {
+					if (!live) return;
+					commit({ data: undefined, error, pending: false });
+					r.reject(error);
 				});
-			}).then(observe);
+			} else {
+				start();
+			}
+
+			onCleanup(() => {
+				live = false;
+				sub?.unsubscribe();
+			});
 		},
-		{
-			deferStream: createResourceOptions?.deferStream,
-			storage(init) {
-				const [value, setValue] = createSignal(init);
-
-				return [
-					value,
-					(next: Setter<true | undefined>) => {
-						const current = untrack(value);
-						const nextValue = typeof next === "function" ? next(current) : next;
-						const k = unwrap(untrack(key));
-
-						if (!fetchedInSameEnv && !current && nextValue && k) {
-							setSubscription(
-								subscribeResult(observeFragment(environment(), fragment, k as KeyType)),
-							);
-						}
-
-						setValue(() => nextValue);
-					},
-				] as Signal<true | undefined>;
-			},
-		},
+		{ data: undefined, error: undefined, pending: false },
 	);
 
-	const store = createDataStore<FragmentResult<unknown>>(
-		{
-			data: undefined,
-			error: undefined,
-			pending: false,
+	const gate = createMemo(
+		() => {
+			if (result.error) throw result.error;
+			return result.pending ? ready.promise : true;
 		},
-		() => resource,
+		{ deferStream: createResourceOptions?.deferStream },
 	);
-	for (const args of setResultQueue) {
-		store[1].apply(undefined, args as never);
-	}
-	setResult = store[1];
 
-	return store[0] as DataStore<Data<TKey> | null | undefined>;
+	return createDataStore(result, gate) as DataStore<Data<TKey> | null | undefined>;
+}
+
+function createReady() {
+	const ready = Promise.withResolvers<true>();
+	ready.promise.catch(() => {}); // Avoid an unhandled rejection if it rejects before the gate reads it.
+	return ready;
 }

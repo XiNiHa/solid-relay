@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
-import { generateHydrationScript, renderToStream } from "solid-js/web";
+import { generateHydrationScript, renderToStream } from "@solidjs/web";
 import { type SetupId, SsrApp } from "./SsrApp";
 
 type HandleRequestArgs = {

@@ -1,4 +1,4 @@
-import { hydrate } from "solid-js/web";
+import { hydrate } from "@solidjs/web";
 import { type SetupId, SsrApp } from "./SsrApp";
 
 declare global {

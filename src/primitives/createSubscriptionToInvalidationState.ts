@@ -1,5 +1,5 @@
 import type { DataID, Disposable } from "relay-runtime";
-import { createEffect, createMemo, onCleanup, untrack } from "solid-js";
+import { createEffect, createMemo, untrack } from "solid-js";
 import { useRelayEnvironment } from "../RelayEnvironment";
 import { access, type MaybeAccessor } from "../utils/access";
 
@@ -31,24 +31,28 @@ export function createSubscriptionToInvalidationState(
 	const environment = useRelayEnvironment();
 	let disposable: Disposable | null = null;
 
-	const stableDataIDs = createMemo(() => [...access(dataIDs)].sort(), undefined, {
+	const stableDataIDs = createMemo(() => [...access(dataIDs)].sort(), {
 		equals: sameDataIDs,
 	});
 
-	createEffect(() => {
-		const store = environment().getStore();
-		const invalidationState = store.lookupInvalidationState(stableDataIDs());
-		const current = store.subscribeToInvalidationState(invalidationState, () => {
-			const resolved = untrack(callback as () => unknown);
-			if (typeof resolved === "function") resolved();
-		});
-		disposable = current;
+	createEffect(
+		() => ({ store: environment().getStore(), dataIDs: stableDataIDs() }),
+		({ store, dataIDs }) => {
+			const current = store.subscribeToInvalidationState(
+				store.lookupInvalidationState(dataIDs),
+				() => {
+					const resolved = untrack(callback as () => unknown);
+					if (typeof resolved === "function") resolved();
+				},
+			);
+			disposable = current;
 
-		onCleanup(() => {
-			current.dispose();
-			if (disposable === current) disposable = null;
-		});
-	});
+			return () => {
+				current.dispose();
+				if (disposable === current) disposable = null;
+			};
+		},
+	);
 
 	return {
 		dispose: () => {

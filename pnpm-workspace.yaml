@@ -2,3 +2,6 @@ packages:
   - "."
   - "example"
   - "docs"
+
+patchedDependencies:
+  "@changesets/assemble-release-plan": patches/@changesets__assemble-release-plan.patch

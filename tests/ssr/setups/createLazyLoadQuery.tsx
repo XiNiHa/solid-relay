@@ -1,5 +1,5 @@
 import { graphql } from "relay-runtime";
-import { createSignal, ErrorBoundary, Show, Suspense } from "solid-js";
+import { createSignal, Errored, Show, Loading } from "solid-js";
 import { createLazyLoadQuery } from "solid-relay";
 import { createLazyLoadQuerySsrFlickerTestQuery } from "./__generated__/createLazyLoadQuerySsrFlickerTestQuery.graphql";
 import type { createLazyLoadQuerySsrFrozenSnapshotBlockerTestQuery } from "./__generated__/createLazyLoadQuerySsrFrozenSnapshotBlockerTestQuery.graphql";
@@ -24,11 +24,11 @@ export function Main() {
 	);
 
 	return (
-		<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-			<Suspense fallback="Fallback">
+		<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+			<Loading fallback="Fallback">
 				<h1 data-testid="name">{data()?.node?.name}</h1>
-			</Suspense>
-		</ErrorBoundary>
+			</Loading>
+		</Errored>
 	);
 }
 
@@ -61,8 +61,8 @@ export function Parallel() {
 	);
 
 	return (
-		<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-			<Suspense
+		<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+			<Loading
 				fallback={
 					<>
 						<span>Fallback</span> <span>a</span>
@@ -70,8 +70,8 @@ export function Parallel() {
 				}
 			>
 				<Show when={a()?.node?.name}>{(name) => <h1 data-testid="a">{`Hello ${name()}`}</h1>}</Show>
-			</Suspense>
-			<Suspense
+			</Loading>
+			<Loading
 				fallback={
 					<>
 						<span>Fallback</span> <span>b</span>
@@ -81,8 +81,8 @@ export function Parallel() {
 				<Show when={b()?.node?.name}>
 					{(name) => <h1 data-testid="b">{`Goodbye ${name()}`}</h1>}
 				</Show>
-			</Suspense>
-		</ErrorBoundary>
+			</Loading>
+		</Errored>
 	);
 }
 
@@ -103,14 +103,17 @@ export function Flicker() {
 	let error = "no error";
 	const env = typeof window === "object" ? "browser" : "server";
 	const [queryHydrated, setQueryHydrated] = createSignal(false);
-	const [track, rerender] = createSignal(undefined, { equals: false });
+	// Hydration keeps the server text, and Solid 2.0 skips a DOM write when the
+	// recomputed text is unchanged, so each rerender must produce a new string.
+	const [renderCount, setRenderCount] = createSignal(0);
+	const rerender = () => setRenderCount((count) => count + 1);
 
 	return (
-		<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-			<Suspense fallback="Fallback">
+		<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+			<Loading fallback="Fallback">
 				<h1 data-testid="name">
 					{(() => {
-						track();
+						const count = renderCount();
 						const name = data()?.node?.name;
 						if (env === "browser") {
 							if (!name) {
@@ -123,15 +126,15 @@ export function Flicker() {
 								queueMicrotask(() => setQueryHydrated(true));
 							}
 						}
-						return `${error} ${name} ${env}`;
+						return `${error} ${name} ${env} ${count}`;
 					})()}
 				</h1>
 				<h2 data-testid="query-hydrated">Query Hydrated: {String(queryHydrated())}</h2>
 				<button data-testid="rerender" onClick={() => rerender()}>
 					Rerender text
 				</button>
-			</Suspense>
-		</ErrorBoundary>
+			</Loading>
+		</Errored>
 	);
 }
 
@@ -164,13 +167,13 @@ export function FrozenSnapshot() {
 	);
 
 	return (
-		<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-			<Suspense fallback="Primary fallback">
+		<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+			<Loading fallback="Primary fallback">
 				<h1 data-testid="primary">{primary()?.node?.name}</h1>
-			</Suspense>
-			<Suspense fallback="Blocker fallback">
+			</Loading>
+			<Loading fallback="Blocker fallback">
 				<h2 data-testid="blocker">{blocker()?.node?.name}</h2>
-			</Suspense>
-		</ErrorBoundary>
+			</Loading>
+		</Errored>
 	);
 }

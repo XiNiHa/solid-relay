@@ -6,7 +6,7 @@ import {
 	Store,
 } from "relay-runtime";
 import { createMockEnvironment, type MockEnvironment } from "relay-test-utils";
-import { ErrorBoundary, type JSXElement, Suspense } from "solid-js";
+import { Errored, type Element, Loading } from "solid-js";
 import {
 	createLazyLoadQuery,
 	createPaginationFragment,
@@ -20,7 +20,7 @@ import { renderToBody, wait } from "./utils";
 
 let environment: MockEnvironment;
 
-const View = (props: { children: JSXElement }) => (
+const View = (props: { children: Element }) => (
 	<RelayEnvironmentProvider environment={environment}>{props.children}</RelayEnvironmentProvider>
 );
 
@@ -97,11 +97,11 @@ describe("createPaginationFragment", () => {
 	const QueryScreen = (props: { variables: createPaginationFragmentTestQuery["variables"] }) => {
 		const data = createLazyLoadQuery<createPaginationFragmentTestQuery>(gqlQuery, props.variables);
 		return (
-			<ErrorBoundary fallback={(err) => <h1 data-testid="error">{err.message}</h1>}>
-				<Suspense fallback="Fallback">
+			<Errored fallback={(err) => <h1 data-testid="error">{(err() as Error).message}</h1>}>
+				<Loading fallback="Fallback">
 					<Child fragmentKey={data()} />
-				</Suspense>
-			</ErrorBoundary>
+				</Loading>
+			</Errored>
 		);
 	};
 
@@ -391,7 +391,7 @@ describe("createPaginationFragment", () => {
 		expect(onComplete).toHaveBeenCalledWith(error);
 	});
 
-	it("clears the load-more state when refetch replaces an in-flight pagination request", async () => {
+	it("clears the load-more state once refetch replaces an in-flight pagination request", async () => {
 		environment.commitPayload(query, {
 			users: {
 				edges: [
@@ -442,7 +442,12 @@ describe("createPaginationFragment", () => {
 		});
 		await wait(1);
 
-		expect(paginationStore?.isLoadingNext).toBe(false);
+		// refetch cancels the in-flight loadNext request immediately.
+		expect(environment.mock.getAllOperations().map((op) => op.request.variables)).toEqual([
+			{ after: null, before: null, first: 1, last: null },
+		]);
+		// The cleared isLoadingNext commits with the refetch transition, not before it.
+		expect(paginationStore?.isLoadingNext).toBe(true);
 
 		environment.mock.resolveMostRecentOperation(() => ({
 			data: {
@@ -469,6 +474,7 @@ describe("createPaginationFragment", () => {
 		await wait(2);
 
 		await expect.element(page.getByText("Zara")).toBeInTheDocument();
+		expect(paginationStore?.isLoadingNext).toBe(false);
 	});
 
 	it("keeps hasNext and hasPrevious false when the fragment key is absent", async () => {

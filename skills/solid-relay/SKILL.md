@@ -23,7 +23,7 @@ Read the reference that matches the task before writing code; each file carries 
 | Task | Reference |
 | --- | --- |
 | `createFragment`, composition, data masking, `createRefetchableFragment`, fragment variables | `references/fragments.md` |
-| Installing, Vite/SolidStart plugin config, `relay.config`, environment + `RelayEnvironmentProvider` | `references/getting-started.md` |
+| Installing, Vite/SSR plugin config, Solid 1.x migration, `relay.config`, environment + `RelayEnvironmentProvider` | `references/getting-started.md` |
 | `createSubscriptionToInvalidationState`, reacting to `invalidateRecord` / `invalidateStore`, stale-data indicators, refetch-on-invalidation | `references/invalidation.md` |
 | `createMutation`, optimistic updates, updater functions, connection updates | `references/mutations.md` |
 | `createPaginationFragment`, `@connection`, bidirectional / infinite scroll, search, virtualized lists | `references/pagination.md` |
