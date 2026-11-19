@@ -13,6 +13,9 @@ export const baseConfig = defineConfig({
 
 export default defineConfig({
 	extends: [baseConfig],
+	// example still runs on Solid 1 and cannot type-check against this package;
+	// remove once the example is migrated to Solid 2 in the follow-up PR.
+	ignorePatterns: ["example/**"],
 	options: {
 		typeAware: true,
 		typeCheck: true,
