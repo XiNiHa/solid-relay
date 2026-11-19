@@ -51,7 +51,7 @@ function UserProfile(props: { userId: string }) {
 Variables can be reactive signals or static values:
 
 ```tsx
-import { createSignal, For, Show, Suspense } from "solid-js";
+import { createSignal, For, Loading, Show } from "solid-js";
 import { createLazyLoadQuery } from "solid-relay";
 import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
 
@@ -70,7 +70,7 @@ function SearchResults() {
 				onInput={(e) => setSearchTerm(e.target.value)}
 				placeholder="Search..."
 			/>
-			<Suspense fallback="Loading...">
+			<Loading fallback="Loading...">
 				<Show when={data()}>
 					{(data) => (
 						<div>
@@ -78,7 +78,7 @@ function SearchResults() {
 						</div>
 					)}
 				</Show>
-			</Suspense>
+			</Loading>
 		</div>
 	);
 }
@@ -107,8 +107,8 @@ For better performance, you can consider preloading queries before they're neede
 
 Preloading page-level queries using the router hook is the recommended pattern of query loading in Relay,
 as it allows loading all data required for the page as soon as possible.
-While the example shows the pattern applied for SolidStart with Solid Router,
-this pattern could be also applied to different router libraries and frameworks, such as standalone Solid Router, TanStack Router, and TanStack Start.
+While the example shows the pattern applied with Solid Router,
+this pattern could be also applied to different router libraries and frameworks, such as TanStack Router.
 
 ```tsx
 import { query, type RouteDefinition } from "@solidjs/router";
@@ -116,7 +116,7 @@ import { Show } from "solid-js";
 import { createPreloadedQuery, loadQuery, useRelayEnvironment } from "solid-relay";
 import type { UserQuery } from "./__generated__/UserQuery.graphql.ts";
 
-// Example using SolidStart with Solid Router
+// Example using a Solid Router route preload
 export const route = {
 	preload() {
 		// With this, you can start preloading the query in many cases, including link hovers
@@ -226,38 +226,81 @@ Place the `Loading` boundary inside `Show`, as above, so the first load shows th
 
 ## Error Handling
 
-Handle query errors using Solid's ErrorBoundary:
+Handle query errors with Solid's `Errored` boundary. The fallback receives the error as an accessor and a `reset` function:
 
 ```tsx
-import { ErrorBoundary } from "solid-js";
+import { Errored } from "solid-js";
 
 function App() {
 	return (
-		<ErrorBoundary
-			fallback={() => (
+		<Errored
+			fallback={(error, reset) => (
 				<div>
 					<h2>Something went wrong</h2>
+					<p>{(error() as Error).message}</p>
+					<button onClick={reset}>Try again</button>
 				</div>
 			)}
 		>
 			<UserProfile userId="123" />
-		</ErrorBoundary>
+		</Errored>
 	);
 }
+```
+
+`Errored` also recovers on its own when the inputs of its content change. For example, when a fragment fails because of `@throwOnFieldError` or `@required(action: THROW)` and a later store update makes the data valid, the boundary renders its children again without a call to `reset()`.
+
+### Error Messages During SSR
+
+During server-side rendering, Solid sends `Internal Server Error` to the client in place of the message of any error it serializes, so server details do not leak. To show the original message, mark errors that are safe to expose with `markSafeError`, for example in your fetch function:
+
+```typescript
+import { markSafeError } from "@solidjs/web";
+
+const fetchFn: FetchFunction = async (params, variables) => {
+	const response = await fetch("/graphql", {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ query: params.text, variables }),
+	});
+	if (!response.ok) throw markSafeError(new Error(`HTTP ${response.status}`));
+	return await response.json();
+};
 ```
 
 ## Loading States
 
-Use Suspense to handle loading states:
+Use `Loading` to handle loading states:
 
 ```tsx
-import { Suspense } from "solid-js";
+import { Loading } from "solid-js";
 
 function App() {
 	return (
-		<Suspense fallback={<div>Loading user...</div>}>
+		<Loading fallback={<div>Loading user...</div>}>
 			<UserProfile userId="123" />
-		</Suspense>
+		</Loading>
 	);
 }
 ```
+
+The fallback shows only on the first load. When the variables of a query change, a boundary that already shows content keeps the previous data until the new response arrives. Use `isPending` inside the boundary to show a refresh indicator:
+
+```tsx
+import { isPending, Loading, Show } from "solid-js";
+
+function UserView(props: { userId: string }) {
+	const data = createLazyLoadQuery<UserQuery>(UserQuery, () => ({ id: props.userId }));
+
+	return (
+		<Loading fallback={<div>Loading user...</div>}>
+			<Show when={isPending(() => data())}>
+				<div>Refreshing...</div>
+			</Show>
+			<h1>{data()?.user?.name}</h1>
+		</Loading>
+	);
+}
+```
+
+Reading `data()` outside a `Loading` boundary, such as in an event handler, throws Solid's `NotReadyError` while the query is pending. Read `data.latest` there instead; it returns the current value, or `undefined`, without suspending. Like `data.pending`, it keeps describing the previous result while a variable change is pending.
